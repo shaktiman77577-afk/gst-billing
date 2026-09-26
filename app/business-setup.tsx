@@ -1,9 +1,22 @@
 import { router } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { LanguageToggle } from '../src/components/LanguageToggle';
 import { StatePicker } from '../src/components/StatePicker';
-import { Button, Chips, Field, Hint, Label, Screen, Title } from '../src/components/ui';
+import {
+  Button,
+  Card,
+  Chips,
+  Field,
+  Hint,
+  Label,
+  MadeInIndia,
+  Screen,
+  SectionHeader,
+  Title,
+} from '../src/components/ui';
 import { useApp } from '../src/context/AppContext';
 import { BusinessType, createBusiness } from '../src/db/businesses';
 import {
@@ -90,135 +103,152 @@ export default function BusinessSetupScreen() {
   };
 
   return (
-    <Screen>
-      <View style={styles.top}>
-        <Title>{t('setupTitle')}</Title>
-        <Hint>{t('setupHint')}</Hint>
+    <Screen
+      footer={
+        <Button label={t('saveBusiness')} icon="checkmark-circle" onPress={onSave} loading={saving} />
+      }
+    >
+      <StatusBar style="dark" />
+      <View style={styles.header}>
+        <View style={styles.headerText}>
+          <Title>{t('setupTitle')}</Title>
+          <Hint>{t('setupHint')}</Hint>
+        </View>
+        <LanguageToggle />
       </View>
 
-      <Field
-        label={t('businessName')}
-        placeholder={t('businessNamePlaceholder')}
-        value={name}
-        onChangeText={setName}
-        autoCapitalize="words"
-        error={errors.name}
-      />
-
-      <Field
-        label={t('mobile')}
-        optionalLabel={t('optional')}
-        placeholder="9876543210"
-        value={phone}
-        onChangeText={(v) => setPhone(v.replace(/\D/g, '').slice(0, 10))}
-        keyboardType="phone-pad"
-        maxLength={10}
-        error={errors.phone}
-      />
-
-      <Label>{t('gstRegistered')}</Label>
-      <Chips
-        options={[
-          { value: 'yes', label: t('yes') },
-          { value: 'no', label: t('no') },
-        ]}
-        value={gstRegistered}
-        onChange={(v) => {
-          setGstRegistered(v);
-          setErrors((e) => ({ ...e, gstin: undefined }));
-        }}
-      />
-
-      {gstRegistered === 'yes' ? (
+      <Card>
+        <SectionHeader icon="storefront" title={t('sectionBusiness')} />
         <Field
-          label={t('gstin')}
-          placeholder={t('gstinPlaceholder')}
-          value={gstin}
-          onChangeText={onGstinChange}
+          label={t('businessName')}
+          placeholder={t('businessNamePlaceholder')}
+          value={name}
+          onChangeText={setName}
+          autoCapitalize="words"
+          icon="business-outline"
+          error={errors.name}
+        />
+        <Field
+          label={t('mobile')}
+          optionalLabel={t('optional')}
+          placeholder="9876543210"
+          value={phone}
+          onChangeText={(v) => setPhone(v.replace(/\D/g, '').slice(0, 10))}
+          keyboardType="phone-pad"
+          maxLength={10}
+          icon="call-outline"
+          error={errors.phone}
+        />
+        <Label>{t('businessType')}</Label>
+        <Chips
+          options={[
+            { value: 'retail', label: t('retail'), icon: 'cart-outline' },
+            { value: 'wholesale', label: t('wholesale'), icon: 'cube-outline' },
+            { value: 'both', label: t('both'), icon: 'layers-outline' },
+          ]}
+          value={businessType}
+          onChange={setBusinessType}
+        />
+      </Card>
+
+      <Card>
+        <SectionHeader icon="receipt" title={t('sectionGst')} />
+        <Label>{t('gstRegistered')}</Label>
+        <Chips
+          options={[
+            { value: 'yes', label: t('yes') },
+            { value: 'no', label: t('no') },
+          ]}
+          value={gstRegistered}
+          onChange={(v) => {
+            setGstRegistered(v);
+            setErrors((e) => ({ ...e, gstin: undefined }));
+          }}
+        />
+        {gstRegistered === 'yes' ? (
+          <Field
+            label={t('gstin')}
+            placeholder={t('gstinPlaceholder')}
+            value={gstin}
+            onChangeText={onGstinChange}
+            autoCapitalize="characters"
+            autoCorrect={false}
+            maxLength={15}
+            icon="document-text-outline"
+            error={errors.gstin}
+            helper={gstinOk ? t('gstinValid') : null}
+          />
+        ) : (
+          <Hint>{t('notGstHint')}</Hint>
+        )}
+        <Field
+          label={t('pan')}
+          optionalLabel={t('optional')}
+          placeholder="ABCDE1234F"
+          value={pan}
+          onChangeText={(v) => setPan(v.toUpperCase().replace(/\s/g, '').slice(0, 10))}
           autoCapitalize="characters"
           autoCorrect={false}
-          maxLength={15}
-          error={errors.gstin}
-          helper={gstinOk ? t('gstinValid') : null}
+          maxLength={10}
+          icon="card-outline"
+          editable={!gstinOk}
         />
-      ) : null}
+      </Card>
 
-      <Field
-        label={t('pan')}
-        optionalLabel={t('optional')}
-        placeholder="ABCDE1234F"
-        value={pan}
-        onChangeText={(v) => setPan(v.toUpperCase().replace(/\s/g, '').slice(0, 10))}
-        autoCapitalize="characters"
-        autoCorrect={false}
-        maxLength={10}
-        editable={!gstinOk}
-      />
-
-      <StatePicker
-        label={t('state')}
-        placeholder={t('selectState')}
-        searchPlaceholder={t('searchState')}
-        value={stateCode}
-        onChange={(code) => {
-          setStateCode(code);
-          setErrors((e) => ({ ...e, state: undefined }));
-        }}
-        error={errors.state}
-      />
-
-      <Field
-        label={t('address')}
-        optionalLabel={t('optional')}
-        value={address}
-        onChangeText={setAddress}
-        multiline
-        style={{ minHeight: 70, textAlignVertical: 'top' }}
-      />
-
-      <View style={styles.row}>
-        <View style={styles.flex}>
-          <Field
-            label={t('city')}
-            optionalLabel={t('optional')}
-            value={city}
-            onChangeText={setCity}
-            autoCapitalize="words"
-          />
+      <Card>
+        <SectionHeader icon="location" title={t('sectionAddress')} />
+        <StatePicker
+          label={t('state')}
+          placeholder={t('selectState')}
+          searchPlaceholder={t('searchState')}
+          value={stateCode}
+          onChange={(code) => {
+            setStateCode(code);
+            setErrors((e) => ({ ...e, state: undefined }));
+          }}
+          error={errors.state}
+        />
+        <Field
+          label={t('address')}
+          optionalLabel={t('optional')}
+          placeholder={t('addressPlaceholder')}
+          value={address}
+          onChangeText={setAddress}
+          multiline
+          style={{ minHeight: 64, textAlignVertical: 'top' }}
+        />
+        <View style={styles.row}>
+          <View style={styles.flex}>
+            <Field
+              label={t('city')}
+              optionalLabel={t('optional')}
+              value={city}
+              onChangeText={setCity}
+              autoCapitalize="words"
+            />
+          </View>
+          <View style={styles.flex}>
+            <Field
+              label={t('pincode')}
+              optionalLabel={t('optional')}
+              value={pincode}
+              onChangeText={(v) => setPincode(v.replace(/\D/g, '').slice(0, 6))}
+              keyboardType="number-pad"
+              maxLength={6}
+              error={errors.pincode}
+            />
+          </View>
         </View>
-        <View style={styles.flex}>
-          <Field
-            label={t('pincode')}
-            optionalLabel={t('optional')}
-            value={pincode}
-            onChangeText={(v) => setPincode(v.replace(/\D/g, '').slice(0, 6))}
-            keyboardType="number-pad"
-            maxLength={6}
-            error={errors.pincode}
-          />
-        </View>
-      </View>
+      </Card>
 
-      <Label>{t('businessType')}</Label>
-      <Chips
-        options={[
-          { value: 'retail', label: t('retail') },
-          { value: 'wholesale', label: t('wholesale') },
-          { value: 'both', label: t('both') },
-        ]}
-        value={businessType}
-        onChange={setBusinessType}
-      />
-
-      <View style={{ marginTop: 12 }}>
-        <Button label={t('saveBusiness')} onPress={onSave} loading={saving} />
-      </View>
+      <MadeInIndia />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  top: { marginTop: 16, marginBottom: 4 },
+  header: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginTop: 8 },
+  headerText: { flex: 1, gap: 4 },
   row: { flexDirection: 'row', gap: 12 },
   flex: { flex: 1 },
 });

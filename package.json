@@ -1,6 +1,6 @@
 {
   "name": "gst-billing",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "main": "expo-router/entry",
   "scripts": {
@@ -8,6 +8,7 @@
     "android": "expo run:android"
   },
   "dependencies": {
+    "@expo/vector-icons": "*",
     "@react-native-firebase/app": "*",
     "@react-native-firebase/auth": "*",
     "@react-native-google-signin/google-signin": "*",
@@ -16,6 +17,7 @@
     "expo-crypto": "*",
     "expo-linking": "*",
     "expo-router": "*",
+    "expo-splash-screen": "*",
     "expo-sqlite": "*",
     "expo-status-bar": "*",
     "react": "~19.2.0",

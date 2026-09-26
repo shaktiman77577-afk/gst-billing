@@ -1,13 +1,25 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
-import { ErrorText, Screen } from '../src/components/ui';
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LanguageToggle } from '../src/components/LanguageToggle';
+import { ErrorText, IconName, MadeInIndia } from '../src/components/ui';
 import { useApp } from '../src/context/AppContext';
+import { StringKey } from '../src/i18n/strings';
 import { loginWithGoogle } from '../src/lib/auth';
-import { colors } from '../src/theme';
+import { colors, radius, shadow } from '../src/theme';
+
+const BENEFITS: { icon: IconName; key: StringKey }[] = [
+  { icon: 'flash', key: 'benefitFast' },
+  { icon: 'cloud-offline', key: 'benefitOffline' },
+  { icon: 'shield-checkmark', key: 'benefitSafe' },
+];
 
 export default function LoginScreen() {
   const { t, completeLogin } = useApp();
+  const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,47 +43,101 @@ export default function LoginScreen() {
   };
 
   return (
-    <Screen>
-      <View style={styles.brand}>
-        <Text style={styles.appName}>{t('appName')}</Text>
-        <Text style={styles.tagline}>{t('tagline')}</Text>
-      </View>
+    <SafeAreaView style={styles.safe} edges={['bottom']}>
+      <StatusBar style="light" />
+      <ScrollView contentContainerStyle={styles.scroll} bounces={false}>
+        <View style={[styles.hero, { paddingTop: insets.top + 12 }]}>
+          <View style={styles.toggleRow}>
+            <LanguageToggle onDark />
+          </View>
+          <Image source={require('../assets/icon.png')} style={styles.logo} />
+          <Text style={styles.appName}>{t('appName')}</Text>
+          <Text style={styles.tagline}>{t('tagline')}</Text>
+          <Text style={styles.hindi}>{t('taglineHindi')}</Text>
+        </View>
 
-      <Text style={styles.title}>{t('loginTitle')}</Text>
-      <Text style={styles.hint}>{t('loginHint')}</Text>
+        <View style={styles.card}>
+          <Text style={styles.title}>{t('loginTitle')}</Text>
+          <Text style={styles.hint}>{t('loginHint')}</Text>
 
-      <Pressable
-        onPress={onGoogle}
-        disabled={loading}
-        style={({ pressed }) => [styles.google, (pressed || loading) && { opacity: 0.7 }]}
-      >
-        {loading ? (
-          <ActivityIndicator color={colors.primary} />
-        ) : (
-          <>
-            <View style={styles.gCircle}>
-              <Text style={styles.gLetter}>G</Text>
-            </View>
-            <Text style={styles.googleLabel}>{t('continueWithGoogle')}</Text>
-          </>
-        )}
-      </Pressable>
+          <View style={styles.benefits}>
+            {BENEFITS.map((b) => (
+              <View key={b.key} style={styles.benefit}>
+                <View style={styles.benefitIcon}>
+                  <Ionicons name={b.icon} size={18} color={colors.primary} />
+                </View>
+                <Text style={styles.benefitText}>{t(b.key)}</Text>
+              </View>
+            ))}
+          </View>
 
-      <ErrorText>{error}</ErrorText>
-      <Text style={styles.offline}>{t('loginOffline')}</Text>
-    </Screen>
+          <Pressable
+            onPress={onGoogle}
+            disabled={loading}
+            style={({ pressed }) => [styles.google, (pressed || loading) && { opacity: 0.75 }]}
+          >
+            {loading ? (
+              <ActivityIndicator color={colors.primary} />
+            ) : (
+              <>
+                <Ionicons name="logo-google" size={22} color="#4285F4" />
+                <Text style={styles.googleLabel}>{t('continueWithGoogle')}</Text>
+              </>
+            )}
+          </Pressable>
+
+          <ErrorText>{error}</ErrorText>
+        </View>
+
+        <View style={styles.bottom}>
+          <MadeInIndia />
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  brand: { alignItems: 'center', marginTop: 60, marginBottom: 48 },
-  appName: { fontSize: 32, fontWeight: '700', color: colors.primary },
-  tagline: { fontSize: 16, color: colors.muted, marginTop: 4 },
-  title: { fontSize: 22, fontWeight: '700', color: colors.text, textAlign: 'center' },
-  hint: { fontSize: 14, color: colors.muted, textAlign: 'center', marginBottom: 20 },
+  safe: { flex: 1, backgroundColor: colors.background },
+  scroll: { flexGrow: 1 },
+  hero: {
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    paddingBottom: 56,
+    paddingHorizontal: 20,
+    borderBottomLeftRadius: radius.xl,
+    borderBottomRightRadius: radius.xl,
+  },
+  toggleRow: { alignSelf: 'stretch', alignItems: 'flex-end', marginBottom: 16 },
+  logo: { width: 84, height: 84, borderRadius: 22, borderWidth: 2, borderColor: 'rgba(255,255,255,0.25)' },
+  appName: { fontSize: 30, fontWeight: '800', color: colors.white, marginTop: 14, letterSpacing: 0.3 },
+  tagline: { fontSize: 15, color: 'rgba(255,255,255,0.75)', marginTop: 2 },
+  hindi: { fontSize: 16, color: colors.accent, marginTop: 10, fontWeight: '600' },
+  card: {
+    backgroundColor: colors.card,
+    marginHorizontal: 16,
+    marginTop: -32,
+    borderRadius: radius.lg,
+    padding: 20,
+    gap: 14,
+    ...shadow,
+  },
+  title: { fontSize: 22, fontWeight: '800', color: colors.text },
+  hint: { fontSize: 14, color: colors.muted, marginTop: -8 },
+  benefits: { gap: 10, marginVertical: 4 },
+  benefit: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  benefitIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: radius.sm,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  benefitText: { fontSize: 15, color: colors.text, flex: 1 },
   google: {
     minHeight: 54,
-    borderRadius: 12,
+    borderRadius: radius.md,
     borderWidth: 1.5,
     borderColor: colors.border,
     backgroundColor: colors.card,
@@ -79,16 +145,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
+    marginTop: 4,
   },
-  gCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#4285F4',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  gLetter: { color: '#fff', fontWeight: '700', fontSize: 16 },
-  googleLabel: { fontSize: 17, fontWeight: '600', color: colors.text },
-  offline: { fontSize: 13, color: colors.muted, textAlign: 'center', marginTop: 12 },
+  googleLabel: { fontSize: 17, fontWeight: '700', color: colors.text },
+  bottom: { flex: 1, justifyContent: 'flex-end', paddingVertical: 20 },
 });

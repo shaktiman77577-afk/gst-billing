@@ -1,35 +1,68 @@
-import { ReactNode } from 'react';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { ComponentProps, ReactNode } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
+  StyleProp,
   StyleSheet,
   Text,
   TextInput,
   TextInputProps,
   View,
+  ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors } from '../theme';
+import { colors, radius, shadow } from '../theme';
 
-export function Screen({ children, scroll = true }: { children: ReactNode; scroll?: boolean }) {
+export type IconName = ComponentProps<typeof Ionicons>['name'];
+
+type ScreenProps = {
+  children: ReactNode;
+  scroll?: boolean;
+  footer?: ReactNode; // sticky area at the bottom (e.g. Save button)
+  edges?: ('top' | 'bottom')[];
+  contentStyle?: StyleProp<ViewStyle>;
+};
+
+export function Screen({ children, scroll = true, footer, edges = ['top', 'bottom'], contentStyle }: ScreenProps) {
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+    <SafeAreaView style={styles.safe} edges={edges}>
+      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {scroll ? (
-          <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          <ScrollView
+            contentContainerStyle={[styles.content, contentStyle]}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
             {children}
           </ScrollView>
         ) : (
-          <View style={[styles.flex, styles.content]}>{children}</View>
+          <View style={[styles.flex, styles.content, contentStyle]}>{children}</View>
         )}
+        {footer ? <View style={styles.footer}>{footer}</View> : null}
       </KeyboardAvoidingView>
     </SafeAreaView>
+  );
+}
+
+export function Card({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
+  return <View style={[styles.card, style]}>{children}</View>;
+}
+
+export function SectionHeader({ icon, title, subtitle }: { icon: IconName; title: string; subtitle?: string }) {
+  return (
+    <View style={styles.sectionHeader}>
+      <View style={styles.sectionIcon}>
+        <Ionicons name={icon} size={18} color={colors.primary} />
+      </View>
+      <View style={styles.flex}>
+        <Text style={styles.sectionTitle}>{title}</Text>
+        {subtitle ? <Text style={styles.sectionSubtitle}>{subtitle}</Text> : null}
+      </View>
+    </View>
   );
 }
 
@@ -43,7 +76,12 @@ export function Hint({ children }: { children: ReactNode }) {
 
 export function ErrorText({ children }: { children: ReactNode }) {
   if (!children) return null;
-  return <Text style={styles.error}>{children}</Text>;
+  return (
+    <View style={styles.errorBox}>
+      <Ionicons name="alert-circle" size={16} color={colors.danger} />
+      <Text style={styles.errorBoxText}>{children}</Text>
+    </View>
+  );
 }
 
 type ButtonProps = {
@@ -51,11 +89,14 @@ type ButtonProps = {
   onPress: () => void;
   loading?: boolean;
   disabled?: boolean;
+  icon?: IconName;
   variant?: 'primary' | 'outline' | 'text' | 'danger';
 };
 
-export function Button({ label, onPress, loading, disabled, variant = 'primary' }: ButtonProps) {
+export function Button({ label, onPress, loading, disabled, icon, variant = 'primary' }: ButtonProps) {
   const isDisabled = disabled || loading;
+  const fg =
+    variant === 'primary' ? colors.white : variant === 'danger' ? colors.danger : colors.primary;
   return (
     <Pressable
       onPress={onPress}
@@ -65,25 +106,18 @@ export function Button({ label, onPress, loading, disabled, variant = 'primary' 
         variant === 'primary' && styles.buttonPrimary,
         variant === 'outline' && styles.buttonOutline,
         variant === 'danger' && styles.buttonDanger,
-        variant === 'text' && styles.buttonText,
-        pressed && { opacity: 0.8 },
+        variant === 'text' && styles.buttonTextOnly,
+        pressed && { opacity: 0.85 },
         isDisabled && { opacity: 0.5 },
       ]}
     >
       {loading ? (
-        <ActivityIndicator color={variant === 'primary' ? '#fff' : colors.primary} />
+        <ActivityIndicator color={fg} />
       ) : (
-        <Text
-          style={[
-            styles.buttonLabel,
-            variant === 'primary' && { color: '#fff' },
-            variant === 'outline' && { color: colors.primary },
-            variant === 'text' && { color: colors.primary },
-            variant === 'danger' && { color: colors.danger },
-          ]}
-        >
-          {label}
-        </Text>
+        <View style={styles.buttonRow}>
+          {icon ? <Ionicons name={icon} size={20} color={fg} /> : null}
+          <Text style={[styles.buttonLabel, { color: fg }]}>{label}</Text>
+        </View>
       )}
     </Pressable>
   );
@@ -94,22 +128,27 @@ type FieldProps = TextInputProps & {
   optionalLabel?: string;
   error?: string | null;
   helper?: string | null;
+  icon?: IconName;
 };
 
-export function Field({ label, optionalLabel, error, helper, style, ...rest }: FieldProps) {
+export function Field({ label, optionalLabel, error, helper, icon, style, ...rest }: FieldProps) {
   return (
     <View style={styles.field}>
       <Text style={styles.label}>
         {label}
-        {optionalLabel ? <Text style={styles.optional}> ({optionalLabel})</Text> : null}
+        {optionalLabel ? <Text style={styles.optional}>  ({optionalLabel})</Text> : null}
       </Text>
-      <TextInput
-        placeholderTextColor={colors.muted}
-        style={[styles.input, error ? { borderColor: colors.danger } : null, style]}
-        {...rest}
-      />
+      <View style={[styles.inputWrap, error ? { borderColor: colors.danger } : null]}>
+        {icon ? <Ionicons name={icon} size={18} color={colors.faint} style={{ marginRight: 8 }} /> : null}
+        <TextInput placeholderTextColor={colors.faint} style={[styles.input, style]} {...rest} />
+      </View>
       {error ? <Text style={styles.error}>{error}</Text> : null}
-      {!error && helper ? <Text style={styles.helper}>{helper}</Text> : null}
+      {!error && helper ? (
+        <View style={styles.helperRow}>
+          <Ionicons name="checkmark-circle" size={15} color={colors.success} />
+          <Text style={styles.helper}>{helper}</Text>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -118,7 +157,7 @@ export function Label({ children }: { children: ReactNode }) {
   return <Text style={styles.label}>{children}</Text>;
 }
 
-type ChipOption<T extends string> = { value: T; label: string };
+type ChipOption<T extends string> = { value: T; label: string; icon?: IconName };
 
 export function Chips<T extends string>({
   options,
@@ -139,6 +178,9 @@ export function Chips<T extends string>({
             onPress={() => onChange(o.value)}
             style={[styles.chip, selected && styles.chipSelected]}
           >
+            {o.icon ? (
+              <Ionicons name={o.icon} size={16} color={selected ? colors.primary : colors.muted} />
+            ) : null}
             <Text style={[styles.chipLabel, selected && styles.chipLabelSelected]}>{o.label}</Text>
           </Pressable>
         );
@@ -147,49 +189,102 @@ export function Chips<T extends string>({
   );
 }
 
+export function MadeInIndia({ light = false }: { light?: boolean }) {
+  return (
+    <View style={styles.madeWrap}>
+      <Text style={[styles.made, light && { color: 'rgba(255,255,255,0.85)' }]}>Made with 🤎 in India</Text>
+      <Text style={[styles.madeHindi, light && { color: 'rgba(255,255,255,0.7)' }]}>
+        भारत के व्यापारियों के लिए
+      </Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
-  content: { padding: 20, paddingBottom: 40, gap: 12 },
+  content: { padding: 16, paddingBottom: 32, gap: 14 },
+  footer: {
+    padding: 16,
+    paddingTop: 12,
+    backgroundColor: colors.card,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  card: {
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    padding: 16,
+    gap: 12,
+    ...shadow,
+  },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 2 },
+  sectionIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.sm,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: colors.text },
+  sectionSubtitle: { fontSize: 12, color: colors.muted, marginTop: 1 },
   title: { fontSize: 24, fontWeight: '700', color: colors.text },
-  hint: { fontSize: 14, color: colors.muted, marginBottom: 8 },
+  hint: { fontSize: 14, color: colors.muted },
+  errorBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: colors.dangerSoft,
+    padding: 12,
+    borderRadius: radius.md,
+  },
+  errorBoxText: { color: colors.danger, fontSize: 14, flex: 1 },
   error: { color: colors.danger, fontSize: 13, marginTop: 4 },
-  helper: { color: colors.success, fontSize: 13, marginTop: 4 },
+  helperRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
+  helper: { color: colors.success, fontSize: 13 },
   button: {
-    minHeight: 50,
-    borderRadius: 10,
+    minHeight: 52,
+    borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 16,
   },
+  buttonRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   buttonPrimary: { backgroundColor: colors.primary },
   buttonOutline: { borderWidth: 1.5, borderColor: colors.primary, backgroundColor: colors.card },
-  buttonDanger: { borderWidth: 1.5, borderColor: colors.danger, backgroundColor: colors.card },
-  buttonText: { minHeight: 40 },
+  buttonDanger: { borderWidth: 1.5, borderColor: colors.dangerSoft, backgroundColor: colors.dangerSoft },
+  buttonTextOnly: { minHeight: 40 },
   buttonLabel: { fontSize: 16, fontWeight: '600' },
-  field: { marginBottom: 4 },
-  label: { fontSize: 14, fontWeight: '600', color: colors.text, marginBottom: 6 },
-  optional: { fontWeight: '400', color: colors.muted },
-  input: {
+  field: { gap: 6 },
+  label: { fontSize: 13, fontWeight: '600', color: colors.text },
+  optional: { fontWeight: '400', color: colors.faint },
+  inputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 10,
-    backgroundColor: colors.card,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: colors.text,
+    borderRadius: radius.md,
+    backgroundColor: colors.background,
+    paddingHorizontal: 12,
   },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 4 },
+  input: { flex: 1, paddingVertical: 12, fontSize: 16, color: colors.text },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    borderRadius: radius.pill,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
     backgroundColor: colors.card,
   },
-  chipSelected: { borderColor: colors.primary, backgroundColor: colors.primaryLight },
-  chipLabel: { fontSize: 15, color: colors.text },
-  chipLabelSelected: { color: colors.primary, fontWeight: '600' },
+  chipSelected: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
+  chipLabel: { fontSize: 14, color: colors.text },
+  chipLabelSelected: { color: colors.primary, fontWeight: '700' },
+  madeWrap: { alignItems: 'center', gap: 2, paddingVertical: 8 },
+  made: { fontSize: 13, color: colors.muted, fontWeight: '600' },
+  madeHindi: { fontSize: 12, color: colors.faint },
 });
