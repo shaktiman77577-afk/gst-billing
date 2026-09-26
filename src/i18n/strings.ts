@@ -235,9 +235,31 @@ const en = {
   waMessage: 'Hello {name}, your bill {no} dated {date} for {amount} is ready. Thank you for your business!',
   waBalance: 'Balance due: {balance}',
 
+  // Catalog (price list) share (F4)
+  cat_title: 'Price List',
+  cat_item: 'Item',
+  cat_unit: 'Unit',
+  cat_rate: 'Rate (incl. GST)',
+  cat_asOn: 'As on {date}',
+  cat_inclGstNote: 'All rates include GST.',
+  cat_shareCatalog: 'Share price list on WhatsApp',
+  cat_caption: 'Price list from {business} — all rates include GST.',
+  cat_empty: 'Add a sale rate to at least one item to share a price list.',
+
   // Reports
   r_reports: 'Reports',
   r_reportsHint: 'Sales, GST and top performers',
+
+  // GSTR-1 CSV export (F2)
+  g1_exportTitle: 'GSTR-1 CSV export',
+  g1_export: 'Export GSTR-1 CSV',
+  g1_exportHint: 'Invoice-wise CSV for your CA: live B2B bills plus credit notes (CDNR, shown negative). Works offline.',
+  g1_doneTitle: 'CSV ready',
+  g1_done: 'The GSTR-1 CSV has been created — share it with your CA.',
+  g1_noDataTitle: 'Nothing to export',
+  g1_noData: 'No live tax invoices or credit notes found.',
+  g1_failedTitle: 'Export failed',
+  g1_failed: 'Could not create the CSV. Please try again.',
   r_salesReport: 'Sales report',
   r_salesReportHint: 'Totals and bills by date range',
   r_gstSummary: 'GST summary',
@@ -284,6 +306,28 @@ const en = {
   e_cat_marketing: 'Marketing',
   e_cat_other: 'Other',
 
+  // Purchases (F1)
+  pur_purchases: 'Purchase Bills',
+  pur_purchasesHint: 'Supplier purchases · stock comes in',
+  pur_addPurchase: 'Add Purchase',
+  pur_newPurchase: 'New Purchase',
+  pur_editPurchase: 'Edit Purchase',
+  pur_savePurchase: 'Save Purchase',
+  pur_date: 'Purchase date',
+  pur_supplier: 'Supplier',
+  pur_selectSupplier: 'Select supplier',
+  pur_cashPurchase: 'Cash purchase',
+  pur_cashPurchaseHint: 'Paid in cash, no supplier needed',
+  pur_supplierBillNo: 'Supplier bill no',
+  pur_supplierBillNoPlaceholder: 'e.g. SB-1234',
+  pur_totalThisMonth: 'Total purchases this month',
+  pur_noPurchases: 'No purchases yet',
+  pur_noPurchasesHint: 'Tap + to record your first purchase',
+  pur_stockNote: 'This purchase adds the items to your stock.',
+  pur_deleteConfirm: 'Delete this purchase? The stock it added will be taken back.',
+  pur_errNoSupplier: 'Please select a supplier or Cash purchase',
+  pur_errNoItems: 'Add at least one item',
+
   // Smart alerts
   a_needsAttention: 'Needs attention',
   a_lowStock: 'Low stock',
@@ -298,6 +342,16 @@ const en = {
   a_overdueEmptyHint: 'Bills past their due date will appear here.',
   a_remind: 'Remind',
   a_remindError: 'Could not open WhatsApp.',
+
+  // GST deadlines (F5)
+  due_title: 'GST deadlines',
+  due_gstr1: 'GSTR-1 — {period}',
+  due_gstr3b: 'GSTR-3B — {period}',
+  due_dueOn: 'Due {date}',
+  due_daysLeft: '{n} days left',
+  due_dueToday: 'Due today',
+  due_overdueBy: 'Overdue by {n} days',
+  due_monthlyHint: 'For monthly filers',
   billDesign: 'Bill design',
   billDesignHint: 'Template, colour, logo and more',
   template: 'Template',
@@ -406,6 +460,20 @@ const en = {
   continueSetup: 'Continue',
   retry: 'Retry',
   cloudHint: 'Log in with the same Google account on a new phone and everything comes back automatically.',
+
+  // Daybook (F3)
+  dbk_daybook: 'Daybook',
+  dbk_daybookHint: 'Daily money log — sales, receipts, expenses, purchases',
+  dbk_sales: 'Sales bills',
+  dbk_paymentsIn: 'Payments received',
+  dbk_expenses: 'Expenses',
+  dbk_purchases: 'Purchases',
+  dbk_moneyIn: 'Money in',
+  dbk_moneyOut: 'Money out',
+  dbk_net: 'Net for the day',
+  dbk_today: 'Today',
+  dbk_empty: 'No entries',
+  dbk_purchasesPending: 'Purchases will show here once purchase entry is available',
 };
 
 export type StringKey = keyof typeof en;
@@ -642,9 +710,31 @@ const hi: Record<StringKey, string> = {
   waMessage: 'Namaste {name} ji, aapka bill {no} ({date}) {amount} ka taiyaar hai. Dhanyavaad!',
   waBalance: 'Baaki rakam: {balance}',
 
+  // Catalog (price list) share (F4)
+  cat_title: 'Rate List',
+  cat_item: 'Saaman',
+  cat_unit: 'Unit',
+  cat_rate: 'Rate (GST sahit)',
+  cat_asOn: '{date} tak ke rate',
+  cat_inclGstNote: 'Saare rate GST sahit hain.',
+  cat_shareCatalog: 'WhatsApp par rate list bhejein',
+  cat_caption: '{business} se rate list — saare rate GST sahit hain.',
+  cat_empty: 'Rate list bhejne ke liye kam se kam ek item ka sale rate jodein.',
+
   // Reports
   r_reports: 'Reports',
   r_reportsHint: 'Bikri, GST aur top performers',
+
+  // GSTR-1 CSV export (F2)
+  g1_exportTitle: 'GSTR-1 CSV export',
+  g1_export: 'GSTR-1 CSV export karein',
+  g1_exportHint: 'CA ke liye invoice-wise CSV: live B2B bill aur credit notes (CDNR, minus me). Bina internet ke chalega.',
+  g1_doneTitle: 'CSV taiyaar hai',
+  g1_done: 'GSTR-1 CSV ban gaya hai — ise apne CA ko bhejein.',
+  g1_noDataTitle: 'Export karne ko kuch nahi',
+  g1_noData: 'Koi live tax invoice ya credit note nahi mila.',
+  g1_failedTitle: 'Export nahi ho paaya',
+  g1_failed: 'CSV nahi ban payi. Dobara koshish karein.',
   r_salesReport: 'Bikri report',
   r_salesReportHint: 'Tareekh ke hisaab se kul bikri aur bill',
   r_gstSummary: 'GST summary',
@@ -691,6 +781,28 @@ const hi: Record<StringKey, string> = {
   e_cat_marketing: 'Marketing',
   e_cat_other: 'Anya',
 
+  // Purchases (F1)
+  pur_purchases: 'Kharid Bills',
+  pur_purchasesHint: 'Supplier se kharid · stock aata hai',
+  pur_addPurchase: 'Kharid Jodein',
+  pur_newPurchase: 'Nayi Kharid',
+  pur_editPurchase: 'Kharid Badlein',
+  pur_savePurchase: 'Kharid save karein',
+  pur_date: 'Kharid ki tareekh',
+  pur_supplier: 'Supplier',
+  pur_selectSupplier: 'Supplier chunein',
+  pur_cashPurchase: 'Nagad kharid',
+  pur_cashPurchaseHint: 'Cash me liya, supplier ki zaroorat nahi',
+  pur_supplierBillNo: 'Supplier ka bill no',
+  pur_supplierBillNoPlaceholder: 'jaise SB-1234',
+  pur_totalThisMonth: 'Is mahine ki kul kharid',
+  pur_noPurchases: 'Abhi koi kharid nahi',
+  pur_noPurchasesHint: '+ dabakar pehli kharid darj karein',
+  pur_stockNote: 'Is kharid se saaman aapke stock me jud jayega.',
+  pur_deleteConfirm: 'Ye kharid delete karein? Isse juda stock wapas ghat jayega.',
+  pur_errNoSupplier: 'Supplier chunein ya Nagad kharid chunein',
+  pur_errNoItems: 'Kam se kam ek saaman jodein',
+
   // Smart alerts
   a_needsAttention: 'Dhyaan dein',
   a_lowStock: 'Kam stock',
@@ -705,6 +817,16 @@ const hi: Record<StringKey, string> = {
   a_overdueEmptyHint: 'Due date nikalne wale bill yahan dikhenge.',
   a_remind: 'Yaad dilayein',
   a_remindError: 'WhatsApp nahi khul paya.',
+
+  // GST deadlines (F5)
+  due_title: 'GST ki last dates',
+  due_gstr1: 'GSTR-1 — {period}',
+  due_gstr3b: 'GSTR-3B — {period}',
+  due_dueOn: '{date} tak',
+  due_daysLeft: '{n} din baaki',
+  due_dueToday: 'Aaj last date hai',
+  due_overdueBy: '{n} din late',
+  due_monthlyHint: 'Monthly filing walon ke liye',
   billDesign: 'Bill ka design',
   billDesignHint: 'Template, rang, logo aur bahut kuch',
   template: 'Template',
@@ -813,6 +935,20 @@ const hi: Record<StringKey, string> = {
   continueSetup: 'Aage badhein',
   retry: 'Dobara try',
   cloudHint: 'Naye phone par isi Google account se login karein, sab kuch apne aap wapas aa jayega.',
+
+  // Daybook (F3)
+  dbk_daybook: 'Daybook',
+  dbk_daybookHint: 'Roz ka hisaab — sales, receipts, kharcha, kharid',
+  dbk_sales: 'Becha hua maal',
+  dbk_paymentsIn: 'Milaa hua paisa',
+  dbk_expenses: 'Kharcha',
+  dbk_purchases: 'Kharid',
+  dbk_moneyIn: 'Aaya hua paisa',
+  dbk_moneyOut: 'Gaya hua paisa',
+  dbk_net: 'Aaj ka net',
+  dbk_today: 'Aaj',
+  dbk_empty: 'Koi entry nahi',
+  dbk_purchasesPending: 'Purchase entry aane ke baad kharid yahan dikhegi',
 };
 
 export const STRINGS: Record<Language, Record<StringKey, string>> = { en, hi };

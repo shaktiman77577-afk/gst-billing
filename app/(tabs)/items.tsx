@@ -3,7 +3,7 @@ import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { EmptyState } from '../../src/components/EmptyState';
 import { Fab } from '../../src/components/Fab';
 import { Header } from '../../src/components/Header';
@@ -11,7 +11,11 @@ import { SearchBar } from '../../src/components/SearchBar';
 import { Chips } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import { formatQty, isLowStock, Item, listItems } from '../../src/db/items';
+import { useBusiness } from '../../src/hooks/useBusiness';
+import { todayIso } from '../../src/lib/dates';
 import { formatPaise } from '../../src/lib/money';
+import { catalogHtml } from '../../src/pdf/catalog';
+import { sharePdfOnWhatsApp } from '../../src/pdf/share';
 import { colors, radius, shadow } from '../../src/theme';
 
 type Filter = 'all' | 'low';
@@ -19,8 +23,10 @@ type Filter = 'all' | 'low';
 export default function ItemsScreen() {
   const db = useSQLiteContext();
   const { t, businessId } = useApp();
+  const business = useBusiness();
   const [items, setItems] = useState<Item[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
   const params = useLocalSearchParams<{ filter?: string }>();
@@ -47,10 +53,55 @@ export default function ItemsScreen() {
     );
   }, [items, query, filter]);
 
+  // Price list → WhatsApp PDF. Reuses the already-loaded, active items
+  // (listItems filters out deleted rows and orders by name). Only items
+  // with a sale rate > 0 go in the catalog.
+  const onShareCatalog = async () => {
+    if (!business || !businessId || sharing) return;
+    setSharing(true);
+    try {
+      const priced = items.filter((i) => i.sales_price_paise > 0);
+      if (priced.length === 0) {
+        Alert.alert(t('appName'), t('cat_empty'));
+        return;
+      }
+      const html = catalogHtml(business, priced, t);
+      const stamp = todayIso(); // YYYY-MM-DD → file "Price-List-<date>.pdf"
+      const caption = t('cat_caption').replace('{business}', business.name);
+      // Same one-tap path as the bill share: PDF attaches to WhatsApp;
+      // no phone → WhatsApp's own share picker; not installed → system sheet.
+      await sharePdfOnWhatsApp(html, `Price-List-${stamp}`, null, caption);
+    } catch (e) {
+      if (!/cancel/i.test(String((e as Error)?.message ?? e))) Alert.alert(t('appName'), t('pdfError'));
+    } finally {
+      setSharing(false);
+    }
+  };
+
+  const showShare = loaded && items.some((i) => i.sales_price_paise > 0);
+
   return (
     <View style={styles.flex}>
       <StatusBar style="dark" />
-      <Header title={t('tabItems')}>
+      <Header
+        title={t('tabItems')}
+        right={
+          showShare ? (
+            <Pressable
+              onPress={onShareCatalog}
+              disabled={sharing}
+              accessibilityLabel={t('cat_shareCatalog')}
+              style={({ pressed }) => [styles.shareBtn, pressed && { opacity: 0.8 }, sharing && { opacity: 0.6 }]}
+            >
+              {sharing ? (
+                <ActivityIndicator size="small" color={colors.success} />
+              ) : (
+                <Ionicons name="logo-whatsapp" size={22} color={colors.success} />
+              )}
+            </Pressable>
+          ) : undefined
+        }
+      >
         <SearchBar value={query} onChange={setQuery} placeholder={t('searchItems')} />
       </Header>
 
@@ -134,6 +185,14 @@ const styles = StyleSheet.create({
   flexOnly: { flex: 1 },
   list: { padding: 16, paddingBottom: 100, gap: 10 },
   top: { marginBottom: 4 },
+  shareBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.pill,
+    backgroundColor: colors.successSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',

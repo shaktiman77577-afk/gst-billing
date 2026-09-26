@@ -7,6 +7,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { BillRow } from '../../src/components/BillRow';
 import { CloudPill } from '../../src/components/CloudStatus';
 import { EmptyState } from '../../src/components/EmptyState';
+import { GstDeadlinesCard } from '../../src/components/GstDeadlinesCard';
 import { Header } from '../../src/components/Header';
 import { Card, IconName } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
@@ -198,6 +199,8 @@ export default function HomeScreen() {
             </Text>
           </View>
         </View>
+
+        <GstDeadlinesCard />
 
         <Text style={styles.sectionTitle}>{t('quickActions')}</Text>
         <View style={styles.actions}>

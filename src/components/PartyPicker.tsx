@@ -12,11 +12,13 @@ type Props = {
   visible: boolean;
   parties: PartyWithBalance[];
   onClose: () => void;
-  onPick: (party: PartyWithBalance | null) => void; // null = Cash Sale
+  onPick: (party: PartyWithBalance | null) => void; // null = cash (sale / purchase)
   onAddNew: () => void;
+  nullLabel?: string; // override for the cash row (defaults to t('cashSale'))
+  nullHint?: string; // defaults to t('cashSaleHint')
 };
 
-export function PartyPicker({ visible, parties, onClose, onPick, onAddNew }: Props) {
+export function PartyPicker({ visible, parties, onClose, onPick, onAddNew, nullLabel, nullHint }: Props) {
   const { t } = useApp();
   const [query, setQuery] = useState('');
   const list = useMemo(() => {
@@ -48,8 +50,8 @@ export function PartyPicker({ visible, parties, onClose, onPick, onAddNew }: Pro
                   <Ionicons name="cash-outline" size={20} color={colors.success} />
                 </View>
                 <View style={styles.flex}>
-                  <Text style={styles.name}>{t('cashSale')}</Text>
-                  <Text style={styles.sub}>{t('cashSaleHint')}</Text>
+                  <Text style={styles.name}>{nullLabel ?? t('cashSale')}</Text>
+                  <Text style={styles.sub}>{nullHint ?? t('cashSaleHint')}</Text>
                 </View>
               </Pressable>
               <Pressable style={styles.special} onPress={onAddNew}>

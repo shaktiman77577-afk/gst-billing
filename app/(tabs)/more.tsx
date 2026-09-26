@@ -108,6 +108,28 @@ export default function MoreScreen() {
             <Ionicons name="chevron-forward" size={18} color={colors.faint} />
           </Pressable>
           <View style={styles.sep} />
+          <Pressable style={styles.row} onPress={() => router.push('/purchases')}>
+            <View style={styles.rowIcon}>
+              <Ionicons name="bag-handle-outline" size={18} color={colors.primary} />
+            </View>
+            <View style={styles.flexOnly}>
+              <Text style={styles.rowText}>{t('pur_purchases')}</Text>
+              <Text style={styles.meta}>{t('pur_purchasesHint')}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.faint} />
+          </Pressable>
+          <View style={styles.sep} />
+          <Pressable style={styles.row} onPress={() => router.push('/daybook')}>
+            <View style={styles.rowIcon}>
+              <Ionicons name="book-outline" size={18} color={colors.primary} />
+            </View>
+            <View style={styles.flexOnly}>
+              <Text style={styles.rowText}>{t('dbk_daybook')}</Text>
+              <Text style={styles.meta}>{t('dbk_daybookHint')}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.faint} />
+          </Pressable>
+          <View style={styles.sep} />
           <View style={styles.row}>
             <View style={styles.rowIcon}>
               <Ionicons name="language" size={18} color={colors.primary} />

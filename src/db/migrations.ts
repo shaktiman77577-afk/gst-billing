@@ -215,6 +215,46 @@ const MIGRATIONS: string[] = [
 
   CREATE INDEX IF NOT EXISTS idx_expenses_business_date ON expenses(business_id, date);
   `,
+
+  // v8: purchase bills (kharid). Stock comes IN here. Purchases never touch
+  // invoices, payments, GST reports or party balances, so they live in their
+  // own tables. Money is stored in paise (integer).
+  `
+  CREATE TABLE IF NOT EXISTS purchases (
+    id TEXT PRIMARY KEY NOT NULL,
+    business_id TEXT NOT NULL,
+    purchase_date TEXT NOT NULL,
+    party_id TEXT,
+    party_name TEXT NOT NULL,
+    supplier_bill_no TEXT,
+    total_paise INTEGER NOT NULL DEFAULT 0,
+    note TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    deleted_at TEXT
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_purchases_business ON purchases(business_id, deleted_at, purchase_date);
+  CREATE INDEX IF NOT EXISTS idx_purchases_party ON purchases(party_id);
+
+  CREATE TABLE IF NOT EXISTS purchase_items (
+    id TEXT PRIMARY KEY NOT NULL,
+    purchase_id TEXT NOT NULL,
+    item_id TEXT,
+    item_type TEXT NOT NULL DEFAULT 'product',
+    name TEXT NOT NULL,
+    unit TEXT NOT NULL,
+    qty REAL NOT NULL,
+    rate_paise INTEGER NOT NULL,
+    amount_paise INTEGER NOT NULL,
+    sort INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    deleted_at TEXT
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_purchase_items_purchase ON purchase_items(purchase_id, deleted_at);
+  `,
 ];
 
 export async function migrateDb(db: SQLiteDatabase): Promise<void> {

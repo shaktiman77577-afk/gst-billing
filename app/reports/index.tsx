@@ -3,14 +3,15 @@ import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FormHeader } from '../../src/components/FormHeader';
-import { Card } from '../../src/components/ui';
+import { Button, Card } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import { useBusiness } from '../../src/hooks/useBusiness';
 import { formatPaise } from '../../src/lib/money';
 import { receivablesTotal } from '../../src/lib/reports';
+import { exportGstr1Csv } from '../../src/lib/gstr1';
 import { colors, radius, text } from '../../src/theme';
 
 export default function ReportsScreen() {
@@ -18,6 +19,24 @@ export default function ReportsScreen() {
   const { t } = useApp();
   const business = useBusiness();
   const [due, setDue] = useState<number | null>(null);
+  const [exporting, setExporting] = useState(false);
+
+  const onExportGstr1 = useCallback(async () => {
+    if (!business || exporting) return;
+    setExporting(true);
+    try {
+      const uri = await exportGstr1Csv(db, business.id, business.name);
+      if (!uri) {
+        Alert.alert(t('g1_noDataTitle'), t('g1_noData'));
+      } else {
+        Alert.alert(t('g1_doneTitle'), t('g1_done'));
+      }
+    } catch {
+      Alert.alert(t('g1_failedTitle'), t('g1_failed'));
+    } finally {
+      setExporting(false);
+    }
+  }, [business, db, exporting, t]);
 
   const menu = [
     { route: '/reports/sales' as const, icon: 'trending-up' as const, title: t('r_salesReport'), hint: t('r_salesReportHint') },
@@ -58,6 +77,14 @@ export default function ReportsScreen() {
                   <Text style={styles.dueAmount}>{formatPaise(due)}</Text>
                 )}
               </View>
+            </View>
+          </Card>
+
+          <Card>
+            <Text style={styles.rowText}>{t('g1_exportTitle')}</Text>
+            <Text style={styles.meta}>{t('g1_exportHint')}</Text>
+            <View style={styles.g1Btn}>
+              <Button label={t('g1_export')} icon="document-text" onPress={onExportGstr1} loading={exporting} />
             </View>
           </Card>
 
@@ -111,5 +138,6 @@ const styles = StyleSheet.create({
   },
   rowText: { fontSize: 15, fontWeight: '600', color: colors.text },
   meta: { fontSize: 13, color: colors.muted, marginTop: 2 },
+  g1Btn: { marginTop: 12 },
   sep: { height: 1, backgroundColor: colors.border },
 });
