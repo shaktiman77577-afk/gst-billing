@@ -9,6 +9,7 @@ import { EmptyState } from '../../src/components/EmptyState';
 import { Header } from '../../src/components/Header';
 import { Card, IconName } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
+import { needsBackupReminder } from '../../src/db/backup';
 import { InvoiceListRow, listInvoices, salesSummary } from '../../src/db/invoices';
 import { partyTotals } from '../../src/db/parties';
 import { useBusiness } from '../../src/hooks/useBusiness';
@@ -31,6 +32,7 @@ export default function HomeScreen() {
   const [totals, setTotals] = useState({ toCollect: 0, toPay: 0 });
   const [recent, setRecent] = useState<InvoiceListRow[]>([]);
   const [month, setMonth] = useState({ total: 0, count: 0 });
+  const [remind, setRemind] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -38,6 +40,7 @@ export default function HomeScreen() {
       partyTotals(db, businessId).then(setTotals);
       listInvoices(db, businessId, 5).then(setRecent);
       salesSummary(db, businessId, monthStartIso()).then(setMonth);
+      needsBackupReminder(db, businessId).then(setRemind);
     }, [db, businessId]),
   );
 
@@ -95,6 +98,14 @@ export default function HomeScreen() {
           </View>
         </View>
 
+        {remind ? (
+          <Pressable style={styles.reminder} onPress={() => router.push('/settings/backup')}>
+            <Ionicons name="cloud-upload-outline" size={20} color="#B45309" />
+            <Text style={styles.reminderText}>{t('backupReminder')}</Text>
+            <Ionicons name="chevron-forward" size={18} color="#B45309" />
+          </Pressable>
+        ) : null}
+
         <Pressable style={styles.monthCard} onPress={() => router.navigate('/bills')}>
           <View style={styles.monthIcon}>
             <Ionicons name="trending-up" size={22} color={colors.primary} />
@@ -143,6 +154,15 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.background },
   flexOnly: { flex: 1 },
+  reminder: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: colors.accentSoft,
+    borderRadius: radius.md,
+    padding: 12,
+  },
+  reminderText: { flex: 1, fontSize: 13, color: '#92400E', fontWeight: '600' },
   monthCard: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -1,6 +1,6 @@
 {
   "name": "gst-billing",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "private": true,
   "main": "expo-router/entry",
   "scripts": {
@@ -16,6 +16,7 @@
     "expo": "~57.0.0",
     "expo-constants": "*",
     "expo-crypto": "*",
+    "expo-document-picker": "*",
     "expo-file-system": "*",
     "expo-image-picker": "*",
     "expo-linking": "*",

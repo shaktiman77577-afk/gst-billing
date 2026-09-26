@@ -1,6 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-export type MetaKey = 'language' | 'user_id' | 'email' | 'active_business_id';
+export type MetaKey = 'language' | 'user_id' | 'email' | 'active_business_id' | 'last_backup_at';
 
 export async function getMeta(db: SQLiteDatabase, key: MetaKey): Promise<string | null> {
   const row = await db.getFirstAsync<{ value: string | null }>(

@@ -21,6 +21,7 @@ import {
 import { useApp } from '../src/context/AppContext';
 import { BusinessType, createBusiness, updateBusiness } from '../src/db/businesses';
 import { useBusiness } from '../src/hooks/useBusiness';
+import { useRestore } from '../src/hooks/useRestore';
 import {
   isValidGstin,
   normalizeGstin,
@@ -41,6 +42,7 @@ export default function BusinessSetupScreen() {
   const { edit } = useLocalSearchParams<{ edit?: string }>();
   const isEdit = edit === '1';
   const existing = useBusiness();
+  const { start: startRestore, restoring } = useRestore();
   const [prefilled, setPrefilled] = useState(false);
 
   const [name, setName] = useState('');
@@ -153,6 +155,15 @@ export default function BusinessSetupScreen() {
           </View>
           <LanguageToggle />
         </View>
+      )}
+      {isEdit ? null : (
+        <Button
+          variant="outline"
+          icon="cloud-download-outline"
+          label={t('haveBackup')}
+          onPress={startRestore}
+          loading={restoring}
+        />
       )}
 
       <Card>

@@ -292,6 +292,28 @@ const en = {
   reminder: 'Reminder',
   waReminder: 'Hello {name}, a balance of {amount} is pending with {business}. Kindly pay at the earliest. Thank you!',
   noEntries: 'No entries yet',
+
+  // Backup
+  backup: 'Backup & restore',
+  backupHint: 'Keep a copy of your data safe',
+  backupNow: 'Backup now',
+  restore: 'Restore from backup',
+  lastBackup: 'Last backup',
+  never: 'Never',
+  daysAgo: '{n} days ago',
+  today: 'Today',
+  backupHow: 'A backup file will be created. Save it to Google Drive, or send it to yourself on WhatsApp.',
+  backupTip1: 'Take a backup every week',
+  backupTip2: 'Keep the file private — it has all your business data',
+  backupTip3: 'On a new phone, log in and choose "Restore from backup"',
+  backupDone: 'Backup file created',
+  restoreConfirm: 'Restore this backup? All data on this phone will be replaced by the backup.',
+  restoreDetails: 'Backup of {date}\n{business}\n{parties} parties · {items} items · {bills} bills',
+  restoreDone: 'Data restored',
+  restoreInvalid: 'This is not a GST Billing backup file.',
+  restoreNewer: 'This backup is from a newer version of the app. Please update the app first.',
+  backupReminder: 'No backup in the last 7 days. Take one now to keep your data safe.',
+  haveBackup: 'Have a backup? Restore it',
 };
 
 export type StringKey = keyof typeof en;
@@ -585,6 +607,28 @@ const hi: Record<StringKey, string> = {
   reminder: 'Yaad dilayein',
   waReminder: 'Namaste {name} ji, {business} ke {amount} baaki hain. Kripya jaldi bhugtaan karein. Dhanyavaad!',
   noEntries: 'Abhi koi entry nahi',
+
+  // Backup
+  backup: 'Backup aur restore',
+  backupHint: 'Apne data ki copy safe rakhein',
+  backupNow: 'Abhi backup lein',
+  restore: 'Backup se restore karein',
+  lastBackup: 'Pichhla backup',
+  never: 'Kabhi nahi',
+  daysAgo: '{n} din pehle',
+  today: 'Aaj',
+  backupHow: 'Ek backup file banegi. Use Google Drive mein save karein, ya WhatsApp par khud ko bhej dein.',
+  backupTip1: 'Har hafte backup lein',
+  backupTip2: 'File kisi ko na bhejein — isme aapka poora business data hai',
+  backupTip3: 'Naye phone par login karke "Backup se restore karein" chunein',
+  backupDone: 'Backup file ban gayi',
+  restoreConfirm: 'Ye backup restore karein? Is phone ka saara data backup wale data se badal jayega.',
+  restoreDetails: '{date} ka backup\n{business}\n{parties} party · {items} saaman · {bills} bill',
+  restoreDone: 'Data wapas aa gaya',
+  restoreInvalid: 'Ye GST Billing ki backup file nahi hai.',
+  restoreNewer: 'Ye backup app ke naye version ka hai. Pehle app update karein.',
+  backupReminder: '7 din se backup nahi liya. Data safe rakhne ke liye abhi lein.',
+  haveBackup: 'Backup hai? Restore karein',
 };
 
 export const STRINGS: Record<Language, Record<StringKey, string>> = { en, hi };

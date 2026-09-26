@@ -70,6 +70,17 @@ export default function MoreScreen() {
             <Ionicons name="chevron-forward" size={18} color={colors.faint} />
           </Pressable>
           <View style={styles.sep} />
+          <Pressable style={styles.row} onPress={() => router.push('/settings/backup')}>
+            <View style={styles.rowIcon}>
+              <Ionicons name="cloud-upload" size={18} color={colors.primary} />
+            </View>
+            <View style={styles.flexOnly}>
+              <Text style={styles.rowText}>{t('backup')}</Text>
+              <Text style={styles.meta}>{t('backupHint')}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.faint} />
+          </Pressable>
+          <View style={styles.sep} />
           <View style={styles.row}>
             <View style={styles.rowIcon}>
               <Ionicons name="language" size={18} color={colors.primary} />
