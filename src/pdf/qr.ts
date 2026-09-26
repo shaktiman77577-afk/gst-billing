@@ -23,3 +23,15 @@ export function qrSvg(text: string): string {
     return '';
   }
 }
+
+// QR code as a data-URL image for React Native <Image> ('' if it cannot be made).
+export function qrDataUrl(text: string): string {
+  try {
+    const qr = qrcode(0, 'M');
+    qr.addData(text);
+    qr.make();
+    return qr.createDataURL(6, 0);
+  } catch {
+    return '';
+  }
+}

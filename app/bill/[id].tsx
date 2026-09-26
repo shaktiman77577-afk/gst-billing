@@ -2,8 +2,8 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useMemo, useState } from 'react';
+import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BillRow } from '../../src/components/BillRow';
 import { FormHeader } from '../../src/components/FormHeader';
@@ -28,6 +28,7 @@ import { formatDate } from '../../src/lib/dates';
 import { amountInWords } from '../../src/lib/gst';
 import { formatPaise } from '../../src/lib/money';
 import { billWhatsappText, invoiceHtml, printBill, sharePdf, sharePdfOnWhatsApp } from '../../src/pdf/share';
+import { qrDataUrl, upiLink } from '../../src/pdf/qr';
 import { colors, radius } from '../../src/theme';
 
 type Data = { invoice: Invoice; lines: InvoiceLine[]; payments: Payment[]; creditNotes: InvoiceListRow[] };
@@ -59,6 +60,14 @@ export default function BillDetailScreen() {
   const cancelled = !!inv.cancelled_at;
   const balance = inv.total_paise - inv.received_paise - inv.credited_paise;
   const gst = inv.doc_type === 'tax_invoice';
+
+  // In-app "Scan to Pay" QR — same conditions as the QR printed on the PDF.
+  const upiId = business?.upi_id?.trim() ?? '';
+  const showQr = !!upiId && !cancelled && !isCn && balance > 0;
+  const qrUri = useMemo(
+    () => (showQr && business ? qrDataUrl(upiLink(upiId, business.name ?? '', balance, inv.invoice_no)) : ''),
+    [showQr, business, upiId, balance, inv.invoice_no],
+  );
 
   const run = async (kind: 'share' | 'print') => {
     if (!business) return;
@@ -160,6 +169,18 @@ export default function BillDetailScreen() {
               </Pressable>
             ) : null}
           </Card>
+
+          {/* Scan to Pay */}
+          {showQr && qrUri ? (
+            <Card>
+              <View style={styles.qrWrap}>
+                <Text style={styles.qrTitle}>{t('scanToPay')}</Text>
+                <Image source={{ uri: qrUri }} style={styles.qr} />
+                <Text style={styles.qrAmount}>{formatPaise(balance)}</Text>
+                <Text style={styles.qrUpi}>{upiId}</Text>
+              </View>
+            </Card>
+          ) : null}
 
           {/* Party */}
           <Card>
@@ -436,4 +457,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   waText: { color: colors.white, fontSize: 16, fontWeight: '700' },
+  qrWrap: { alignItems: 'center', paddingVertical: 8 },
+  qrTitle: { fontSize: 15, fontWeight: '700', color: colors.text, marginBottom: 12 },
+  qr: { width: 200, height: 200, borderRadius: radius.sm },
+  qrAmount: { marginTop: 12, fontSize: 22, fontWeight: '800', color: colors.text },
+  qrUpi: { marginTop: 4, fontSize: 13, color: colors.muted },
 });
