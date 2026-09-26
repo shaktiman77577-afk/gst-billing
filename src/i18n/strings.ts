@@ -314,6 +314,24 @@ const en = {
   restoreNewer: 'This backup is from a newer version of the app. Please update the app first.',
   backupReminder: 'No backup in the last 7 days. Take one now to keep your data safe.',
   haveBackup: 'Have a backup? Restore it',
+
+  // Cloud sync
+  cloudBackup: 'Cloud backup',
+  cloudSynced: 'All data saved in the cloud',
+  cloudPending: 'Waiting to upload',
+  cloudSyncing: 'Uploading…',
+  cloudOffline: 'No internet — will upload automatically later',
+  cloudError: 'Could not reach the server. Will try again.',
+  cloudOff: 'Not set up yet',
+  syncNow: 'Sync now',
+  lastSynced: 'Last synced',
+  justNow: 'just now',
+  minutesAgo: '{n} min ago',
+  checkingCloud: 'Checking your data in the cloud…',
+  cloudCheckFailed: 'Could not check the cloud for your old data (no internet?). Retry, or continue to set up a new business.',
+  continueSetup: 'Continue',
+  retry: 'Retry',
+  cloudHint: 'Log in with the same Google account on a new phone and everything comes back automatically.',
 };
 
 export type StringKey = keyof typeof en;
@@ -629,6 +647,24 @@ const hi: Record<StringKey, string> = {
   restoreNewer: 'Ye backup app ke naye version ka hai. Pehle app update karein.',
   backupReminder: '7 din se backup nahi liya. Data safe rakhne ke liye abhi lein.',
   haveBackup: 'Backup hai? Restore karein',
+
+  // Cloud sync
+  cloudBackup: 'Cloud backup',
+  cloudSynced: 'Saara data cloud mein save hai',
+  cloudPending: 'Upload hona baaki hai',
+  cloudSyncing: 'Upload ho raha hai…',
+  cloudOffline: 'Internet nahi — baad mein apne aap upload hoga',
+  cloudError: 'Server tak nahi pahunch paaye. Dobara try karenge.',
+  cloudOff: 'Abhi set up nahi hai',
+  syncNow: 'Abhi sync karein',
+  lastSynced: 'Pichhla sync',
+  justNow: 'abhi abhi',
+  minutesAgo: '{n} min pehle',
+  checkingCloud: 'Cloud mein aapka data dekh rahe hain…',
+  cloudCheckFailed: 'Cloud mein purana data check nahi ho paaya (internet?). Dobara try karein, ya naya business set up karein.',
+  continueSetup: 'Aage badhein',
+  retry: 'Dobara try',
+  cloudHint: 'Naye phone par isi Google account se login karein, sab kuch apne aap wapas aa jayega.',
 };
 
 export const STRINGS: Record<Language, Record<StringKey, string>> = { en, hi };

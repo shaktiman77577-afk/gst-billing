@@ -4,6 +4,7 @@ import { getFirstBusinessForUser } from '../db/businesses';
 import { getMeta, setMeta } from '../db/meta';
 import { Language, STRINGS, StringKey } from '../i18n/strings';
 import { logoutGoogle } from '../lib/auth';
+import { pushChanges, resetSyncState, syncEnabled } from '../sync/engine';
 
 type AppState = {
   ready: boolean;
@@ -16,7 +17,7 @@ type AppState = {
 type AppContextValue = AppState & {
   t: (key: StringKey) => string;
   chooseLanguage: (lang: Language) => Promise<void>;
-  completeLogin: (userId: string, email: string) => Promise<void>;
+  completeLogin: (userId: string, email: string) => Promise<string | null>;
   setActiveBusiness: (id: string) => Promise<void>;
   logout: () => Promise<void>;
 };
@@ -60,12 +61,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const completeLogin = useCallback(
     async (userId: string, email: string) => {
+      const previous = await getMeta(db, 'user_id');
+      if (previous !== userId) await resetSyncState(db);
       await setMeta(db, 'user_id', userId);
       await setMeta(db, 'email', email);
       // Same user logging in again on this phone: reopen their business.
       const existing = await getFirstBusinessForUser(db, userId);
       await setMeta(db, 'active_business_id', existing?.id ?? null);
       setState((s) => ({ ...s, userId, email, businessId: existing?.id ?? null }));
+      return existing?.id ?? null;
     },
     [db],
   );
@@ -79,12 +83,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(async () => {
+    // Last chance to send unsaved changes to the cloud (skipped if offline).
+    if (syncEnabled() && state.userId) {
+      await Promise.race([pushChanges(db, state.userId).catch(() => 0), new Promise((r) => setTimeout(r, 8000))]);
+    }
+    await resetSyncState(db);
     await logoutGoogle();
     await setMeta(db, 'user_id', null);
     await setMeta(db, 'email', null);
     await setMeta(db, 'active_business_id', null);
     setState((s) => ({ ...s, userId: null, email: null, businessId: null }));
-  }, [db]);
+  }, [db, state.userId]);
 
   const value = useMemo(
     () => ({ ...state, t, chooseLanguage, completeLogin, setActiveBusiness, logout }),

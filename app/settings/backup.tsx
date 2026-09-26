@@ -4,6 +4,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useState } from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
+import { CloudStatusCard } from '../../src/components/CloudStatus';
 import { FormHeader } from '../../src/components/FormHeader';
 import { Button, Card, IconName, Screen } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
@@ -57,6 +58,10 @@ export default function BackupScreen() {
       <StatusBar style="dark" />
       <FormHeader title={t('backup')} />
       <Screen edges={['bottom']}>
+        <Card>
+          <CloudStatusCard />
+          <Text style={styles.muted}>{t('cloudHint')}</Text>
+        </Card>
         <Card style={styles.status}>
           <View style={[styles.icon, { backgroundColor: old ? colors.accentSoft : colors.successSoft }]}>
             <Ionicons

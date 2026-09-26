@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { BillRow } from '../../src/components/BillRow';
+import { CloudPill } from '../../src/components/CloudStatus';
 import { EmptyState } from '../../src/components/EmptyState';
 import { Header } from '../../src/components/Header';
 import { Card, IconName } from '../../src/components/ui';
@@ -71,7 +72,15 @@ export default function HomeScreen() {
   return (
     <View style={styles.flex}>
       <StatusBar style="light" />
-      <Header subtitle={`${t(greetingKey())} 👋`} title={business?.name ?? ''}>
+      <Header
+        subtitle={`${t(greetingKey())} 👋`}
+        title={business?.name ?? ''}
+        right={
+          <Pressable onPress={() => router.push('/settings/backup')} hitSlop={8}>
+            <CloudPill />
+          </Pressable>
+        }
+      >
         {business?.gstin ? (
           <View style={styles.gstChip}>
             <Ionicons name="checkmark-circle" size={14} color={colors.accent} />

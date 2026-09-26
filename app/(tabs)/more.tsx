@@ -3,6 +3,7 @@ import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { CloudStatusCard } from '../../src/components/CloudStatus';
 import { Header } from '../../src/components/Header';
 import { LanguageToggle } from '../../src/components/LanguageToggle';
 import { Button, Card, MadeInIndia } from '../../src/components/ui';
@@ -56,6 +57,10 @@ export default function MoreScreen() {
               <Text style={styles.editText}>{t('edit')}</Text>
             </View>
           </Pressable>
+        </Card>
+
+        <Card>
+          <CloudStatusCard />
         </Card>
 
         <Card>

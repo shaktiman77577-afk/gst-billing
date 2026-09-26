@@ -124,6 +124,8 @@ export async function restoreBackup(db: SQLiteDatabase, data: BackupFile, userId
     userId,
   );
   await setMeta(db, 'last_backup_at', data.created_at);
+  // Restored rows keep their old times, so send everything to the cloud again.
+  await setMeta(db, 'sync_pushed_at', null);
   return first?.id ?? null;
 }
 

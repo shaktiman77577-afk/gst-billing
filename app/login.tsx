@@ -1,14 +1,17 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useSQLiteContext } from 'expo-sqlite';
 import { useState } from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LanguageToggle } from '../src/components/LanguageToggle';
 import { ErrorText, IconName, MadeInIndia } from '../src/components/ui';
 import { useApp } from '../src/context/AppContext';
 import { StringKey } from '../src/i18n/strings';
+import { getFirstBusinessForUser } from '../src/db/businesses';
 import { loginWithGoogle } from '../src/lib/auth';
+import { pullChanges, syncEnabled } from '../src/sync/engine';
 import { colors, radius, shadow } from '../src/theme';
 
 const BENEFITS: { icon: IconName; key: StringKey }[] = [
@@ -18,9 +21,30 @@ const BENEFITS: { icon: IconName; key: StringKey }[] = [
 ];
 
 export default function LoginScreen() {
-  const { t, completeLogin } = useApp();
+  const db = useSQLiteContext();
+  const { t, completeLogin, setActiveBusiness } = useApp();
   const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(false);
+  const [checking, setChecking] = useState(false);
+
+  // New phone: bring back this account's business and bills from the cloud.
+  const restoreFromCloud = async (uid: string): Promise<void> => {
+    setChecking(true);
+    try {
+      await pullChanges(db, uid);
+      const b = await getFirstBusinessForUser(db, uid);
+      if (b) await setActiveBusiness(b.id);
+      router.replace('/');
+    } catch {
+      setChecking(false);
+      Alert.alert(t('cloudBackup'), t('cloudCheckFailed'), [
+        { text: t('continueSetup'), onPress: () => router.replace('/') },
+        { text: t('retry'), onPress: () => restoreFromCloud(uid) },
+      ]);
+      return;
+    }
+    setChecking(false);
+  };
   const [error, setError] = useState<string | null>(null);
 
   const onGoogle = async () => {
@@ -29,7 +53,11 @@ export default function LoginScreen() {
     try {
       const result = await loginWithGoogle();
       if (result.ok) {
-        await completeLogin(result.uid, result.email);
+        const existing = await completeLogin(result.uid, result.email);
+        if (!existing && syncEnabled()) {
+          await restoreFromCloud(result.uid);
+          return;
+        }
         router.replace('/');
         return;
       }
@@ -73,11 +101,14 @@ export default function LoginScreen() {
 
           <Pressable
             onPress={onGoogle}
-            disabled={loading}
+            disabled={loading || checking}
             style={({ pressed }) => [styles.google, (pressed || loading) && { opacity: 0.75 }]}
           >
-            {loading ? (
-              <ActivityIndicator color={colors.primary} />
+            {loading || checking ? (
+              <View style={styles.checkingRow}>
+                <ActivityIndicator color={colors.primary} />
+                {checking ? <Text style={styles.checkingText}>{t('checkingCloud')}</Text> : null}
+              </View>
             ) : (
               <>
                 <Ionicons name="logo-google" size={22} color="#4285F4" />
@@ -148,5 +179,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   googleLabel: { fontSize: 17, fontWeight: '700', color: colors.text },
+  checkingRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  checkingText: { fontSize: 14, color: colors.muted, fontWeight: '600' },
   bottom: { flex: 1, justifyContent: 'flex-end', paddingVertical: 20 },
 });

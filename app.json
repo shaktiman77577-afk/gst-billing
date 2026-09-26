@@ -3,7 +3,7 @@
     "name": "GST Billing",
     "slug": "gst-billing",
     "scheme": "gstbilling",
-    "version": "0.9.0",
+    "version": "0.10.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "plugins": [
@@ -28,7 +28,7 @@
     ],
     "android": {
       "package": "com.gstbilling.invoicemaker",
-      "versionCode": 9,
+      "versionCode": 10,
       "softwareKeyboardLayoutMode": "resize",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {

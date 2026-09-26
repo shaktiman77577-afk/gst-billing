@@ -1,6 +1,14 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-export type MetaKey = 'language' | 'user_id' | 'email' | 'active_business_id' | 'last_backup_at';
+export type MetaKey =
+  | 'language'
+  | 'user_id'
+  | 'email'
+  | 'active_business_id'
+  | 'last_backup_at'
+  | 'sync_pushed_at' // newest local change already sent to the cloud
+  | 'sync_pulled_seq' // cloud cursor already downloaded
+  | 'sync_last_ok'; // time of the last successful sync
 
 export async function getMeta(db: SQLiteDatabase, key: MetaKey): Promise<string | null> {
   const row = await db.getFirstAsync<{ value: string | null }>(
