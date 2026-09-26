@@ -2,7 +2,9 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 import { BillTotals, DiscountType, financialYear, invoiceNumber } from '../lib/gst';
 import { newId, nowIso } from '../lib/id';
 
-export type InvoiceStatus = 'paid' | 'partial' | 'unpaid';
+export type InvoiceStatus = 'paid' | 'partial' | 'unpaid' | 'cancelled';
+export type InvoiceKind = 'invoice' | 'credit_note';
+export type PaymentDirection = 'in' | 'out';
 export type PaymentMode = 'cash' | 'upi' | 'card' | 'bank' | 'cheque';
 export type DocType = 'tax_invoice' | 'bill_of_supply';
 
@@ -40,6 +42,11 @@ export type Invoice = {
   po_no: string | null;
   vehicle_no: string | null;
   notes: string | null;
+  kind: InvoiceKind;
+  ref_invoice_id: string | null;
+  ref_invoice_no: string | null;
+  credited_paise: number;
+  cancelled_at: string | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -102,10 +109,12 @@ export type InvoiceDraft = {
   paymentMode: PaymentMode;
 };
 
-export function statusFor(total: number, received: number): InvoiceStatus {
-  if (received <= 0) return total <= 0 ? 'paid' : 'unpaid';
-  return received >= total ? 'paid' : 'partial';
+export function statusFor(total: number, settled: number): InvoiceStatus {
+  if (settled <= 0) return total <= 0 ? 'paid' : 'unpaid';
+  return settled >= total ? 'paid' : 'partial';
 }
+
+export const CREDIT_NOTE_PREFIX = 'CN';
 
 // Next number in this financial year. Counts deleted/cancelled bills too,
 // so a number is never reused.
@@ -114,12 +123,14 @@ export async function nextInvoiceNo(
   businessId: string,
   prefix: string,
   isoDate: string,
+  kind: InvoiceKind = 'invoice',
 ): Promise<{ fy: string; seq: number; invoiceNo: string }> {
   const fy = financialYear(isoDate);
   const row = await db.getFirstAsync<{ maxSeq: number | null }>(
-    'SELECT MAX(seq) AS maxSeq FROM invoices WHERE business_id = ? AND fy = ?',
+    'SELECT MAX(seq) AS maxSeq FROM invoices WHERE business_id = ? AND fy = ? AND kind = ?',
     businessId,
     fy,
+    kind,
   );
   const seq = (row?.maxSeq ?? 0) + 1;
   return { fy, seq, invoiceNo: invoiceNumber(prefix, fy, seq) };
@@ -127,14 +138,26 @@ export async function nextInvoiceNo(
 
 export type InvoiceListRow = Pick<
   Invoice,
-  'id' | 'invoice_no' | 'invoice_date' | 'party_name' | 'total_paise' | 'received_paise' | 'status'
+  | 'id'
+  | 'invoice_no'
+  | 'invoice_date'
+  | 'party_name'
+  | 'total_paise'
+  | 'received_paise'
+  | 'credited_paise'
+  | 'status'
+  | 'kind'
+  | 'ref_invoice_no'
 >;
+
+const LIST_COLS =
+  'id, invoice_no, invoice_date, party_name, total_paise, received_paise, credited_paise, status, kind, ref_invoice_no';
 
 export async function listInvoices(db: SQLiteDatabase, businessId: string, limit = 500): Promise<InvoiceListRow[]> {
   return db.getAllAsync<InvoiceListRow>(
-    `SELECT id, invoice_no, invoice_date, party_name, total_paise, received_paise, status
+    `SELECT ${LIST_COLS}
      FROM invoices WHERE business_id = ? AND deleted_at IS NULL
-     ORDER BY invoice_date DESC, seq DESC LIMIT ?`,
+     ORDER BY invoice_date DESC, created_at DESC LIMIT ?`,
     businessId,
     limit,
   );
@@ -159,8 +182,10 @@ export async function salesSummary(
   fromDate: string,
 ): Promise<{ total: number; count: number }> {
   const row = await db.getFirstAsync<{ total: number | null; count: number }>(
-    `SELECT SUM(total_paise) AS total, COUNT(*) AS count FROM invoices
-     WHERE business_id = ? AND deleted_at IS NULL AND invoice_date >= ?`,
+    `SELECT SUM(CASE WHEN kind = 'credit_note' THEN -total_paise ELSE total_paise END) AS total,
+            SUM(CASE WHEN kind = 'invoice' THEN 1 ELSE 0 END) AS count
+     FROM invoices
+     WHERE business_id = ? AND deleted_at IS NULL AND cancelled_at IS NULL AND invoice_date >= ?`,
     businessId,
     fromDate,
   );
@@ -189,9 +214,15 @@ export async function saveInvoice(
     draft: InvoiceDraft;
     lines: LineDraft[];
     totals: BillTotals;
+    kind?: InvoiceKind;
+    refInvoice?: { id: string; no: string } | null;
   },
 ): Promise<string> {
   const { businessId, draft, lines, totals } = params;
+  const kind: InvoiceKind = params.kind ?? 'invoice';
+  // A bill takes stock out; a credit note (goods returned) puts it back.
+  const stockSign = kind === 'credit_note' ? 1 : -1;
+  const payDirection: PaymentDirection = kind === 'credit_note' ? 'out' : 'in';
   const now = nowIso();
   let id = params.invoiceId ?? newId();
 
@@ -202,7 +233,7 @@ export async function saveInvoice(
         'SELECT item_id, qty FROM invoice_items WHERE invoice_id = ? AND deleted_at IS NULL',
         id,
       );
-      for (const l of old) if (l.item_id) await changeStock(db, l.item_id, l.qty, now);
+      for (const l of old) if (l.item_id) await changeStock(db, l.item_id, -stockSign * l.qty, now);
       await db.runAsync(
         'UPDATE invoice_items SET deleted_at = ?, updated_at = ? WHERE invoice_id = ? AND deleted_at IS NULL',
         now,
@@ -253,8 +284,7 @@ export async function saveInvoice(
         id,
       );
     } else {
-      const no = await nextInvoiceNo(db, businessId, params.prefix, draft.invoiceDate);
-      id = params.invoiceId ?? id;
+      const no = await nextInvoiceNo(db, businessId, params.prefix, draft.invoiceDate, kind);
       await db.runAsync(
         `INSERT INTO invoices (
           doc_type, invoice_date, due_date, party_id, party_name, party_phone,
@@ -262,9 +292,10 @@ export async function saveInvoice(
           place_of_supply, is_igst, discount_paise, taxable_paise, cgst_paise,
           sgst_paise, igst_paise, charges_label, charges_paise, round_off,
           round_off_paise, total_paise, po_no, vehicle_no, notes,
-          id, business_id, prefix, fy, seq, invoice_no, created_at, updated_at)
+          id, business_id, prefix, fy, seq, invoice_no, kind, ref_invoice_id, ref_invoice_no,
+          created_at, updated_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                 ?, ?, ?, ?, ?, ?, ?, ?)`,
+                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         ...header,
         id,
         businessId,
@@ -272,6 +303,9 @@ export async function saveInvoice(
         no.fy,
         no.seq,
         no.invoiceNo,
+        kind,
+        params.refInvoice?.id ?? null,
+        params.refInvoice?.no ?? null,
         now,
         now,
       );
@@ -308,7 +342,7 @@ export async function saveInvoice(
         now,
         now,
       );
-      if (l.itemId) await changeStock(db, l.itemId, -l.qty, now);
+      if (l.itemId) await changeStock(db, l.itemId, stockSign * l.qty, now);
     }
 
     // Payment received at billing time (one "invoice" payment per bill).
@@ -319,18 +353,20 @@ export async function saveInvoice(
     if (draft.receivedPaise > 0) {
       if (existing) {
         await db.runAsync(
-          'UPDATE payments SET amount_paise = ?, mode = ?, party_id = ?, paid_on = ?, updated_at = ? WHERE id = ?',
+          'UPDATE payments SET amount_paise = ?, mode = ?, party_id = ?, paid_on = ?, direction = ?, updated_at = ? WHERE id = ?',
           draft.receivedPaise,
           draft.paymentMode,
           draft.partyId,
           draft.invoiceDate,
+          payDirection,
           now,
           existing.id,
         );
       } else {
         await db.runAsync(
-          `INSERT INTO payments (id, business_id, invoice_id, party_id, source, amount_paise, mode, paid_on, created_at, updated_at)
-           VALUES (?, ?, ?, ?, 'invoice', ?, ?, ?, ?, ?)`,
+          `INSERT INTO payments (id, business_id, invoice_id, party_id, source, amount_paise, mode, paid_on,
+             direction, created_at, updated_at)
+           VALUES (?, ?, ?, ?, 'invoice', ?, ?, ?, ?, ?, ?)`,
           newId(),
           businessId,
           id,
@@ -338,6 +374,7 @@ export async function saveInvoice(
           draft.receivedPaise,
           draft.paymentMode,
           draft.invoiceDate,
+          payDirection,
           now,
           now,
         );
@@ -346,18 +383,8 @@ export async function saveInvoice(
       await db.runAsync('UPDATE payments SET deleted_at = ?, updated_at = ? WHERE id = ?', now, now, existing.id);
     }
 
-    // Received total + status.
-    const paid = await db.getFirstAsync<{ total: number | null }>(
-      'SELECT SUM(amount_paise) AS total FROM payments WHERE invoice_id = ? AND deleted_at IS NULL',
-      id,
-    );
-    const received = paid?.total ?? 0;
-    await db.runAsync(
-      'UPDATE invoices SET received_paise = ?, status = ? WHERE id = ?',
-      received,
-      statusFor(totals.totalPaise, received),
-      id,
-    );
+    await refreshInvoiceStatus(db, id);
+    if (params.refInvoice) await refreshInvoiceStatus(db, params.refInvoice.id);
   });
 
   return id;
@@ -371,4 +398,306 @@ export async function getInvoicePayment(
     `SELECT amount_paise, mode FROM payments WHERE invoice_id = ? AND source = 'invoice' AND deleted_at IS NULL`,
     invoiceId,
   );
+}
+
+// ---------- status, cancel, payments, credit notes, ledger ----------
+
+/** Recomputes received / credited / status for one bill. */
+export async function refreshInvoiceStatus(db: SQLiteDatabase, invoiceId: string): Promise<void> {
+  const inv = await db.getFirstAsync<{ total_paise: number; kind: InvoiceKind; cancelled_at: string | null }>(
+    'SELECT total_paise, kind, cancelled_at FROM invoices WHERE id = ?',
+    invoiceId,
+  );
+  if (!inv) return;
+  const paid = await db.getFirstAsync<{ total: number | null }>(
+    'SELECT SUM(amount_paise) AS total FROM payments WHERE invoice_id = ? AND deleted_at IS NULL',
+    invoiceId,
+  );
+  const credited = await db.getFirstAsync<{ total: number | null }>(
+    `SELECT SUM(total_paise) AS total FROM invoices
+     WHERE ref_invoice_id = ? AND kind = 'credit_note' AND deleted_at IS NULL AND cancelled_at IS NULL`,
+    invoiceId,
+  );
+  const received = paid?.total ?? 0;
+  const credit = credited?.total ?? 0;
+  let status: InvoiceStatus;
+  if (inv.cancelled_at) status = 'cancelled';
+  else if (inv.kind === 'credit_note') status = 'paid';
+  else status = statusFor(inv.total_paise, received + credit);
+  await db.runAsync(
+    'UPDATE invoices SET received_paise = ?, credited_paise = ?, status = ?, updated_at = ? WHERE id = ?',
+    received,
+    credit,
+    status,
+    nowIso(),
+    invoiceId,
+  );
+}
+
+export async function creditNotesFor(db: SQLiteDatabase, invoiceId: string): Promise<InvoiceListRow[]> {
+  return db.getAllAsync<InvoiceListRow>(
+    `SELECT ${LIST_COLS} FROM invoices
+     WHERE ref_invoice_id = ? AND kind = 'credit_note' AND deleted_at IS NULL
+     ORDER BY created_at`,
+    invoiceId,
+  );
+}
+
+/** Cancels a bill or credit note: stock goes back, it stops counting in balances. */
+export async function cancelInvoice(db: SQLiteDatabase, invoiceId: string): Promise<'ok' | 'has-credit-notes'> {
+  const inv = await db.getFirstAsync<{ kind: InvoiceKind; ref_invoice_id: string | null; cancelled_at: string | null }>(
+    'SELECT kind, ref_invoice_id, cancelled_at FROM invoices WHERE id = ?',
+    invoiceId,
+  );
+  if (!inv || inv.cancelled_at) return 'ok';
+  if (inv.kind === 'invoice') {
+    const cn = await db.getFirstAsync<{ n: number }>(
+      `SELECT COUNT(*) AS n FROM invoices WHERE ref_invoice_id = ? AND kind = 'credit_note'
+       AND deleted_at IS NULL AND cancelled_at IS NULL`,
+      invoiceId,
+    );
+    if ((cn?.n ?? 0) > 0) return 'has-credit-notes';
+  }
+  const now = nowIso();
+  const sign = inv.kind === 'credit_note' ? -1 : 1; // undo what saving did
+  await db.withTransactionAsync(async () => {
+    const lines = await db.getAllAsync<{ item_id: string | null; qty: number }>(
+      'SELECT item_id, qty FROM invoice_items WHERE invoice_id = ? AND deleted_at IS NULL',
+      invoiceId,
+    );
+    for (const l of lines) if (l.item_id) await changeStock(db, l.item_id, sign * l.qty, now);
+    // Money already received stays with the party as an advance (not linked to this bill).
+    await db.runAsync(
+      'UPDATE payments SET invoice_id = NULL, updated_at = ? WHERE invoice_id = ? AND deleted_at IS NULL',
+      now,
+      invoiceId,
+    );
+    await db.runAsync(
+      "UPDATE invoices SET cancelled_at = ?, status = 'cancelled', updated_at = ? WHERE id = ?",
+      now,
+      now,
+      invoiceId,
+    );
+    await refreshInvoiceStatus(db, invoiceId);
+    if (inv.ref_invoice_id) await refreshInvoiceStatus(db, inv.ref_invoice_id);
+  });
+  return 'ok';
+}
+
+export type Payment = {
+  id: string;
+  invoice_id: string | null;
+  party_id: string | null;
+  source: string;
+  direction: PaymentDirection;
+  amount_paise: number;
+  mode: PaymentMode;
+  paid_on: string;
+  notes: string | null;
+  group_id: string | null;
+  created_at: string;
+};
+
+export async function paymentsForInvoice(db: SQLiteDatabase, invoiceId: string): Promise<Payment[]> {
+  return db.getAllAsync<Payment>(
+    'SELECT * FROM payments WHERE invoice_id = ? AND deleted_at IS NULL ORDER BY paid_on, created_at',
+    invoiceId,
+  );
+}
+
+/**
+ * Records money received (in) or paid (out).
+ * With an invoice: linked to that bill.
+ * Party "in" without an invoice: adjusted against the oldest unpaid bills first;
+ * anything left over stays as an advance.
+ */
+export async function recordPayment(
+  db: SQLiteDatabase,
+  p: {
+    businessId: string;
+    partyId: string | null;
+    invoiceId: string | null;
+    direction: PaymentDirection;
+    amountPaise: number;
+    mode: PaymentMode;
+    paidOn: string;
+    notes: string | null;
+  },
+): Promise<void> {
+  const now = nowIso();
+  const groupId = newId();
+  const insert = (invoiceId: string | null, amount: number) =>
+    db.runAsync(
+      `INSERT INTO payments (id, business_id, invoice_id, party_id, source, direction, amount_paise, mode,
+         paid_on, notes, group_id, created_at, updated_at)
+       VALUES (?, ?, ?, ?, 'manual', ?, ?, ?, ?, ?, ?, ?, ?)`,
+      newId(),
+      p.businessId,
+      invoiceId,
+      p.partyId,
+      p.direction,
+      amount,
+      p.mode,
+      p.paidOn,
+      p.notes,
+      groupId,
+      now,
+      now,
+    );
+
+  await db.withTransactionAsync(async () => {
+    const touched: string[] = [];
+    if (p.invoiceId) {
+      await insert(p.invoiceId, p.amountPaise);
+      touched.push(p.invoiceId);
+    } else if (p.direction === 'in' && p.partyId) {
+      let left = p.amountPaise;
+      const open = await db.getAllAsync<{ id: string; due: number }>(
+        `SELECT id, total_paise - received_paise - credited_paise AS due FROM invoices
+         WHERE party_id = ? AND kind = 'invoice' AND deleted_at IS NULL AND cancelled_at IS NULL
+           AND status IN ('unpaid', 'partial')
+         ORDER BY invoice_date, created_at`,
+        p.partyId,
+      );
+      for (const o of open) {
+        if (left <= 0) break;
+        const take = Math.min(left, o.due);
+        if (take <= 0) continue;
+        await insert(o.id, take);
+        touched.push(o.id);
+        left -= take;
+      }
+      if (left > 0) await insert(null, left);
+    } else {
+      await insert(null, p.amountPaise);
+    }
+    for (const id of touched) await refreshInvoiceStatus(db, id);
+  });
+}
+
+/** Deletes a payment (and the other parts of the same party payment). */
+export async function deletePayment(db: SQLiteDatabase, paymentId: string): Promise<void> {
+  const now = nowIso();
+  const row = await db.getFirstAsync<{ group_id: string | null }>('SELECT group_id FROM payments WHERE id = ?', paymentId);
+  const rows = await db.getAllAsync<{ id: string; invoice_id: string | null }>(
+    row?.group_id
+      ? 'SELECT id, invoice_id FROM payments WHERE group_id = ? AND deleted_at IS NULL'
+      : 'SELECT id, invoice_id FROM payments WHERE id = ? AND deleted_at IS NULL',
+    row?.group_id ?? paymentId,
+  );
+  await db.withTransactionAsync(async () => {
+    for (const r of rows) {
+      await db.runAsync('UPDATE payments SET deleted_at = ?, updated_at = ? WHERE id = ?', now, now, r.id);
+    }
+    for (const r of rows) if (r.invoice_id) await refreshInvoiceStatus(db, r.invoice_id);
+  });
+}
+
+/** How much of each item on a bill has already been returned (credit notes). */
+export async function returnedQty(db: SQLiteDatabase, invoiceId: string): Promise<Record<string, number>> {
+  const rows = await db.getAllAsync<{ key: string; qty: number }>(
+    `SELECT COALESCE(ii.item_id, ii.name) AS key, SUM(ii.qty) AS qty
+     FROM invoice_items ii JOIN invoices cn ON cn.id = ii.invoice_id
+     WHERE cn.ref_invoice_id = ? AND cn.kind = 'credit_note' AND cn.deleted_at IS NULL
+       AND cn.cancelled_at IS NULL AND ii.deleted_at IS NULL
+     GROUP BY COALESCE(ii.item_id, ii.name)`,
+    invoiceId,
+  );
+  const out: Record<string, number> = {};
+  for (const r of rows) out[r.key] = r.qty;
+  return out;
+}
+
+export type LedgerEntry = {
+  id: string; // invoice id or payment group/id
+  type: 'opening' | 'invoice' | 'credit_note' | 'payment_in' | 'payment_out';
+  date: string;
+  ref: string; // bill no. / mode
+  amount_paise: number; // + increases what the party owes you
+  balance_paise: number; // running balance after this entry
+  invoice_id: string | null;
+  cancelled: boolean;
+};
+
+/** Party khata: opening balance, bills, credit notes and payments with a running balance. */
+export async function partyLedger(db: SQLiteDatabase, partyId: string): Promise<LedgerEntry[]> {
+  const party = await db.getFirstAsync<{ opening_balance_paise: number; created_at: string }>(
+    'SELECT opening_balance_paise, created_at FROM parties WHERE id = ?',
+    partyId,
+  );
+  const bills = await db.getAllAsync<{
+    id: string;
+    kind: InvoiceKind;
+    invoice_no: string;
+    invoice_date: string;
+    total_paise: number;
+    cancelled_at: string | null;
+    created_at: string;
+  }>(
+    `SELECT id, kind, invoice_no, invoice_date, total_paise, cancelled_at, created_at FROM invoices
+     WHERE party_id = ? AND deleted_at IS NULL`,
+    partyId,
+  );
+  const pays = await db.getAllAsync<{
+    id: string;
+    group_id: string | null;
+    direction: PaymentDirection;
+    amount: number;
+    mode: PaymentMode;
+    paid_on: string;
+    created_at: string;
+    invoice_id: string | null;
+  }>(
+    `SELECT MIN(id) AS id, group_id, direction, SUM(amount_paise) AS amount, mode, paid_on,
+            MIN(created_at) AS created_at, MIN(invoice_id) AS invoice_id
+     FROM payments WHERE party_id = ? AND deleted_at IS NULL
+     GROUP BY COALESCE(group_id, id)`,
+    partyId,
+  );
+
+  type Raw = Omit<LedgerEntry, 'balance_paise'> & { sortKey: string };
+  const raw: Raw[] = [];
+  if (party && party.opening_balance_paise !== 0) {
+    raw.push({
+      id: 'opening',
+      type: 'opening',
+      date: party.created_at.slice(0, 10),
+      ref: '',
+      amount_paise: party.opening_balance_paise,
+      invoice_id: null,
+      cancelled: false,
+      sortKey: `0000${party.created_at}`,
+    });
+  }
+  for (const b of bills) {
+    const sign = b.kind === 'credit_note' ? -1 : 1;
+    raw.push({
+      id: b.id,
+      type: b.kind,
+      date: b.invoice_date,
+      ref: b.invoice_no,
+      amount_paise: b.cancelled_at ? 0 : sign * b.total_paise,
+      invoice_id: b.id,
+      cancelled: !!b.cancelled_at,
+      sortKey: `${b.invoice_date}${b.created_at}`,
+    });
+  }
+  for (const p of pays) {
+    raw.push({
+      id: p.id,
+      type: p.direction === 'out' ? 'payment_out' : 'payment_in',
+      date: p.paid_on,
+      ref: p.mode,
+      amount_paise: p.direction === 'out' ? p.amount : -p.amount,
+      invoice_id: p.invoice_id,
+      cancelled: false,
+      sortKey: `${p.paid_on}${p.created_at}`,
+    });
+  }
+  raw.sort((a, b) => (a.sortKey < b.sortKey ? -1 : a.sortKey > b.sortKey ? 1 : 0));
+  let bal = 0;
+  return raw.map(({ sortKey: _s, ...e }) => {
+    bal += e.amount_paise;
+    return { ...e, balance_paise: bal };
+  });
 }

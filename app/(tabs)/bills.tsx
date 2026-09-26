@@ -13,7 +13,7 @@ import { useApp } from '../../src/context/AppContext';
 import { InvoiceListRow, InvoiceStatus, listInvoices } from '../../src/db/invoices';
 import { colors } from '../../src/theme';
 
-type Filter = 'all' | InvoiceStatus;
+type Filter = 'all' | InvoiceStatus | 'credit_note';
 
 export default function BillsScreen() {
   const db = useSQLiteContext();
@@ -37,7 +37,8 @@ export default function BillsScreen() {
     const q = query.trim().toLowerCase();
     return bills.filter(
       (b) =>
-        (filter === 'all' || b.status === filter) &&
+        (filter === 'all' ||
+          (filter === 'credit_note' ? b.kind === 'credit_note' : b.kind === 'invoice' && b.status === filter)) &&
         (!q || b.party_name.toLowerCase().includes(q) || b.invoice_no.toLowerCase().includes(q)),
     );
   }, [bills, query, filter]);
@@ -62,6 +63,8 @@ export default function BillsScreen() {
                   { value: 'unpaid', label: t('unpaid') },
                   { value: 'partial', label: t('partial') },
                   { value: 'paid', label: t('paid') },
+                  { value: 'credit_note', label: t('creditNotes') },
+                  { value: 'cancelled', label: t('cancelled') },
                 ]}
                 value={filter}
                 onChange={setFilter}

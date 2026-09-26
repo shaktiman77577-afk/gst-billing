@@ -7,7 +7,9 @@ import { colors, radius, shadow } from '../theme';
 import { StatusBadge } from './StatusBadge';
 
 export function BillRow({ bill, flat = false }: { bill: InvoiceListRow; flat?: boolean }) {
-  const due = bill.total_paise - bill.received_paise;
+  const due = bill.total_paise - bill.received_paise - bill.credited_paise;
+  const isCn = bill.kind === 'credit_note';
+  const cancelled = bill.status === 'cancelled';
   return (
     <Pressable
       onPress={() => router.push(`/bill/${bill.id}`)}
@@ -22,11 +24,20 @@ export function BillRow({ bill, flat = false }: { bill: InvoiceListRow; flat?: b
         </Text>
       </View>
       <View style={styles.right}>
-        <Text style={styles.amount}>{formatPaise(bill.total_paise)}</Text>
-        {bill.status === 'partial' ? (
+        <Text
+          style={[
+            styles.amount,
+            isCn && { color: colors.primary },
+            cancelled && { color: colors.faint, textDecorationLine: 'line-through' },
+          ]}
+        >
+          {isCn ? '− ' : ''}
+          {formatPaise(bill.total_paise)}
+        </Text>
+        {bill.status === 'partial' && !isCn ? (
           <Text style={styles.due}>{formatPaise(due)}</Text>
         ) : (
-          <StatusBadge status={bill.status} />
+          <StatusBadge status={bill.status} kind={bill.kind} />
         )}
       </View>
     </Pressable>

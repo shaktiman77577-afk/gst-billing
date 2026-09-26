@@ -29,13 +29,15 @@ const BASE_CSS = `
   .qr svg { width: 92px; height: 92px; }
   .footer { margin-top: 10px; text-align: center; font-size: 9px; color: #9ca3af; }
   .page { position: relative; }
+  .void { position: fixed; top: 38%; left: 0; right: 0; text-align: center; font-size: 110px; font-weight: 900;
+    color: rgba(220, 38, 38, 0.16); transform: rotate(-24deg); letter-spacing: 8px; z-index: 10; pointer-events: none; }
 `;
 
 function page(title: string, css: string, body: string, d: Doc): string {
   return `<!DOCTYPE html><html><head><meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>${title}</title><style>${BASE_CSS}${css}</style></head>
-<body><div class="page">${body}${
+<body><div class="page">${d.cancelled ? '<div class="void">CANCELLED</div>' : ''}${body}${
     d.showFooter ? `<div class="footer">Invoice created using <b>GST Billing</b> · Made with 🤎 in India</div>` : ''
   }</div></body></html>`;
 }
@@ -72,8 +74,9 @@ function metaItems(d: Doc): [string, string][] {
   const m = d.meta;
   return (
     [
-      ['Invoice No.', m.invoiceNo],
-      ['Invoice Date', m.date],
+      [d.isCreditNote ? 'Credit Note No.' : 'Invoice No.', m.invoiceNo],
+      [d.isCreditNote ? 'Date' : 'Invoice Date', m.date],
+      ['Against Invoice', m.refNo],
       ['Due Date', m.dueDate],
       ['P.O. No.', m.poNo],
       ['Vehicle No.', m.vehicleNo],
@@ -95,8 +98,11 @@ function totalsRows(d: Doc, opts: { strongColor?: string } = {}) {
       opts.strongColor ? `color:${opts.strongColor}` : ''
     }">${t.total}</td></tr>`,
   );
-  if (t.receivedRaw > 0) {
-    rows.push(row('Received Amount', t.received));
+  if (d.isCreditNote) {
+    if (t.receivedRaw > 0) rows.push(row('Refund Paid', t.received));
+  } else if (t.receivedRaw > 0 || t.creditedRaw > 0) {
+    if (t.receivedRaw > 0) rows.push(row('Received Amount', t.received));
+    if (t.creditedRaw > 0) rows.push(row('Credit Note', `- ${t.credited}`));
     rows.push(row('Balance Due', t.balance, 'b'));
   }
   return rows.join('');
@@ -382,7 +388,7 @@ function advance(d: Doc): string {
     <tr class="tot"><td></td><td class="r">TOTAL</td>${g ? '<td></td>' : ''}<td class="r">${d.totalQty}</td><td></td>
       <td class="r">${d.totals.discountRaw ? d.totals.discount : ''}</td>${g ? `<td class="r">${d.totals.taxTotal}</td><td></td>` : ''}
       <td class="r">${d.totals.total}</td></tr>
-    ${d.totals.receivedRaw > 0 ? `<tr><td></td><td class="r b">RECEIVED AMOUNT</td><td colspan="${cols - 3}"></td><td class="r">${d.totals.received}</td></tr>` : ''}
+    ${d.totals.receivedRaw > 0 ? `<tr><td></td><td class="r b">${d.isCreditNote ? 'REFUND PAID' : 'RECEIVED AMOUNT'}</td><td colspan="${cols - 3}"></td><td class="r">${d.totals.received}</td></tr>` : ''}
   </tbody></table>
   ${hsnTable(d, '#111')}
   <table class="grid" style="margin-top:8px"><tr><td><span class="b">Total Amount (in words):</span> ${d.totals.words}</td></tr></table>
@@ -418,7 +424,11 @@ function tally(d: Doc): string {
   </tbody></table>
   ${hsnTable(d, '#111')}
   <table class="grid" style="margin-top:8px"><tr><td><span class="b">Total Amount (in words):</span> ${d.totals.words}</td>
-    ${d.totals.receivedRaw > 0 ? `<td class="r nowrap" style="width:220px">Received: <b>${d.totals.received}</b><br/>Balance: <b>${d.totals.balance}</b></td>` : ''}</tr></table>
+    ${
+      d.totals.receivedRaw > 0 && !d.isCreditNote
+        ? `<td class="r nowrap" style="width:220px">Received: <b>${d.totals.received}</b><br/>Balance: <b>${d.totals.balance}</b></td>`
+        : ''
+    }</tr></table>
   <table class="grid" style="border-top:none"><tr>
     <td style="width:50%">${termsBlock(d)}</td><td>${bankBlock(d)}</td></tr>
     <tr><td class="small muted">Declaration: We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.</td>

@@ -33,14 +33,17 @@ export type PartyInput = {
   openingBalancePaise: number;
 };
 
-// Balance = opening balance + bills − payments received.
 export type PartyWithBalance = Party & { balance_paise: number };
 
-const BALANCE_SQL = `
+// Balance = opening + bills − credit notes − money received + money paid out.
+// Positive = you will collect, negative = you will pay.
+export const BALANCE_SQL = `
   p.opening_balance_paise
-  + COALESCE((SELECT SUM(i.total_paise) FROM invoices i
-              WHERE i.party_id = p.id AND i.deleted_at IS NULL), 0)
-  - COALESCE((SELECT SUM(pay.amount_paise) FROM payments pay
+  + COALESCE((SELECT SUM(CASE WHEN i.kind = 'credit_note' THEN -i.total_paise ELSE i.total_paise END)
+              FROM invoices i
+              WHERE i.party_id = p.id AND i.deleted_at IS NULL AND i.cancelled_at IS NULL), 0)
+  - COALESCE((SELECT SUM(CASE WHEN pay.direction = 'out' THEN -pay.amount_paise ELSE pay.amount_paise END)
+              FROM payments pay
               WHERE pay.party_id = p.id AND pay.deleted_at IS NULL), 0)`;
 
 export async function listParties(db: SQLiteDatabase, businessId: string): Promise<PartyWithBalance[]> {
@@ -121,4 +124,9 @@ export async function partyTotals(
     businessId,
   );
   return { toCollect: row?.collect ?? 0, toPay: row?.pay ?? 0 };
+}
+
+export async function getPartyBalance(db: SQLiteDatabase, id: string): Promise<number> {
+  const row = await db.getFirstAsync<{ bal: number }>(`SELECT (${BALANCE_SQL}) AS bal FROM parties p WHERE p.id = ?`, id);
+  return row?.bal ?? 0;
 }

@@ -40,7 +40,7 @@ export default function BillFormScreen() {
   const db = useSQLiteContext();
   const { t, businessId } = useApp();
   const business = useBusiness();
-  const { id } = useLocalSearchParams<{ id?: string }>();
+  const { id, partyId: presetPartyId } = useLocalSearchParams<{ id?: string; partyId?: string }>();
   const editId = id && id !== 'new' ? id : null;
 
   const [parties, setParties] = useState<PartyWithBalance[]>([]);
@@ -131,6 +131,13 @@ export default function BillFormScreen() {
       if (p) setParty(p);
     }
   }, [editPartyId, parties]);
+
+  // New bill started from a party's khata: pick that party.
+  useEffect(() => {
+    if (editId || !presetPartyId || party !== undefined) return;
+    const p = parties.find((x) => x.id === presetPartyId);
+    if (p) setParty(p);
+  }, [editId, presetPartyId, parties, party]);
 
   // New bill: preview the next number.
   useEffect(() => {

@@ -25,7 +25,9 @@ export type DocLine = {
 export type HsnRow = { hsn: string; taxable: string; rate: string; cgst: string; sgst: string; igst: string; tax: string };
 
 export type Doc = {
-  title: string; // TAX INVOICE / BILL OF SUPPLY
+  title: string; // TAX INVOICE / BILL OF SUPPLY / CREDIT NOTE
+  isCreditNote: boolean;
+  cancelled: boolean;
   applyGst: boolean;
   isIgst: boolean;
   color: string;
@@ -41,7 +43,15 @@ export type Doc = {
     signature: string | null;
   };
   buyer: { name: string; address: string; shipping: string; phone: string; gstin: string; state: string };
-  meta: { invoiceNo: string; date: string; dueDate: string; poNo: string; vehicleNo: string; placeOfSupply: string };
+  meta: {
+    invoiceNo: string;
+    date: string;
+    dueDate: string;
+    poNo: string;
+    vehicleNo: string;
+    placeOfSupply: string;
+    refNo: string;
+  };
   lines: DocLine[];
   totalQty: string;
   hsn: HsnRow[];
@@ -64,6 +74,8 @@ export type Doc = {
     total: string;
     received: string;
     receivedRaw: number;
+    credited: string;
+    creditedRaw: number;
     balance: string;
     balanceRaw: number;
     words: string;
@@ -146,13 +158,21 @@ export function buildDoc(
       }
     });
 
-  const balance = inv.total_paise - inv.received_paise;
+  const isCreditNote = inv.kind === 'credit_note';
+  const cancelled = !!inv.cancelled_at;
+  const balance = isCreditNote ? 0 : inv.total_paise - inv.received_paise - inv.credited_paise;
   const upi = business.upi_id?.trim() ?? '';
-  const qr = upi ? qrSvg(upiLink(upi, business.name, Math.max(balance, 0), inv.invoice_no)) : '';
+  // QR only when something is still to be paid on a live bill.
+  const qr =
+    upi && !isCreditNote && !cancelled && balance > 0
+      ? qrSvg(upiLink(upi, business.name, balance, inv.invoice_no))
+      : '';
   const totalQty = lines.reduce((s, l) => s + l.qty, 0);
 
   return {
-    title: applyGst ? 'TAX INVOICE' : 'BILL OF SUPPLY',
+    title: isCreditNote ? 'CREDIT NOTE' : applyGst ? 'TAX INVOICE' : 'BILL OF SUPPLY',
+    isCreditNote,
+    cancelled,
     applyGst,
     isIgst,
     color,
@@ -182,6 +202,7 @@ export function buildDoc(
       poNo: esc(inv.po_no),
       vehicleNo: esc(inv.vehicle_no),
       placeOfSupply: `${stateName(inv.place_of_supply)} (${inv.place_of_supply})`,
+      refNo: esc(inv.ref_invoice_no),
     },
     lines: lines.map((l, i) => ({
       sno: i + 1,
@@ -217,6 +238,8 @@ export function buildDoc(
       total: formatPaise(inv.total_paise),
       received: formatPaise(inv.received_paise),
       receivedRaw: inv.received_paise,
+      credited: formatPaise(inv.credited_paise),
+      creditedRaw: isCreditNote ? 0 : inv.credited_paise,
       balance: formatPaise(Math.max(balance, 0)),
       balanceRaw: balance,
       words: amountInWords(inv.total_paise),

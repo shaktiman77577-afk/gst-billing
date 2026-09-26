@@ -112,7 +112,7 @@ function PartyRow({ party }: { party: PartyWithBalance }) {
   const initial = party.name.trim().charAt(0).toUpperCase();
   return (
     <Pressable
-      onPress={() => router.push(`/party/${party.id}`)}
+      onPress={() => router.push({ pathname: '/party/ledger', params: { id: party.id } })}
       style={({ pressed }) => [styles.row, pressed && { opacity: 0.85 }]}
     >
       <View style={[styles.avatar, party.party_type === 'supplier' && { backgroundColor: colors.accentSoft }]}>

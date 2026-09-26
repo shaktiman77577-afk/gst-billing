@@ -183,6 +183,20 @@ const MIGRATIONS: string[] = [
   ALTER TABLE businesses ADD COLUMN terms TEXT;
   ALTER TABLE businesses ADD COLUMN tagline TEXT;
   `,
+
+  // v6: payments in/out with grouping, cancelled bills, credit notes.
+  `
+  ALTER TABLE invoices ADD COLUMN kind TEXT NOT NULL DEFAULT 'invoice';
+  ALTER TABLE invoices ADD COLUMN ref_invoice_id TEXT;
+  ALTER TABLE invoices ADD COLUMN ref_invoice_no TEXT;
+  ALTER TABLE invoices ADD COLUMN credited_paise INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE invoices ADD COLUMN cancelled_at TEXT;
+  ALTER TABLE payments ADD COLUMN direction TEXT NOT NULL DEFAULT 'in';
+  ALTER TABLE payments ADD COLUMN group_id TEXT;
+
+  CREATE INDEX IF NOT EXISTS idx_invoices_kind_seq ON invoices(business_id, kind, fy, seq);
+  CREATE INDEX IF NOT EXISTS idx_invoices_ref ON invoices(ref_invoice_id);
+  `,
 ];
 
 export async function migrateDb(db: SQLiteDatabase): Promise<void> {

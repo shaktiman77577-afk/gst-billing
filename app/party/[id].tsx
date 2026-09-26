@@ -112,7 +112,7 @@ export default function PartyFormScreen() {
         style: 'destructive',
         onPress: async () => {
           await deleteParty(db, id);
-          router.back();
+          router.dismissAll(); // back to the tabs (the party's khata no longer exists)
         },
       },
     ]);
