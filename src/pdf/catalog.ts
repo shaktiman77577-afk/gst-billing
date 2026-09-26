@@ -4,6 +4,7 @@
 // The PDF bytes are made by the existing sharePdfOnWhatsApp() in ./share.
 import { Business } from '../db/businesses';
 import { Item } from '../db/items';
+import type { StringKey } from '../i18n/strings';
 import { formatDate, todayIso } from '../lib/dates';
 import { formatPaise } from '../lib/money';
 
@@ -24,7 +25,7 @@ const esc = (s: string | null | undefined): string =>
 
 // items must be the active, priced, name-sorted rows for this business
 // (see the caller in app/(tabs)/items.tsx).
-export function catalogHtml(business: Business, items: Item[], t: (key: string) => string): string {
+export function catalogHtml(business: Business, items: Item[], t: (key: StringKey) => string): string {
   const rows = items
     .map(
       (item, idx) => `
