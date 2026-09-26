@@ -3,14 +3,17 @@ import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { BillRow } from '../../src/components/BillRow';
 import { EmptyState } from '../../src/components/EmptyState';
 import { Header } from '../../src/components/Header';
 import { Card, IconName } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
+import { InvoiceListRow, listInvoices, salesSummary } from '../../src/db/invoices';
 import { partyTotals } from '../../src/db/parties';
 import { useBusiness } from '../../src/hooks/useBusiness';
 import { StringKey } from '../../src/i18n/strings';
+import { monthStartIso } from '../../src/lib/dates';
 import { formatPaise } from '../../src/lib/money';
 import { colors, radius, shadow } from '../../src/theme';
 
@@ -26,17 +29,26 @@ export default function HomeScreen() {
   const { t, businessId } = useApp();
   const business = useBusiness();
   const [totals, setTotals] = useState({ toCollect: 0, toPay: 0 });
+  const [recent, setRecent] = useState<InvoiceListRow[]>([]);
+  const [month, setMonth] = useState({ total: 0, count: 0 });
 
   useFocusEffect(
     useCallback(() => {
-      if (businessId) partyTotals(db, businessId).then(setTotals);
+      if (!businessId) return;
+      partyTotals(db, businessId).then(setTotals);
+      listInvoices(db, businessId, 5).then(setRecent);
+      salesSummary(db, businessId, monthStartIso()).then(setMonth);
     }, [db, businessId]),
   );
 
-  const soon = () => Alert.alert(t('appName'), t('comingSoon'));
-
   const actions: { icon: IconName; label: string; color: string; bg: string; onPress: () => void }[] = [
-    { icon: 'document-text', label: t('newBill'), color: colors.white, bg: colors.primary, onPress: soon },
+    {
+      icon: 'document-text',
+      label: t('newBill'),
+      color: colors.white,
+      bg: colors.primary,
+      onPress: () => router.push('/bill/new'),
+    },
     {
       icon: 'person-add',
       label: t('addParty'),
@@ -83,6 +95,20 @@ export default function HomeScreen() {
           </View>
         </View>
 
+        <Pressable style={styles.monthCard} onPress={() => router.navigate('/bills')}>
+          <View style={styles.monthIcon}>
+            <Ionicons name="trending-up" size={22} color={colors.primary} />
+          </View>
+          <View style={styles.flexOnly}>
+            <Text style={styles.statLabel}>{t('thisMonthSales')}</Text>
+            <Text style={styles.monthValue}>{formatPaise(month.total)}</Text>
+          </View>
+          <Text style={styles.monthCount}>
+            {month.count} {t('billsCount')}
+          </Text>
+          <Ionicons name="chevron-forward" size={18} color={colors.faint} />
+        </Pressable>
+
         <Text style={styles.sectionTitle}>{t('quickActions')}</Text>
         <View style={styles.actions}>
           {actions.map((a) => (
@@ -102,8 +128,12 @@ export default function HomeScreen() {
         </View>
 
         <Text style={styles.sectionTitle}>{t('recentBills')}</Text>
-        <Card>
-          <EmptyState icon="receipt-outline" title={t('noBillsYet')} hint={t('noBillsHint')} />
+        <Card style={recent.length ? { gap: 0, paddingVertical: 6 } : undefined}>
+          {recent.length === 0 ? (
+            <EmptyState icon="receipt-outline" title={t('noBillsYet')} hint={t('noBillsHint')} />
+          ) : (
+            recent.map((b) => <BillRow key={b.id} bill={b} flat />)
+          )}
         </Card>
       </ScrollView>
     </View>
@@ -112,6 +142,26 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.background },
+  flexOnly: { flex: 1 },
+  monthCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    padding: 14,
+    ...shadow,
+  },
+  monthIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.md,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  monthValue: { fontSize: 20, fontWeight: '800', color: colors.text, marginTop: 2 },
+  monthCount: { fontSize: 12, color: colors.muted, fontWeight: '600' },
   content: { padding: 16, gap: 14, paddingBottom: 32 },
   gstChip: {
     flexDirection: 'row',

@@ -2,7 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Header } from '../../src/components/Header';
 import { LanguageToggle } from '../../src/components/LanguageToggle';
 import { Button, Card, MadeInIndia } from '../../src/components/ui';
@@ -52,6 +52,19 @@ export default function MoreScreen() {
         </Card>
 
         <Card>
+          <Pressable style={styles.row} onPress={() => router.push('/settings/bill')}>
+            <View style={styles.rowIcon}>
+              <Ionicons name="document-text" size={18} color={colors.primary} />
+            </View>
+            <View style={styles.flexOnly}>
+              <Text style={styles.rowText}>{t('billSettings')}</Text>
+              <Text style={styles.meta}>
+                {t('invoicePrefix')}: {business?.invoice_prefix ?? 'INV'}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.faint} />
+          </Pressable>
+          <View style={styles.sep} />
           <View style={styles.row}>
             <View style={styles.rowIcon}>
               <Ionicons name="language" size={18} color={colors.primary} />
@@ -114,5 +127,6 @@ const styles = StyleSheet.create({
   },
   rowText: { flex: 1, fontSize: 15, fontWeight: '600', color: colors.text },
   footer: { alignItems: 'center', gap: 4, marginTop: 8 },
+  sep: { height: 1, backgroundColor: colors.border },
   version: { fontSize: 12, color: colors.faint },
 });

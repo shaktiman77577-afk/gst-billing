@@ -16,6 +16,7 @@ export type Business = {
   city: string | null;
   pincode: string | null;
   business_type: BusinessType;
+  invoice_prefix: string;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -78,5 +79,14 @@ export async function getFirstBusinessForUser(
   return db.getFirstAsync<Business>(
     'SELECT * FROM businesses WHERE user_id = ? AND deleted_at IS NULL ORDER BY created_at LIMIT 1',
     userId,
+  );
+}
+
+export async function setInvoicePrefix(db: SQLiteDatabase, id: string, prefix: string): Promise<void> {
+  await db.runAsync(
+    'UPDATE businesses SET invoice_prefix = ?, updated_at = ? WHERE id = ?',
+    prefix,
+    nowIso(),
+    id,
   );
 }

@@ -33,15 +33,22 @@ export type PartyInput = {
   openingBalancePaise: number;
 };
 
-// Balance = opening balance for now; invoices & payments will add to it later.
+// Balance = opening balance + bills − payments received.
 export type PartyWithBalance = Party & { balance_paise: number };
+
+const BALANCE_SQL = `
+  p.opening_balance_paise
+  + COALESCE((SELECT SUM(i.total_paise) FROM invoices i
+              WHERE i.party_id = p.id AND i.deleted_at IS NULL), 0)
+  - COALESCE((SELECT SUM(pay.amount_paise) FROM payments pay
+              WHERE pay.party_id = p.id AND pay.deleted_at IS NULL), 0)`;
 
 export async function listParties(db: SQLiteDatabase, businessId: string): Promise<PartyWithBalance[]> {
   return db.getAllAsync<PartyWithBalance>(
-    `SELECT *, opening_balance_paise AS balance_paise
-     FROM parties
-     WHERE business_id = ? AND deleted_at IS NULL
-     ORDER BY name COLLATE NOCASE`,
+    `SELECT p.*, (${BALANCE_SQL}) AS balance_paise
+     FROM parties p
+     WHERE p.business_id = ? AND p.deleted_at IS NULL
+     ORDER BY p.name COLLATE NOCASE`,
     businessId,
   );
 }
@@ -107,9 +114,10 @@ export async function partyTotals(
 ): Promise<{ toCollect: number; toPay: number }> {
   const row = await db.getFirstAsync<{ collect: number | null; pay: number | null }>(
     `SELECT
-       SUM(CASE WHEN opening_balance_paise > 0 THEN opening_balance_paise ELSE 0 END) AS collect,
-       SUM(CASE WHEN opening_balance_paise < 0 THEN -opening_balance_paise ELSE 0 END) AS pay
-     FROM parties WHERE business_id = ? AND deleted_at IS NULL`,
+       SUM(CASE WHEN bal > 0 THEN bal ELSE 0 END) AS collect,
+       SUM(CASE WHEN bal < 0 THEN -bal ELSE 0 END) AS pay
+     FROM (SELECT (${BALANCE_SQL}) AS bal FROM parties p
+           WHERE p.business_id = ? AND p.deleted_at IS NULL)`,
     businessId,
   );
   return { toCollect: row?.collect ?? 0, toPay: row?.pay ?? 0 };

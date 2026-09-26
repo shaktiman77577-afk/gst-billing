@@ -76,6 +76,98 @@ const MIGRATIONS: string[] = [
 
   CREATE INDEX IF NOT EXISTS idx_items_business ON items(business_id, deleted_at);
   `,
+
+  // v4: bills (invoices), bill lines, payments, and the bill number prefix.
+  `
+  ALTER TABLE businesses ADD COLUMN invoice_prefix TEXT NOT NULL DEFAULT 'INV';
+
+  CREATE TABLE IF NOT EXISTS invoices (
+    id TEXT PRIMARY KEY NOT NULL,
+    business_id TEXT NOT NULL,
+    doc_type TEXT NOT NULL DEFAULT 'tax_invoice',
+    prefix TEXT NOT NULL,
+    fy TEXT NOT NULL,
+    seq INTEGER NOT NULL,
+    invoice_no TEXT NOT NULL,
+    invoice_date TEXT NOT NULL,
+    due_date TEXT,
+    party_id TEXT,
+    party_name TEXT NOT NULL,
+    party_phone TEXT,
+    party_gstin TEXT,
+    party_state_code TEXT,
+    billing_address TEXT,
+    shipping_address TEXT,
+    place_of_supply TEXT NOT NULL,
+    is_igst INTEGER NOT NULL DEFAULT 0,
+    discount_paise INTEGER NOT NULL DEFAULT 0,
+    taxable_paise INTEGER NOT NULL DEFAULT 0,
+    cgst_paise INTEGER NOT NULL DEFAULT 0,
+    sgst_paise INTEGER NOT NULL DEFAULT 0,
+    igst_paise INTEGER NOT NULL DEFAULT 0,
+    charges_label TEXT,
+    charges_paise INTEGER NOT NULL DEFAULT 0,
+    round_off INTEGER NOT NULL DEFAULT 1,
+    round_off_paise INTEGER NOT NULL DEFAULT 0,
+    total_paise INTEGER NOT NULL DEFAULT 0,
+    received_paise INTEGER NOT NULL DEFAULT 0,
+    status TEXT NOT NULL DEFAULT 'unpaid',
+    po_no TEXT,
+    vehicle_no TEXT,
+    notes TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    deleted_at TEXT
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_invoices_business ON invoices(business_id, deleted_at, invoice_date);
+  CREATE INDEX IF NOT EXISTS idx_invoices_party ON invoices(party_id);
+  CREATE INDEX IF NOT EXISTS idx_invoices_seq ON invoices(business_id, fy, seq);
+
+  CREATE TABLE IF NOT EXISTS invoice_items (
+    id TEXT PRIMARY KEY NOT NULL,
+    invoice_id TEXT NOT NULL,
+    item_id TEXT,
+    item_type TEXT NOT NULL DEFAULT 'product',
+    name TEXT NOT NULL,
+    hsn TEXT,
+    unit TEXT NOT NULL,
+    qty REAL NOT NULL,
+    rate_paise INTEGER NOT NULL,
+    rate_with_tax INTEGER NOT NULL DEFAULT 0,
+    discount_type TEXT NOT NULL DEFAULT 'pct',
+    discount_value REAL NOT NULL DEFAULT 0,
+    gst_rate REAL NOT NULL DEFAULT 0,
+    discount_paise INTEGER NOT NULL DEFAULT 0,
+    taxable_paise INTEGER NOT NULL DEFAULT 0,
+    tax_paise INTEGER NOT NULL DEFAULT 0,
+    amount_paise INTEGER NOT NULL DEFAULT 0,
+    sort INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    deleted_at TEXT
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_invoice_items_invoice ON invoice_items(invoice_id, deleted_at);
+
+  CREATE TABLE IF NOT EXISTS payments (
+    id TEXT PRIMARY KEY NOT NULL,
+    business_id TEXT NOT NULL,
+    invoice_id TEXT,
+    party_id TEXT,
+    source TEXT NOT NULL DEFAULT 'manual',
+    amount_paise INTEGER NOT NULL,
+    mode TEXT NOT NULL DEFAULT 'cash',
+    paid_on TEXT NOT NULL,
+    notes TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    deleted_at TEXT
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_payments_invoice ON payments(invoice_id, deleted_at);
+  CREATE INDEX IF NOT EXISTS idx_payments_party ON payments(party_id, deleted_at);
+  `,
 ];
 
 export async function migrateDb(db: SQLiteDatabase): Promise<void> {

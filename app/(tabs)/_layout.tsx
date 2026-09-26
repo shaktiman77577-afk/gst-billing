@@ -32,6 +32,10 @@ export default function TabsLayout() {
     >
       <Tabs.Screen name="home" options={{ title: t('tabHome'), tabBarIcon: tabIcon('home', 'home-outline') }} />
       <Tabs.Screen
+        name="bills"
+        options={{ title: t('tabBills'), tabBarIcon: tabIcon('receipt', 'receipt-outline') }}
+      />
+      <Tabs.Screen
         name="parties"
         options={{ title: t('tabParties'), tabBarIcon: tabIcon('people', 'people-outline') }}
       />
