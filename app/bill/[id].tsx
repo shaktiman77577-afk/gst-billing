@@ -3,7 +3,7 @@ import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BillRow } from '../../src/components/BillRow';
 import { FormHeader } from '../../src/components/FormHeader';
@@ -27,7 +27,7 @@ import { useBusiness } from '../../src/hooks/useBusiness';
 import { formatDate } from '../../src/lib/dates';
 import { amountInWords } from '../../src/lib/gst';
 import { formatPaise } from '../../src/lib/money';
-import { invoiceHtml, printBill, sharePdf, whatsappMessage } from '../../src/pdf/share';
+import { billWhatsappText, invoiceHtml, printBill, sharePdf, sharePdfOnWhatsApp } from '../../src/pdf/share';
 import { colors, radius } from '../../src/theme';
 
 type Data = { invoice: Invoice; lines: InvoiceLine[]; payments: Payment[]; creditNotes: InvoiceListRow[] };
@@ -38,7 +38,7 @@ export default function BillDetailScreen() {
   const business = useBusiness();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [data, setData] = useState<Data | null>(null);
-  const [busy, setBusy] = useState<'share' | 'print' | null>(null);
+  const [busy, setBusy] = useState<'share' | 'print' | 'whatsapp' | null>(null);
 
   const load = useCallback(async () => {
     const d = await getInvoice(db, id);
@@ -74,16 +74,25 @@ export default function BillDetailScreen() {
     }
   };
 
-  const onWhatsapp = () => {
-    if (!inv.party_phone) return;
-    let text = t('waMessage')
-      .replace('{name}', inv.party_name)
-      .replace('{no}', inv.invoice_no)
-      .replace('{date}', formatDate(inv.invoice_date))
-      .replace('{amount}', formatPaise(inv.total_paise));
-    if (!isCn && balance > 0) text += `\n${t('waBalance').replace('{balance}', formatPaise(balance))}`;
-    if (business?.name) text += `\n\n– ${business.name}`;
-    whatsappMessage(inv.party_phone, text).catch(() => undefined);
+  const onWhatsapp = async () => {
+    if (!business) return;
+    setBusy('whatsapp');
+    try {
+      const html = invoiceHtml(business, inv, lines);
+      const caption = billWhatsappText(t, {
+        name: inv.party_name,
+        no: inv.invoice_no,
+        date: formatDate(inv.invoice_date),
+        amount: formatPaise(inv.total_paise),
+        balance: !isCn && balance > 0 ? formatPaise(balance) : undefined,
+        business: business.name,
+      });
+      await sharePdfOnWhatsApp(html, inv.invoice_no, inv.party_phone, caption);
+    } catch (e) {
+      if (!/cancel/i.test(String((e as Error)?.message ?? e))) Alert.alert(t('appName'), t('pdfError'));
+    } finally {
+      setBusy(null);
+    }
   };
 
   const onCancel = () => {
@@ -327,10 +336,20 @@ export default function BillDetailScreen() {
               />
             </View>
           </View>
-          {inv.party_phone && !cancelled ? (
-            <Pressable onPress={onWhatsapp} style={({ pressed }) => [styles.wa, pressed && { opacity: 0.85 }]}>
-              <Ionicons name="logo-whatsapp" size={22} color={colors.white} />
-              <Text style={styles.waText}>{t('whatsapp')}</Text>
+          {!cancelled ? (
+            <Pressable
+              onPress={onWhatsapp}
+              disabled={busy === 'whatsapp'}
+              style={({ pressed }) => [styles.wa, pressed && { opacity: 0.85 }, busy === 'whatsapp' && { opacity: 0.7 }]}
+            >
+              {busy === 'whatsapp' ? (
+                <ActivityIndicator color={colors.white} />
+              ) : (
+                <>
+                  <Ionicons name="logo-whatsapp" size={22} color={colors.white} />
+                  <Text style={styles.waText}>{t('whatsapp')}</Text>
+                </>
+              )}
             </Pressable>
           ) : null}
           {!isCn && !cancelled ? (

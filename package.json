@@ -19,6 +19,7 @@
     "expo-document-picker": "*",
     "expo-file-system": "*",
     "expo-image-picker": "*",
+    "expo-intent-launcher": "*",
     "expo-linking": "*",
     "expo-print": "*",
     "expo-router": "*",

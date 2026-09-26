@@ -1,7 +1,8 @@
 import { File, Paths } from 'expo-file-system';
+import * as IntentLauncher from 'expo-intent-launcher';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
-import { Linking } from 'react-native';
+import { Linking, Platform } from 'react-native';
 import { Business } from '../db/businesses';
 import { Invoice, InvoiceLine } from '../db/invoices';
 import { buildDoc } from './data';
@@ -43,6 +44,56 @@ export async function sharePdf(html: string, invoiceNo: string): Promise<void> {
 
 export async function printBill(html: string): Promise<void> {
   await Print.printAsync({ html });
+}
+
+// One-tap share: opens WhatsApp directly with the bill PDF attached.
+// When a phone number is given, the party's chat opens straight away
+// (via WhatsApp's "jid" extra). The caption rides along as the message.
+// Falls back to the system share sheet when WhatsApp isn't installed
+// or the direct intent fails for any reason.
+export async function sharePdfOnWhatsApp(
+  html: string,
+  invoiceNo: string,
+  phone?: string | null,
+  caption?: string,
+): Promise<void> {
+  const uri = await makePdf(html, invoiceNo);
+  if (Platform.OS === 'android') {
+    try {
+      const file = new File(uri);
+      const contentUri = (file as { contentUri?: string }).contentUri ?? uri;
+      const digits = (phone ?? '').replace(/\D/g, '').slice(-10);
+      await IntentLauncher.startActivityAsync('android.intent.action.SEND', {
+        type: 'application/pdf',
+        packageName: 'com.whatsapp',
+        flags: 1, // FLAG_GRANT_READ_URI_PERMISSION — lets WhatsApp read the PDF
+        extra: {
+          'android.intent.extra.STREAM': contentUri,
+          ...(caption ? { 'android.intent.extra.TEXT': caption } : {}),
+          ...(digits ? { jid: `91${digits}@s.whatsapp.net` } : {}),
+        },
+      });
+      return;
+    } catch {
+      // WhatsApp not installed or intent failed — fall through to the share sheet.
+    }
+  }
+  await Sharing.shareAsync(uri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf', dialogTitle: invoiceNo });
+}
+
+// Builds the "your bill is ready" caption sent along with the PDF.
+export function billWhatsappText(
+  t: (key: string) => string,
+  p: { name: string; no: string; date: string; amount: string; balance?: string; business?: string },
+): string {
+  let text = t('waMessage')
+    .replace('{name}', p.name)
+    .replace('{no}', p.no)
+    .replace('{date}', p.date)
+    .replace('{amount}', p.amount);
+  if (p.balance) text += `\n${t('waBalance').replace('{balance}', p.balance)}`;
+  if (p.business) text += `\n\n– ${p.business}`;
+  return text;
 }
 
 // Opens WhatsApp chat with the party and a ready message.
