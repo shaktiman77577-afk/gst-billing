@@ -25,7 +25,7 @@ export type DocLine = {
 export type HsnRow = { hsn: string; taxable: string; rate: string; cgst: string; sgst: string; igst: string; tax: string };
 
 export type Doc = {
-  title: string; // TAX INVOICE / BILL OF SUPPLY / CREDIT NOTE
+  title: string; // TAX INVOICE / BILL OF SUPPLY / CREDIT NOTE / QUOTATION
   isCreditNote: boolean;
   cancelled: boolean;
   applyGst: boolean;
@@ -117,7 +117,9 @@ export function buildDoc(
   opts: { color?: string; showFooter?: boolean } = {},
 ): Doc {
   const color = opts.color ?? business.theme_color ?? '#1E3A8A';
-  const applyGst = inv.doc_type === 'tax_invoice';
+  const isQuotation = inv.doc_type === 'quotation';
+  // Quotations of a GST-registered business carry GST like a tax invoice.
+  const applyGst = inv.doc_type === 'tax_invoice' || (isQuotation && inv.cgst_paise + inv.sgst_paise + inv.igst_paise > 0);
   const isIgst = applyGst && inv.is_igst === 1;
   const sellerState = stateName(business.state_code);
 
@@ -162,15 +164,15 @@ export function buildDoc(
   const cancelled = !!inv.cancelled_at;
   const balance = isCreditNote ? 0 : inv.total_paise - inv.received_paise - inv.credited_paise;
   const upi = business.upi_id?.trim() ?? '';
-  // QR only when something is still to be paid on a live bill.
+  // QR only when something is still to be paid on a live bill — never on a quotation.
   const qr =
-    upi && !isCreditNote && !cancelled && balance > 0
+    upi && !isCreditNote && !isQuotation && !cancelled && balance > 0
       ? qrSvg(upiLink(upi, business.name, balance, inv.invoice_no))
       : '';
   const totalQty = lines.reduce((s, l) => s + l.qty, 0);
 
   return {
-    title: isCreditNote ? 'CREDIT NOTE' : applyGst ? 'TAX INVOICE' : 'BILL OF SUPPLY',
+    title: isCreditNote ? 'CREDIT NOTE' : isQuotation ? 'QUOTATION' : applyGst ? 'TAX INVOICE' : 'BILL OF SUPPLY',
     isCreditNote,
     cancelled,
     applyGst,
@@ -256,7 +258,9 @@ export function buildDoc(
         : null,
     upiId: esc(upi),
     qr,
-    notes: esc(inv.notes),
+    notes: isQuotation
+      ? ['This is not a tax invoice.', esc(inv.notes)].filter(Boolean).join('<br/>')
+      : esc(inv.notes),
     terms: (business.terms ?? DEFAULT_TERMS)
       .split('\n')
       .map((t) => t.trim())

@@ -43,7 +43,7 @@ export default function HomeScreen() {
     useCallback(() => {
       if (!businessId) return;
       partyTotals(db, businessId).then(setTotals);
-      listInvoices(db, businessId, 5).then(setRecent);
+      listInvoices(db, businessId, 5).then((rows) => setRecent(rows.filter((r) => r.doc_type !== 'quotation')));
       salesSummary(db, businessId, monthStartIso()).then(setMonth);
       totalExpenses(db, businessId, monthStartIso(), todayIso()).then(setMonthExp);
       needsBackupReminder(db, businessId).then(setRemind);

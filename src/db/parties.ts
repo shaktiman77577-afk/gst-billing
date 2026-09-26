@@ -41,7 +41,8 @@ export const BALANCE_SQL = `
   p.opening_balance_paise
   + COALESCE((SELECT SUM(CASE WHEN i.kind = 'credit_note' THEN -i.total_paise ELSE i.total_paise END)
               FROM invoices i
-              WHERE i.party_id = p.id AND i.deleted_at IS NULL AND i.cancelled_at IS NULL), 0)
+              WHERE i.party_id = p.id AND i.deleted_at IS NULL AND i.cancelled_at IS NULL
+                AND i.doc_type != 'quotation'), 0)
   - COALESCE((SELECT SUM(CASE WHEN pay.direction = 'out' THEN -pay.amount_paise ELSE pay.amount_paise END)
               FROM payments pay
               WHERE pay.party_id = p.id AND pay.deleted_at IS NULL), 0)`;

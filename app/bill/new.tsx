@@ -13,6 +13,7 @@ import { Button, Card, Chips, ErrorText, Field, Screen, SectionHeader } from '..
 import { useApp } from '../../src/context/AppContext';
 import { stateName } from '../../src/data/states';
 import {
+  DocType,
   getInvoice,
   getInvoicePayment,
   LineDraft,
@@ -20,6 +21,7 @@ import {
   PaymentMode,
   saveInvoice,
 } from '../../src/db/invoices';
+import { nextQuotationNo, saveQuotation } from '../../src/db/quotations';
 import { Item, listItems } from '../../src/db/items';
 import { listParties, PartyWithBalance } from '../../src/db/parties';
 import { useBusiness } from '../../src/hooks/useBusiness';
@@ -61,7 +63,8 @@ export default function BillFormScreen() {
   const [poNo, setPoNo] = useState('');
   const [vehicleNo, setVehicleNo] = useState('');
   const [notes, setNotes] = useState('');
-  const [docTypeLocked, setDocTypeLocked] = useState<'tax_invoice' | 'bill_of_supply' | null>(null);
+  const [docTypeLocked, setDocTypeLocked] = useState<DocType | null>(null);
+  const [docTypeChoice, setDocTypeChoice] = useState<DocType | null>(null);
   const [partyOpen, setPartyOpen] = useState(false);
   const [itemsOpen, setItemsOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -139,23 +142,27 @@ export default function BillFormScreen() {
     if (p) setParty(p);
   }, [editId, presetPartyId, parties, party]);
 
-  // New bill: preview the next number.
-  useEffect(() => {
-    if (editId || !business || !businessId) return;
-    nextInvoiceNo(db, businessId, business.invoice_prefix, invoiceDate).then((n) => setInvoiceNo(n.invoiceNo));
-  }, [db, editId, business, businessId, invoiceDate]);
-
-  const docType = docTypeLocked ?? (business?.gst_registered ? 'tax_invoice' : 'bill_of_supply');
-  const applyGst = docType === 'tax_invoice';
+  const docType: DocType =
+    docTypeLocked ?? docTypeChoice ?? (business?.gst_registered ? 'tax_invoice' : 'bill_of_supply');
+  const isQuotation = docType === 'quotation';
+  // Quotations follow the business's GST treatment (they usually become tax invoices).
+  const applyGst = docType === 'tax_invoice' || (isQuotation && business?.gst_registered === 1);
   const placeOfSupply = (party && party.state_code) || business?.state_code || '';
   const isIgst = applyGst && !!business && placeOfSupply !== business.state_code;
+
+  // New bill: preview the next number (own series for quotations).
+  useEffect(() => {
+    if (editId || !business || !businessId) return;
+    if (isQuotation) nextQuotationNo(db, businessId, invoiceDate).then((n) => setInvoiceNo(n.quotationNo));
+    else nextInvoiceNo(db, businessId, business.invoice_prefix, invoiceDate).then((n) => setInvoiceNo(n.invoiceNo));
+  }, [db, editId, business, businessId, invoiceDate, isQuotation]);
 
   const chargesPaise = toPaise(chargesText) ?? 0;
   const totals = useMemo(
     () => calcBill(lines, { applyGst, isIgst, chargesPaise, roundOff }),
     [lines, applyGst, isIgst, chargesPaise, roundOff],
   );
-  const receivedPaise = fullyPaid ? totals.totalPaise : toPaise(receivedText) ?? 0;
+  const receivedPaise = isQuotation ? 0 : fullyPaid ? totals.totalPaise : toPaise(receivedText) ?? 0;
   const balance = totals.totalPaise - receivedPaise;
 
   const counts = useMemo(() => {
@@ -208,41 +215,47 @@ export default function BillFormScreen() {
     if (party === undefined) return setError(t('errNoParty'));
     const valid = lines.filter((l) => l.qty > 0);
     if (valid.length === 0) return setError(t('errNoItems'));
-    if (receivedPaise > totals.totalPaise) return setError(t('errReceived'));
+    if (!isQuotation && receivedPaise > totals.totalPaise) return setError(t('errReceived'));
     if (!business || !businessId) return;
     setError(null);
 
     const finalTotals = calcBill(valid, { applyGst, isIgst, chargesPaise, roundOff });
     setSaving(true);
     try {
-      const savedId = await saveInvoice(db, {
-        businessId,
-        invoiceId: editId,
-        prefix: business.invoice_prefix,
-        lines: valid,
-        totals: finalTotals,
-        draft: {
-          docType,
-          invoiceDate,
-          dueDate,
-          partyId: party?.id ?? null,
-          partyName: party?.name ?? t('cashSale'),
-          partyPhone: party?.phone ?? null,
-          partyGstin: party?.gstin ?? null,
-          partyStateCode: party?.state_code ?? null,
-          billingAddress: party?.billing_address ?? null,
-          shippingAddress: party ? (party.same_shipping ? party.billing_address : party.shipping_address) : null,
-          placeOfSupply,
-          isIgst,
-          chargesLabel: chargesLabel.trim() || null,
-          roundOff,
-          poNo: poNo.trim() || null,
-          vehicleNo: vehicleNo.trim() || null,
-          notes: notes.trim() || null,
-          receivedPaise: fullyPaid ? finalTotals.totalPaise : receivedPaise,
-          paymentMode: mode,
-        },
-      });
+      const draft = {
+        docType,
+        invoiceDate,
+        dueDate,
+        partyId: party?.id ?? null,
+        partyName: party?.name ?? t('cashSale'),
+        partyPhone: party?.phone ?? null,
+        partyGstin: party?.gstin ?? null,
+        partyStateCode: party?.state_code ?? null,
+        billingAddress: party?.billing_address ?? null,
+        shippingAddress: party ? (party.same_shipping ? party.billing_address : party.shipping_address) : null,
+        placeOfSupply,
+        isIgst,
+        chargesLabel: chargesLabel.trim() || null,
+        roundOff,
+        poNo: poNo.trim() || null,
+        vehicleNo: vehicleNo.trim() || null,
+        notes: notes.trim() || null,
+        receivedPaise: isQuotation ? 0 : fullyPaid ? finalTotals.totalPaise : receivedPaise,
+        paymentMode: mode,
+      };
+      let savedId: string;
+      if (isQuotation) {
+        savedId = await saveQuotation(db, { businessId, quotationId: editId, draft, lines: valid, totals: finalTotals });
+      } else {
+        savedId = await saveInvoice(db, {
+          businessId,
+          invoiceId: editId,
+          prefix: business.invoice_prefix,
+          lines: valid,
+          totals: finalTotals,
+          draft,
+        });
+      }
       if (editId) router.back();
       else router.replace(`/bill/${savedId}`);
     } catch (e) {
@@ -258,11 +271,21 @@ export default function BillFormScreen() {
     router.push(path);
   };
 
+  const typeOptions: { value: DocType; label: string }[] = business?.gst_registered
+    ? [
+        { value: 'tax_invoice', label: t('taxInvoice') },
+        { value: 'quotation', label: t('q_quotation') },
+      ]
+    : [
+        { value: 'bill_of_supply', label: t('billOfSupply') },
+        { value: 'quotation', label: t('q_quotation') },
+      ];
+
   return (
     <View style={styles.flex}>
       <StatusBar style="dark" />
       <FormHeader
-        title={editId ? t('editBill') : t('newBill')}
+        title={editId ? (isQuotation ? t('q_editQuotation') : t('editBill')) : isQuotation ? t('q_newQuotation') : t('newBill')}
         right={<Text style={styles.headerNo}>{invoiceNo}</Text>}
       />
       <Screen
@@ -274,11 +297,25 @@ export default function BillFormScreen() {
               <Text style={styles.footerTotal}>{formatPaise(totals.totalPaise)}</Text>
             </View>
             <View style={styles.footerBtn}>
-              <Button label={t('saveBill')} icon="checkmark-circle" onPress={onSave} loading={saving} />
+              <Button
+                label={isQuotation ? t('q_saveQuotation') : t('saveBill')}
+                icon="checkmark-circle"
+                onPress={onSave}
+                loading={saving}
+              />
             </View>
           </View>
         }
       >
+        {/* Document type */}
+        {!docTypeLocked ? (
+          <Card>
+            <Text style={styles.label}>{t('q_docType')}</Text>
+            <Chips options={typeOptions} value={docType} onChange={setDocTypeChoice} />
+            {isQuotation ? <Text style={styles.note}>{t('q_quotationHint')}</Text> : null}
+          </Card>
+        ) : null}
+
         {/* Number & dates */}
         <Card>
           <View style={styles.row}>
@@ -404,8 +441,8 @@ export default function BillFormScreen() {
           </Card>
         ) : null}
 
-        {/* Payment */}
-        {lines.length > 0 ? (
+        {/* Payment — not for quotations (an estimate takes no money) */}
+        {lines.length > 0 && !isQuotation ? (
           <Card>
             <SectionHeader icon="wallet" title={t('received')} />
             <View style={styles.switchRow}>

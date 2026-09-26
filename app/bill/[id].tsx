@@ -23,6 +23,7 @@ import {
   Payment,
   paymentsForInvoice,
 } from '../../src/db/invoices';
+import { convertQuotationToBill } from '../../src/db/quotations';
 import { useBusiness } from '../../src/hooks/useBusiness';
 import { formatDate } from '../../src/lib/dates';
 import { amountInWords } from '../../src/lib/gst';
@@ -35,11 +36,11 @@ type Data = { invoice: Invoice; lines: InvoiceLine[]; payments: Payment[]; credi
 
 export default function BillDetailScreen() {
   const db = useSQLiteContext();
-  const { t } = useApp();
+  const { t, businessId } = useApp();
   const business = useBusiness();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [data, setData] = useState<Data | null>(null);
-  const [busy, setBusy] = useState<'share' | 'print' | 'whatsapp' | null>(null);
+  const [busy, setBusy] = useState<'share' | 'print' | 'whatsapp' | 'convert' | null>(null);
 
   const load = useCallback(async () => {
     const d = await getInvoice(db, id);
@@ -54,20 +55,27 @@ export default function BillDetailScreen() {
     }, [load]),
   );
 
+  // In-app "Scan to Pay" QR — the hook must run before any early return.
+  const upiId = business?.upi_id?.trim() ?? '';
+  const qrUri = useMemo(() => {
+    if (!data) return '';
+    const qInv = data.invoice;
+    const qBal = qInv.total_paise - qInv.received_paise - qInv.credited_paise;
+    const ok =
+      !!upiId && !qInv.cancelled_at && qInv.kind !== 'credit_note' && qInv.doc_type !== 'quotation' && qBal > 0;
+    return ok && business ? qrDataUrl(upiLink(upiId, business.name ?? '', qBal, qInv.invoice_no)) : '';
+  }, [data, business, upiId]);
+
   if (!data) return <View style={styles.flex} />;
   const { invoice: inv, lines, payments, creditNotes } = data;
   const isCn = inv.kind === 'credit_note';
+  const isQuotation = inv.doc_type === 'quotation';
   const cancelled = !!inv.cancelled_at;
   const balance = inv.total_paise - inv.received_paise - inv.credited_paise;
   const gst = inv.doc_type === 'tax_invoice';
 
   // In-app "Scan to Pay" QR — same conditions as the QR printed on the PDF.
-  const upiId = business?.upi_id?.trim() ?? '';
-  const showQr = !!upiId && !cancelled && !isCn && balance > 0;
-  const qrUri = useMemo(
-    () => (showQr && business ? qrDataUrl(upiLink(upiId, business.name ?? '', balance, inv.invoice_no)) : ''),
-    [showQr, business, upiId, balance, inv.invoice_no],
-  );
+  const showQr = !!upiId && !cancelled && !isCn && !isQuotation && balance > 0;
 
   const run = async (kind: 'share' | 'print') => {
     if (!business) return;
@@ -99,6 +107,25 @@ export default function BillDetailScreen() {
       await sharePdfOnWhatsApp(html, inv.invoice_no, inv.party_phone, caption);
     } catch (e) {
       if (!/cancel/i.test(String((e as Error)?.message ?? e))) Alert.alert(t('appName'), t('pdfError'));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const onConvert = async () => {
+    if (!business || !businessId) return;
+    setBusy('convert');
+    try {
+      const billId = await convertQuotationToBill(db, {
+        businessId,
+        quotationId: inv.id,
+        prefix: business.invoice_prefix,
+        gstRegistered: business.gst_registered === 1,
+        stateCode: business.state_code,
+      });
+      router.replace(`/bill/${billId}`);
+    } catch (e) {
+      Alert.alert(t('appName'), `${t('somethingWrong')} (${String((e as Error)?.message ?? e)})`);
     } finally {
       setBusy(null);
     }
@@ -150,7 +177,7 @@ export default function BillDetailScreen() {
           <Card>
             <View style={styles.rowBetween}>
               <Text style={styles.docType}>
-                {isCn ? t('creditNote') : gst ? t('taxInvoice') : t('billOfSupply')}
+                {isQuotation ? t('q_quotation') : isCn ? t('creditNote') : gst ? t('taxInvoice') : t('billOfSupply')}
               </Text>
               <StatusBadge status={inv.status} kind={inv.kind} />
             </View>
@@ -165,6 +192,14 @@ export default function BillDetailScreen() {
                 <Ionicons name="link-outline" size={16} color={colors.primary} />
                 <Text style={styles.refText}>
                   {t('againstBill')} {inv.ref_invoice_no}
+                </Text>
+              </Pressable>
+            ) : null}
+            {isQuotation && inv.ref_invoice_id ? (
+              <Pressable onPress={() => router.push(`/bill/${inv.ref_invoice_id}`)} style={styles.refLink}>
+                <Ionicons name="checkmark-circle" size={16} color={colors.success} />
+                <Text style={styles.refText}>
+                  {t('q_convertedTo')} {inv.ref_invoice_no}
                 </Text>
               </Pressable>
             ) : null}
@@ -264,7 +299,7 @@ export default function BillDetailScreen() {
           </Card>
 
           {/* Payments */}
-          {!isCn ? (
+          {!isCn && !isQuotation ? (
             <Card>
               <Text style={styles.cardLabel}>{t('payments')}</Text>
               {payments.length === 0 ? <Text style={styles.meta}>{t('noPayments')}</Text> : null}
@@ -373,7 +408,15 @@ export default function BillDetailScreen() {
               )}
             </Pressable>
           ) : null}
-          {!isCn && !cancelled ? (
+          {isQuotation && !cancelled ? (
+            <Button
+              icon="document-text"
+              label={t('q_convertToBill')}
+              onPress={onConvert}
+              loading={busy === 'convert'}
+            />
+          ) : null}
+          {!isCn && !isQuotation && !cancelled ? (
             <Button
               variant="outline"
               icon="return-down-back-outline"

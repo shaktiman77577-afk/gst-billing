@@ -15,7 +15,7 @@ import { todayIso } from '../../src/lib/dates';
 import { InvoiceListRow, InvoiceStatus, listInvoices } from '../../src/db/invoices';
 import { colors } from '../../src/theme';
 
-type Filter = 'all' | InvoiceStatus | 'credit_note' | 'overdue';
+type Filter = 'all' | InvoiceStatus | 'credit_note' | 'overdue' | 'quotation';
 
 export default function BillsScreen() {
   const db = useSQLiteContext();
@@ -50,7 +50,9 @@ export default function BillsScreen() {
             ? overdueIds.has(b.id)
             : filter === 'credit_note'
               ? b.kind === 'credit_note'
-              : b.kind === 'invoice' && b.status === filter)) &&
+              : filter === 'quotation'
+                ? b.doc_type === 'quotation'
+                : b.kind === 'invoice' && b.doc_type !== 'quotation' && b.status === filter)) &&
         (!q || b.party_name.toLowerCase().includes(q) || b.invoice_no.toLowerCase().includes(q)),
     );
   }, [bills, query, filter, overdueIds]);
@@ -77,6 +79,7 @@ export default function BillsScreen() {
                   { value: 'partial', label: t('partial') },
                   { value: 'paid', label: t('paid') },
                   { value: 'credit_note', label: t('creditNotes') },
+                  { value: 'quotation', label: t('q_quotations') },
                   { value: 'cancelled', label: t('cancelled') },
                 ]}
                 value={filter}
