@@ -30,6 +30,52 @@ const MIGRATIONS: string[] = [
 
   CREATE INDEX IF NOT EXISTS idx_businesses_user ON businesses(user_id);
   `,
+
+  // v2: parties (customers & suppliers). Money is stored in paise (integer).
+  `
+  CREATE TABLE IF NOT EXISTS parties (
+    id TEXT PRIMARY KEY NOT NULL,
+    business_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    phone TEXT,
+    party_type TEXT NOT NULL DEFAULT 'customer',
+    gstin TEXT,
+    state_code TEXT,
+    billing_address TEXT,
+    shipping_address TEXT,
+    same_shipping INTEGER NOT NULL DEFAULT 1,
+    opening_balance_paise INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    deleted_at TEXT
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_parties_business ON parties(business_id, deleted_at);
+  `,
+
+  // v3: items (products & services).
+  `
+  CREATE TABLE IF NOT EXISTS items (
+    id TEXT PRIMARY KEY NOT NULL,
+    business_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    item_type TEXT NOT NULL DEFAULT 'product',
+    unit TEXT NOT NULL DEFAULT 'PCS',
+    sales_price_paise INTEGER NOT NULL DEFAULT 0,
+    sales_price_with_tax INTEGER NOT NULL DEFAULT 0,
+    purchase_price_paise INTEGER,
+    gst_rate REAL NOT NULL DEFAULT 0,
+    hsn TEXT,
+    opening_stock REAL NOT NULL DEFAULT 0,
+    stock_qty REAL NOT NULL DEFAULT 0,
+    low_stock_qty REAL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    deleted_at TEXT
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_items_business ON items(business_id, deleted_at);
+  `,
 ];
 
 export async function migrateDb(db: SQLiteDatabase): Promise<void> {

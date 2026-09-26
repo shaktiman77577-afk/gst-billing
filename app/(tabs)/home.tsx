@@ -1,14 +1,17 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
+import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
+import { useCallback, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { EmptyState } from '../../src/components/EmptyState';
 import { Header } from '../../src/components/Header';
 import { Card, IconName } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
+import { partyTotals } from '../../src/db/parties';
 import { useBusiness } from '../../src/hooks/useBusiness';
 import { StringKey } from '../../src/i18n/strings';
-import { formatINR } from '../../src/lib/money';
+import { formatPaise } from '../../src/lib/money';
 import { colors, radius, shadow } from '../../src/theme';
 
 function greetingKey(): StringKey {
@@ -19,8 +22,16 @@ function greetingKey(): StringKey {
 }
 
 export default function HomeScreen() {
-  const { t } = useApp();
+  const db = useSQLiteContext();
+  const { t, businessId } = useApp();
   const business = useBusiness();
+  const [totals, setTotals] = useState({ toCollect: 0, toPay: 0 });
+
+  useFocusEffect(
+    useCallback(() => {
+      if (businessId) partyTotals(db, businessId).then(setTotals);
+    }, [db, businessId]),
+  );
 
   const soon = () => Alert.alert(t('appName'), t('comingSoon'));
 
@@ -31,14 +42,14 @@ export default function HomeScreen() {
       label: t('addParty'),
       color: colors.primary,
       bg: colors.primarySoft,
-      onPress: () => router.navigate('/parties'),
+      onPress: () => router.push('/party/new'),
     },
     {
       icon: 'add-circle',
       label: t('addItem'),
       color: '#B45309',
       bg: colors.accentSoft,
-      onPress: () => router.navigate('/items'),
+      onPress: () => router.push('/item/new'),
     },
   ];
 
@@ -61,14 +72,14 @@ export default function HomeScreen() {
               <Ionicons name="arrow-down-circle" size={18} color={colors.success} />
               <Text style={styles.statLabel}>{t('toCollect')}</Text>
             </View>
-            <Text style={[styles.statValue, { color: colors.success }]}>{formatINR(0)}</Text>
+            <Text style={[styles.statValue, { color: colors.success }]}>{formatPaise(totals.toCollect)}</Text>
           </View>
           <View style={[styles.stat, { borderLeftColor: colors.danger }]}>
             <View style={styles.statTop}>
               <Ionicons name="arrow-up-circle" size={18} color={colors.danger} />
               <Text style={styles.statLabel}>{t('toPay')}</Text>
             </View>
-            <Text style={[styles.statValue, { color: colors.danger }]}>{formatINR(0)}</Text>
+            <Text style={[styles.statValue, { color: colors.danger }]}>{formatPaise(totals.toPay)}</Text>
           </View>
         </View>
 
