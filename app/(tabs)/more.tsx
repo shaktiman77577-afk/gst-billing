@@ -39,7 +39,10 @@ export default function MoreScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Card>
           <Text style={styles.cardLabel}>{t('businessProfile')}</Text>
-          <View style={styles.profile}>
+          <Pressable
+            style={styles.profile}
+            onPress={() => router.push({ pathname: '/business-setup', params: { edit: '1' } })}
+          >
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>{initial}</Text>
             </View>
@@ -48,7 +51,11 @@ export default function MoreScreen() {
               {business ? <Text style={styles.meta}>{stateName(business.state_code)}</Text> : null}
               {business?.gstin ? <Text style={styles.meta}>GSTIN {business.gstin}</Text> : null}
             </View>
-          </View>
+            <View style={styles.editPill}>
+              <Ionicons name="create-outline" size={14} color={colors.primary} />
+              <Text style={styles.editText}>{t('edit')}</Text>
+            </View>
+          </Pressable>
         </Card>
 
         <Card>
@@ -58,9 +65,7 @@ export default function MoreScreen() {
             </View>
             <View style={styles.flexOnly}>
               <Text style={styles.rowText}>{t('billSettings')}</Text>
-              <Text style={styles.meta}>
-                {t('invoicePrefix')}: {business?.invoice_prefix ?? 'INV'}
-              </Text>
+              <Text style={styles.meta}>{t('billDesignHint')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.faint} />
           </Pressable>
@@ -128,5 +133,15 @@ const styles = StyleSheet.create({
   rowText: { flex: 1, fontSize: 15, fontWeight: '600', color: colors.text },
   footer: { alignItems: 'center', gap: 4, marginTop: 8 },
   sep: { height: 1, backgroundColor: colors.border },
+  editPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: colors.primarySoft,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: radius.pill,
+  },
+  editText: { fontSize: 12, fontWeight: '700', color: colors.primary },
   version: { fontSize: 12, color: colors.faint },
 });

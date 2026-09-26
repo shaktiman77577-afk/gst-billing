@@ -1,8 +1,9 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { FormHeader } from '../src/components/FormHeader';
 import { LanguageToggle } from '../src/components/LanguageToggle';
 import { StatePicker } from '../src/components/StatePicker';
 import {
@@ -18,7 +19,8 @@ import {
   Title,
 } from '../src/components/ui';
 import { useApp } from '../src/context/AppContext';
-import { BusinessType, createBusiness } from '../src/db/businesses';
+import { BusinessType, createBusiness, updateBusiness } from '../src/db/businesses';
+import { useBusiness } from '../src/hooks/useBusiness';
 import {
   isValidGstin,
   normalizeGstin,
@@ -35,7 +37,11 @@ const clean = (v: string) => {
 
 export default function BusinessSetupScreen() {
   const db = useSQLiteContext();
-  const { t, userId, setActiveBusiness } = useApp();
+  const { t, userId, businessId, setActiveBusiness } = useApp();
+  const { edit } = useLocalSearchParams<{ edit?: string }>();
+  const isEdit = edit === '1';
+  const existing = useBusiness();
+  const [prefilled, setPrefilled] = useState(false);
 
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -49,6 +55,22 @@ export default function BusinessSetupScreen() {
   const [businessType, setBusinessType] = useState<BusinessType>('retail');
   const [errors, setErrors] = useState<Errors>({});
   const [saving, setSaving] = useState(false);
+
+  // Editing: fill the form with the saved business once.
+  useEffect(() => {
+    if (!isEdit || !existing || prefilled) return;
+    setName(existing.name);
+    setPhone(existing.phone ?? '');
+    setGstRegistered(existing.gst_registered ? 'yes' : 'no');
+    setGstin(existing.gstin ?? '');
+    setPan(existing.pan ?? '');
+    setStateCode(existing.state_code);
+    setAddress(existing.address ?? '');
+    setCity(existing.city ?? '');
+    setPincode(existing.pincode ?? '');
+    setBusinessType(existing.business_type);
+    setPrefilled(true);
+  }, [isEdit, existing, prefilled]);
 
   const gstinOk = gstRegistered === 'yes' && isValidGstin(gstin);
 
@@ -83,7 +105,7 @@ export default function BusinessSetupScreen() {
     setSaving(true);
     try {
       const registered = gstRegistered === 'yes';
-      const id = await createBusiness(db, userId, {
+      const input = {
         name: name.trim(),
         phone: clean(phone),
         gstRegistered: registered,
@@ -94,7 +116,13 @@ export default function BusinessSetupScreen() {
         city: clean(city),
         pincode: clean(pincode),
         businessType,
-      });
+      };
+      if (isEdit && businessId) {
+        await updateBusiness(db, businessId, input);
+        router.back();
+        return;
+      }
+      const id = await createBusiness(db, userId, input);
       await setActiveBusiness(id);
       router.replace('/');
     } finally {
@@ -103,19 +131,29 @@ export default function BusinessSetupScreen() {
   };
 
   return (
+    <View style={styles.flex}>
+    {isEdit ? <FormHeader title={t('editBusiness')} /> : null}
     <Screen
+      edges={isEdit ? ['bottom'] : ['top', 'bottom']}
       footer={
-        <Button label={t('saveBusiness')} icon="checkmark-circle" onPress={onSave} loading={saving} />
+        <Button
+          label={isEdit ? t('save') : t('saveBusiness')}
+          icon="checkmark-circle"
+          onPress={onSave}
+          loading={saving}
+        />
       }
     >
       <StatusBar style="dark" />
-      <View style={styles.header}>
-        <View style={styles.headerText}>
-          <Title>{t('setupTitle')}</Title>
-          <Hint>{t('setupHint')}</Hint>
+      {isEdit ? null : (
+        <View style={styles.header}>
+          <View style={styles.headerText}>
+            <Title>{t('setupTitle')}</Title>
+            <Hint>{t('setupHint')}</Hint>
+          </View>
+          <LanguageToggle />
         </View>
-        <LanguageToggle />
-      </View>
+      )}
 
       <Card>
         <SectionHeader icon="storefront" title={t('sectionBusiness')} />
@@ -243,6 +281,7 @@ export default function BusinessSetupScreen() {
 
       <MadeInIndia />
     </Screen>
+    </View>
   );
 }
 

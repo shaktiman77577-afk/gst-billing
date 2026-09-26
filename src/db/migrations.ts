@@ -168,6 +168,21 @@ const MIGRATIONS: string[] = [
   CREATE INDEX IF NOT EXISTS idx_payments_invoice ON payments(invoice_id, deleted_at);
   CREATE INDEX IF NOT EXISTS idx_payments_party ON payments(party_id, deleted_at);
   `,
+
+  // v5: bill design settings (template, colour, logo, signature, bank, UPI, terms).
+  `
+  ALTER TABLE businesses ADD COLUMN template TEXT NOT NULL DEFAULT 'simple';
+  ALTER TABLE businesses ADD COLUMN theme_color TEXT NOT NULL DEFAULT '#1E3A8A';
+  ALTER TABLE businesses ADD COLUMN logo TEXT;
+  ALTER TABLE businesses ADD COLUMN signature TEXT;
+  ALTER TABLE businesses ADD COLUMN bank_account_name TEXT;
+  ALTER TABLE businesses ADD COLUMN bank_account_no TEXT;
+  ALTER TABLE businesses ADD COLUMN bank_ifsc TEXT;
+  ALTER TABLE businesses ADD COLUMN bank_name TEXT;
+  ALTER TABLE businesses ADD COLUMN upi_id TEXT;
+  ALTER TABLE businesses ADD COLUMN terms TEXT;
+  ALTER TABLE businesses ADD COLUMN tagline TEXT;
+  `,
 ];
 
 export async function migrateDb(db: SQLiteDatabase): Promise<void> {

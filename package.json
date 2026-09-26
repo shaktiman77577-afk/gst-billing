@@ -1,6 +1,6 @@
 {
   "name": "gst-billing",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": true,
   "main": "expo-router/entry",
   "scripts": {
@@ -16,15 +16,21 @@
     "expo": "~57.0.0",
     "expo-constants": "*",
     "expo-crypto": "*",
+    "expo-file-system": "*",
+    "expo-image-picker": "*",
     "expo-linking": "*",
+    "expo-print": "*",
     "expo-router": "*",
+    "expo-sharing": "*",
     "expo-splash-screen": "*",
     "expo-sqlite": "*",
     "expo-status-bar": "*",
+    "qrcode-generator": "^1.4.4",
     "react": "~19.2.0",
     "react-native": "~0.86.0",
     "react-native-safe-area-context": "*",
-    "react-native-screens": "*"
+    "react-native-screens": "*",
+    "react-native-webview": "*"
   },
   "devDependencies": {
     "@types/react": "~19.2.0",

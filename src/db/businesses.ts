@@ -17,6 +17,17 @@ export type Business = {
   pincode: string | null;
   business_type: BusinessType;
   invoice_prefix: string;
+  template: string;
+  theme_color: string;
+  logo: string | null; // data URI (base64 image)
+  signature: string | null; // data URI
+  bank_account_name: string | null;
+  bank_account_no: string | null;
+  bank_ifsc: string | null;
+  bank_name: string | null;
+  upi_id: string | null;
+  terms: string | null;
+  tagline: string | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -86,6 +97,81 @@ export async function setInvoicePrefix(db: SQLiteDatabase, id: string, prefix: s
   await db.runAsync(
     'UPDATE businesses SET invoice_prefix = ?, updated_at = ? WHERE id = ?',
     prefix,
+    nowIso(),
+    id,
+  );
+}
+
+export async function updateBusiness(db: SQLiteDatabase, id: string, input: NewBusiness): Promise<void> {
+  await db.runAsync(
+    `UPDATE businesses SET
+      name = ?, phone = ?, gst_registered = ?, gstin = ?, pan = ?, state_code = ?,
+      address = ?, city = ?, pincode = ?, business_type = ?, updated_at = ?
+     WHERE id = ?`,
+    input.name,
+    input.phone,
+    input.gstRegistered ? 1 : 0,
+    input.gstin,
+    input.pan,
+    input.stateCode,
+    input.address,
+    input.city,
+    input.pincode,
+    input.businessType,
+    nowIso(),
+    id,
+  );
+}
+
+export type BillDesign = {
+  invoicePrefix: string;
+  template: string;
+  themeColor: string;
+  logo: string | null;
+  signature: string | null;
+  bankAccountName: string | null;
+  bankAccountNo: string | null;
+  bankIfsc: string | null;
+  bankName: string | null;
+  upiId: string | null;
+  terms: string | null;
+  tagline: string | null;
+};
+
+export async function updateBillDesign(db: SQLiteDatabase, id: string, d: BillDesign): Promise<void> {
+  await db.runAsync(
+    `UPDATE businesses SET
+      invoice_prefix = ?, template = ?, theme_color = ?, logo = ?, signature = ?,
+      bank_account_name = ?, bank_account_no = ?, bank_ifsc = ?, bank_name = ?,
+      upi_id = ?, terms = ?, tagline = ?, updated_at = ?
+     WHERE id = ?`,
+    d.invoicePrefix,
+    d.template,
+    d.themeColor,
+    d.logo,
+    d.signature,
+    d.bankAccountName,
+    d.bankAccountNo,
+    d.bankIfsc,
+    d.bankName,
+    d.upiId,
+    d.terms,
+    d.tagline,
+    nowIso(),
+    id,
+  );
+}
+
+export async function setTemplateDesign(
+  db: SQLiteDatabase,
+  id: string,
+  template: string,
+  themeColor: string,
+): Promise<void> {
+  await db.runAsync(
+    'UPDATE businesses SET template = ?, theme_color = ?, updated_at = ? WHERE id = ?',
+    template,
+    themeColor,
     nowIso(),
     id,
   );

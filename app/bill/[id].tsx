@@ -3,7 +3,7 @@ import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FormHeader } from '../../src/components/FormHeader';
 import { StatusBadge } from '../../src/components/StatusBadge';
@@ -12,16 +12,20 @@ import { useApp } from '../../src/context/AppContext';
 import { stateName } from '../../src/data/states';
 import { formatQty } from '../../src/db/items';
 import { getInvoice, Invoice, InvoiceLine } from '../../src/db/invoices';
+import { useBusiness } from '../../src/hooks/useBusiness';
 import { formatDate } from '../../src/lib/dates';
 import { amountInWords } from '../../src/lib/gst';
 import { formatPaise } from '../../src/lib/money';
+import { invoiceHtml, printBill, sharePdf, whatsappMessage } from '../../src/pdf/share';
 import { colors, radius } from '../../src/theme';
 
 export default function BillDetailScreen() {
   const db = useSQLiteContext();
   const { t } = useApp();
+  const business = useBusiness();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [data, setData] = useState<{ invoice: Invoice; lines: InvoiceLine[] } | null>(null);
+  const [busy, setBusy] = useState<'share' | 'print' | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -32,7 +36,34 @@ export default function BillDetailScreen() {
   if (!data) return <View style={styles.flex} />;
   const { invoice: inv, lines } = data;
   const balance = inv.total_paise - inv.received_paise;
-  const soon = () => Alert.alert(t('appName'), t('comingSoon'));
+
+  const run = async (kind: 'share' | 'print') => {
+    if (!business) return;
+    setBusy(kind);
+    try {
+      const html = invoiceHtml(business, inv, lines);
+      if (kind === 'share') await sharePdf(html, inv.invoice_no);
+      else await printBill(html);
+    } catch (e) {
+      const msg = String((e as Error)?.message ?? e);
+      // Closing the print dialog is not an error.
+      if (!/cancel/i.test(msg)) Alert.alert(t('appName'), t('pdfError'));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const onWhatsapp = () => {
+    if (!inv.party_phone) return;
+    let text = t('waMessage')
+      .replace('{name}', inv.party_name)
+      .replace('{no}', inv.invoice_no)
+      .replace('{date}', formatDate(inv.invoice_date))
+      .replace('{amount}', formatPaise(inv.total_paise));
+    if (balance > 0) text += `\n${t('waBalance').replace('{balance}', formatPaise(balance))}`;
+    if (business?.name) text += `\n\n– ${business.name}`;
+    whatsappMessage(inv.party_phone, text).catch(() => undefined);
+  };
 
   return (
     <View style={styles.flex}>
@@ -139,9 +170,39 @@ export default function BillDetailScreen() {
               />
             </View>
             <View style={styles.flexOnly}>
-              <Button icon="share-social-outline" label={t('sharePdf')} onPress={soon} />
+              <Button
+                variant="outline"
+                icon="eye-outline"
+                label={t('preview')}
+                onPress={() => router.push({ pathname: '/bill/preview', params: { id: inv.id } })}
+              />
             </View>
           </View>
+          <View style={styles.actions}>
+            <View style={styles.flexOnly}>
+              <Button
+                variant="outline"
+                icon="print-outline"
+                label={t('print')}
+                onPress={() => run('print')}
+                loading={busy === 'print'}
+              />
+            </View>
+            <View style={styles.flexOnly}>
+              <Button
+                icon="share-social-outline"
+                label={t('sharePdf')}
+                onPress={() => run('share')}
+                loading={busy === 'share'}
+              />
+            </View>
+          </View>
+          {inv.party_phone ? (
+            <Pressable onPress={onWhatsapp} style={({ pressed }) => [styles.wa, pressed && { opacity: 0.85 }]}>
+              <Ionicons name="logo-whatsapp" size={22} color={colors.white} />
+              <Text style={styles.waText}>{t('whatsapp')}</Text>
+            </Pressable>
+          ) : null}
         </ScrollView>
       </SafeAreaView>
     </View>
@@ -193,4 +254,14 @@ const styles = StyleSheet.create({
   bold: { fontWeight: '800', color: colors.text, fontSize: 15 },
   divider: { height: 1, backgroundColor: colors.border, borderRadius: radius.sm },
   actions: { flexDirection: 'row', gap: 12 },
+  wa: {
+    minHeight: 52,
+    borderRadius: radius.md,
+    backgroundColor: '#25D366',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  waText: { color: colors.white, fontSize: 16, fontWeight: '700' },
 });
