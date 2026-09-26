@@ -10,10 +10,12 @@ import { Header } from '../../src/components/Header';
 import { SearchBar } from '../../src/components/SearchBar';
 import { Chips } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
+import { getOverdueInvoices } from '../../src/lib/alerts';
+import { todayIso } from '../../src/lib/dates';
 import { InvoiceListRow, InvoiceStatus, listInvoices } from '../../src/db/invoices';
 import { colors } from '../../src/theme';
 
-type Filter = 'all' | InvoiceStatus | 'credit_note';
+type Filter = 'all' | InvoiceStatus | 'credit_note' | 'overdue';
 
 export default function BillsScreen() {
   const db = useSQLiteContext();
@@ -22,6 +24,7 @@ export default function BillsScreen() {
   const [loaded, setLoaded] = useState(false);
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
+  const [overdueIds, setOverdueIds] = useState<Set<string>>(new Set());
 
   useFocusEffect(
     useCallback(() => {
@@ -30,6 +33,11 @@ export default function BillsScreen() {
         setBills(rows);
         setLoaded(true);
       });
+      // Overdue needs due_date, which listInvoices doesn't return —
+      // resolve the matching ids once per focus instead.
+      getOverdueInvoices(db, businessId, todayIso()).then((rows) =>
+        setOverdueIds(new Set(rows.map((r) => r.id))),
+      );
     }, [db, businessId]),
   );
 
@@ -38,10 +46,14 @@ export default function BillsScreen() {
     return bills.filter(
       (b) =>
         (filter === 'all' ||
-          (filter === 'credit_note' ? b.kind === 'credit_note' : b.kind === 'invoice' && b.status === filter)) &&
+          (filter === 'overdue'
+            ? overdueIds.has(b.id)
+            : filter === 'credit_note'
+              ? b.kind === 'credit_note'
+              : b.kind === 'invoice' && b.status === filter)) &&
         (!q || b.party_name.toLowerCase().includes(q) || b.invoice_no.toLowerCase().includes(q)),
     );
-  }, [bills, query, filter]);
+  }, [bills, query, filter, overdueIds]);
 
   return (
     <View style={styles.flex}>
@@ -61,6 +73,7 @@ export default function BillsScreen() {
                 options={[
                   { value: 'all', label: t('all') },
                   { value: 'unpaid', label: t('unpaid') },
+                  { value: 'overdue', label: t('a_overdue') },
                   { value: 'partial', label: t('partial') },
                   { value: 'paid', label: t('paid') },
                   { value: 'credit_note', label: t('creditNotes') },

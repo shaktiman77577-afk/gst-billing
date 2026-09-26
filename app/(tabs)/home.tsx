@@ -16,6 +16,7 @@ import { totalExpenses } from '../../src/db/expenses';
 import { partyTotals } from '../../src/db/parties';
 import { useBusiness } from '../../src/hooks/useBusiness';
 import { StringKey } from '../../src/i18n/strings';
+import { getAlertCounts } from '../../src/lib/alerts';
 import { monthStartIso, todayIso } from '../../src/lib/dates';
 import { formatPaise } from '../../src/lib/money';
 import { colors, radius, shadowSm } from '../../src/theme';
@@ -36,6 +37,7 @@ export default function HomeScreen() {
   const [month, setMonth] = useState({ total: 0, count: 0 });
   const [monthExp, setMonthExp] = useState(0);
   const [remind, setRemind] = useState(false);
+  const [alerts, setAlerts] = useState({ lowStock: 0, overdueCount: 0, overdueTotal: 0 });
 
   useFocusEffect(
     useCallback(() => {
@@ -45,6 +47,7 @@ export default function HomeScreen() {
       salesSummary(db, businessId, monthStartIso()).then(setMonth);
       totalExpenses(db, businessId, monthStartIso(), todayIso()).then(setMonthExp);
       needsBackupReminder(db, businessId).then(setRemind);
+      getAlertCounts(db, businessId, todayIso()).then(setAlerts);
     }, [db, businessId]),
   );
 
@@ -122,6 +125,44 @@ export default function HomeScreen() {
             <Text style={styles.reminderText}>{t('backupReminder')}</Text>
             <Ionicons name="chevron-forward" size={18} color={colors.warning} />
           </Pressable>
+        ) : null}
+
+        {(alerts.lowStock > 0 || alerts.overdueCount > 0) ? (
+          <View>
+            <Text style={styles.sectionTitle}>{t('a_needsAttention')}</Text>
+            <View style={styles.alerts}>
+              {alerts.lowStock > 0 ? (
+                <Pressable style={styles.alertCard} onPress={() => router.push({ pathname: '/items', params: { filter: 'low' } })}>
+                  <View style={[styles.alertIcon, { backgroundColor: colors.warningSoft }]}>
+                    <Ionicons name="cube-outline" size={20} color={colors.warning} />
+                  </View>
+                  <View style={styles.flexOnly}>
+                    <Text style={styles.alertLabel}>{t('a_lowStock')}</Text>
+                    <Text style={styles.alertSub}>
+                      {t('a_lowStockSub').replace('{n}', String(alerts.lowStock))}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color={colors.faint} />
+                </Pressable>
+              ) : null}
+              {alerts.overdueCount > 0 ? (
+                <Pressable style={styles.alertCard} onPress={() => router.push('/alerts/overdue')}>
+                  <View style={[styles.alertIcon, { backgroundColor: colors.dangerSoft }]}>
+                    <Ionicons name="alarm-outline" size={20} color={colors.danger} />
+                  </View>
+                  <View style={styles.flexOnly}>
+                    <Text style={styles.alertLabel}>{t('a_paymentDue')}</Text>
+                    <Text style={styles.alertSub}>
+                      {t('a_paymentDueSub')
+                        .replace('{total}', formatPaise(alerts.overdueTotal))
+                        .replace('{n}', String(alerts.overdueCount))}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color={colors.faint} />
+                </Pressable>
+              ) : null}
+            </View>
+          </View>
         ) : null}
 
         <Pressable style={styles.monthCard} onPress={() => router.navigate('/bills')}>
@@ -241,6 +282,27 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   reminderText: { flex: 1, fontSize: 13, color: colors.warning, fontWeight: '600' },
+  alerts: { gap: 10 },
+  alertCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    padding: 14,
+    ...shadowSm,
+  },
+  alertIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  alertLabel: { fontSize: 14, fontWeight: '700', color: colors.text },
+  alertSub: { fontSize: 12.5, color: colors.muted, fontWeight: '600', marginTop: 2 },
   monthCard: {
     flexDirection: 'row',
     alignItems: 'center',

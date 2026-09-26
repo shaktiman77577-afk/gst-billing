@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useMemo, useState } from 'react';
@@ -23,6 +23,7 @@ export default function ItemsScreen() {
   const [loaded, setLoaded] = useState(false);
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
+  const params = useLocalSearchParams<{ filter?: string }>();
 
   useFocusEffect(
     useCallback(() => {
@@ -31,7 +32,8 @@ export default function ItemsScreen() {
         setItems(rows);
         setLoaded(true);
       });
-    }, [db, businessId]),
+      if (params.filter === 'low') setFilter('low');
+    }, [db, businessId, params.filter]),
   );
 
   const lowCount = useMemo(() => items.filter(isLowStock).length, [items]);
