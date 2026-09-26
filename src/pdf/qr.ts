@@ -1,6 +1,6 @@
 import qrcode from 'qrcode-generator';
 
-// UPI payment link, e.g. upi://pay?pa=shop@upi&pn=Raja%20Refrigeration&am=1250.00&cu=INR&tn=INV%2F26-27%2F5
+// UPI payment link, e.g. upi://pay?pa=shop@upi&pn=Sharma%20General%20Store&am=1250.00&cu=INR&tn=INV%2F26-27%2F5
 export function upiLink(upiId: string, payeeName: string, amountPaise: number, note: string): string {
   const params = [
     `pa=${encodeURIComponent(upiId.trim())}`,

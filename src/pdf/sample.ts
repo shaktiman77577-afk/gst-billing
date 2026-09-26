@@ -8,9 +8,9 @@ export function sampleInvoice(business: Business): { invoice: Invoice; lines: In
   const applyGst = business.gst_registered === 1;
   const buyerState = business.state_code === '29' ? '27' : '29';
   const drafts = [
-    { name: 'Split AC 1.5 Ton 5 Star', hsn: '8415', unit: 'PCS', qty: 2, rate: 3500000, disc: 5, gst: 18 },
-    { name: 'Copper Pipe (per metre)', hsn: '7411', unit: 'MTR', qty: 6, rate: 45000, disc: 0, gst: 18 },
-    { name: 'Installation Service', hsn: '998719', unit: 'NOS', qty: 2, rate: 150000, disc: 0, gst: 18 },
+    { name: 'Basmati Rice 5 kg', hsn: '1006', unit: 'BAG', qty: 10, rate: 45000, disc: 5, gst: 5 },
+    { name: 'Mustard Oil 1 L', hsn: '1514', unit: 'BTL', qty: 12, rate: 16000, disc: 0, gst: 5 },
+    { name: 'Delivery Service', hsn: '996812', unit: 'NOS', qty: 1, rate: 20000, disc: 0, gst: 18 },
   ];
   const totals = calcBill(
     drafts.map((x) => ({
@@ -21,7 +21,7 @@ export function sampleInvoice(business: Business): { invoice: Invoice; lines: In
       discountValue: x.disc,
       gstRate: x.gst,
     })),
-    { applyGst, isIgst: applyGst, chargesPaise: 20000, roundOff: true },
+    { applyGst, isIgst: applyGst, chargesPaise: 0, roundOff: true },
   );
   const now = new Date().toISOString();
   const invoice: Invoice = {
@@ -35,7 +35,7 @@ export function sampleInvoice(business: Business): { invoice: Invoice; lines: In
     invoice_date: todayIso(),
     due_date: null,
     party_id: null,
-    party_name: 'Rakesh Enterprises',
+    party_name: 'Gupta Traders',
     party_phone: '9876543210',
     party_gstin: applyGst ? `${buyerState}ABCDE1234F1Z5` : null,
     party_state_code: buyerState,
@@ -48,16 +48,16 @@ export function sampleInvoice(business: Business): { invoice: Invoice; lines: In
     cgst_paise: totals.cgstPaise,
     sgst_paise: totals.sgstPaise,
     igst_paise: totals.igstPaise,
-    charges_label: 'Delivery Charges',
+    charges_label: null,
     charges_paise: totals.chargesPaise,
     round_off: 1,
     round_off_paise: totals.roundOffPaise,
     total_paise: totals.totalPaise,
-    received_paise: 2000000,
+    received_paise: 300000,
     status: 'partial',
     po_no: 'PO-4521',
     vehicle_no: null,
-    notes: '1 year warranty on installation.',
+    notes: 'Thank you for your business!',
     kind: 'invoice',
     ref_invoice_id: null,
     ref_invoice_no: null,
