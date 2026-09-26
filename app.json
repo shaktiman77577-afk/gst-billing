@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "GST Billing",
+    "slug": "gst-billing",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "android": {
+      "package": "com.gstbilling.invoicemaker",
+      "versionCode": 1
+    }
+  }
+}
