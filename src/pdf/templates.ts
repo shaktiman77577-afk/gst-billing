@@ -27,7 +27,11 @@ const BASE_CSS = `
   .logo { max-width: 110px; max-height: 70px; object-fit: contain; }
   .sign { max-width: 150px; max-height: 55px; object-fit: contain; }
   .qr svg { width: 92px; height: 92px; }
-  .footer { margin-top: 10px; text-align: center; font-size: 9px; color: #9ca3af; }
+  .footer { margin-top: auto; padding-top: 10px; text-align: center; font-size: 9px; color: #9ca3af; }
+  .sheet { display: flex; flex-direction: column; min-height: 272mm; }
+  .grow { flex: 1; display: flex; flex-direction: column; }
+  .grow > table { table-layout: fixed; }
+  .grow > table.fillt { flex: 1; }
   .page { position: relative; }
   .void { position: fixed; top: 38%; left: 0; right: 0; text-align: center; font-size: 110px; font-weight: 900;
     color: rgba(220, 38, 38, 0.16); transform: rotate(-24deg); letter-spacing: 8px; z-index: 10; pointer-events: none; }
@@ -37,7 +41,7 @@ function page(title: string, css: string, body: string, d: Doc): string {
   return `<!DOCTYPE html><html><head><meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>${title}</title><style>${BASE_CSS}${css}</style></head>
-<body><div class="page">${d.cancelled ? '<div class="void">CANCELLED</div>' : ''}${body}${
+<body><div class="page sheet">${d.cancelled ? '<div class="void">CANCELLED</div>' : ''}${body}${
     d.showFooter ? `<div class="footer">Invoice created using <b>GST Billing</b> · Made with 🤎 in India</div>` : ''
   }</div></body></html>`;
 }
@@ -66,8 +70,9 @@ function buyerBlock(d: Doc, heading = 'BILL TO') {
 }
 
 function shipBlock(d: Doc) {
-  if (!d.buyer.shipping || d.buyer.shipping === d.buyer.address) return '';
-  return `<div class="small b muted">SHIP TO</div><div>${d.buyer.shipping}</div>`;
+  const addr = d.buyer.shipping || d.buyer.address;
+  if (!addr) return '';
+  return `<div class="small b muted">SHIP TO</div><div class="b">${d.buyer.name}</div><div>${addr}</div>`;
 }
 
 function metaItems(d: Doc): [string, string][] {
@@ -330,7 +335,7 @@ function gridCss(d: Doc) {
     .grid td, .grid th { border: 1px solid #111; padding: 4px 6px; }
     .grid th { background: ${d.tint}; font-size: 9.5px; text-transform: uppercase; }
     .items td { border-top: none; border-bottom: none; }
-    .items tr.fill td { height: 120px; }
+    .items td { overflow-wrap: anywhere; }
     .items tr.tot td { border-top: 1px solid #111; background: ${d.tint}; font-weight: 700; }
     .head-title { color: ${d.color}; }
     .kv td { border: none !important; padding: 1px 8px 1px 0 !important; } .terms { margin: 2px 0 0 16px; padding: 0; }
@@ -340,99 +345,133 @@ function gridCss(d: Doc) {
 }
 
 function gridHeader(d: Doc) {
-  const m = metaItems(d);
+  const m = d.meta;
+  const cell = (k: string, v: string) =>
+    `<td class="c" style="padding:6px 4px"><div class="b">${k}</div><div>${v || '--'}</div></td>`;
+  const ship = shipBlock(d);
   return `
   <table class="noborder" style="margin-bottom:6px"><tr>
     <td><span class="b" style="font-size:13px">${d.title}</span>
       <span style="border:1px solid #9ca3af;color:#6b7280;font-size:9px;padding:1px 6px;margin-left:8px">ORIGINAL FOR RECIPIENT</span></td>
+    ${d.seller.tagline ? `<td class="r b" style="color:${d.color}">${d.seller.tagline}</td>` : ''}
   </tr></table>
   <table class="grid"><tr>
-    <td style="width:50%"><table class="noborder"><tr>
+    <td style="width:50%" rowspan="2"><table class="noborder"><tr>
       ${d.seller.logo ? `<td style="width:90px"><img class="logo" style="max-width:80px" src="${d.seller.logo}"/></td>` : ''}
-      <td>${sellerBlock(d, `font-size:15px;color:${d.color}`)}</td></tr></table></td>
-    <td style="padding:0"><table class="noborder" style="height:100%">
-      ${m
-        .reduce<[string, string][][]>((rows, x, i) => {
-          if (i % 2 === 0) rows.push([x]);
-          else rows[rows.length - 1].push(x);
-          return rows;
-        }, [])
-        .map(
-          (pair) =>
-            `<tr>${pair.map(([k, v]) => `<td class="c" style="padding:6px"><div class="b">${k}</div><div>${v}</div></td>`).join('')}</tr>`,
-        )
-        .join('')}
-    </table></td></tr>
-    <tr><td>${buyerBlock(d)}</td><td>${shipBlock(d) || '&nbsp;'}</td></tr>
+      <td>${sellerBlock(d, `font-size:15px;color:${d.color};text-transform:uppercase`)}</td></tr></table></td>
+    <td style="padding:0"><table class="noborder"><tr>
+      ${cell(d.isCreditNote ? 'Credit Note No.' : 'Invoice No.', m.invoiceNo)}
+      ${cell(d.isCreditNote ? 'Date' : 'Invoice Date', m.date)}
+      ${d.isCreditNote ? cell('Against Invoice', m.refNo) : ''}
+    </tr></table></td></tr>
+    <tr><td style="padding:0"><table class="noborder"><tr>
+      ${cell('P.O. No.', m.poNo)}${cell('Vehicle No.', m.vehicleNo)}${cell('Due Date', m.dueDate)}
+    </tr></table></td></tr>
+    <tr>${ship ? `<td>${buyerBlock(d)}</td><td>${ship}</td>` : `<td colspan="2">${buyerBlock(d)}</td>`}</tr>
   </table>`;
 }
 
+// Terms/notes + bank/QR side by side (bank cell only when there is something to show).
+function gridBottom(d: Doc, leftExtra = '') {
+  const bank = bankBlock(d);
+  return `<table class="grid" style="border-top:none"><tr>
+    <td ${bank ? 'style="width:50%"' : 'colspan="2"'}>${termsBlock(d)}</td>${bank ? `<td>${bank}</td>` : ''}</tr>
+    <tr><td class="small muted" style="width:50%">${leftExtra}</td><td>${signBlock(d)}</td></tr></table>`;
+}
+
+// Items table in three parts sharing the same column widths:
+// rows | empty space that stretches to fill the page | totals.
+function stretchTable(widths: number[], head: string, rows: string, tail: string) {
+  const cols = `<colgroup>${widths.map((w) => `<col style="width:${w}%"/>`).join('')}</colgroup>`;
+  const empty = `<tr>${widths.map(() => '<td></td>').join('')}</tr>`;
+  return `<div class="grow">
+    <table class="grid items" style="border-top:none;border-bottom:none">${cols}<thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table>
+    <table class="grid items fillt" style="border-top:none;border-bottom:none">${cols}<tbody>${empty}</tbody></table>
+    <table class="grid items" style="border-top:none">${cols}<tbody>${tail}</tbody></table>
+  </div>`;
+}
+
+function discCell(l: Doc['lines'][number]) {
+  return `<td class="r">${l.discount || '-'}${l.discountPct ? `<div class="small muted">(${l.discountPct})</div>` : ''}</td>`;
+}
+
+// ---------- 4. Advance GST (full grid) ----------
 function advance(d: Doc): string {
   const g = d.applyGst;
-  const cols = g ? 9 : 6;
-  const body = `${gridHeader(d)}
-  <table class="grid items" style="border-top:none"><thead><tr>
-    <th>S.No.</th><th>Items</th>${g ? '<th>HSN</th>' : ''}<th>Qty.</th><th>Rate</th><th>Disc.</th>
-    ${g ? '<th>Tax</th><th>GST %</th>' : ''}<th>Amount</th></tr></thead><tbody>
-    ${d.lines
-      .map(
-        (l) => `<tr><td class="c">${l.sno}</td><td>${l.name}</td>${g ? `<td class="c">${l.hsn}</td>` : ''}
-      <td class="r nowrap">${l.qty}</td><td class="r">${l.rate}</td><td class="r">${l.discount || '-'}${
-        l.discountPct ? `<div class="small muted">(${l.discountPct})</div>` : ''
-      }</td>${g ? `<td class="r">${l.tax}</td><td class="c">${l.gstRate}</td>` : ''}<td class="r">${l.amount}</td></tr>`,
-      )
-      .join('')}
-    <tr class="fill"><td colspan="${cols}"></td></tr>
-    ${d.totals.chargesRaw > 0 ? `<tr><td></td><td class="r"><i>${d.totals.chargesLabel}</i></td><td colspan="${cols - 3}"></td><td class="r">${d.totals.charges}</td></tr>` : ''}
-    ${d.totals.roundOffRaw !== 0 ? `<tr><td></td><td class="r"><i>Round Off</i></td><td colspan="${cols - 3}"></td><td class="r">${d.totals.roundOff}</td></tr>` : ''}
+  const widths = g ? [6, 27, 9, 9, 9, 9, 10, 7, 14] : [7, 43, 12, 12, 12, 14];
+  const n = widths.length;
+  const head = `<th>S.No.</th><th>Items</th>${g ? '<th>HSN</th>' : ''}<th>Qty.</th><th>Rate</th><th>Disc.</th>${
+    g ? '<th>Tax</th><th>GST %</th>' : ''
+  }<th>Amount</th>`;
+  const rows = d.lines
+    .map(
+      (l) => `<tr><td class="c">${l.sno}</td><td>${l.name}</td>${g ? `<td class="c">${l.hsn}</td>` : ''}
+      <td class="r nowrap">${l.qty}</td><td class="r">${l.rate}</td>${discCell(l)}${
+        g ? `<td class="r">${l.tax}</td><td class="c">${l.gstRate}</td>` : ''
+      }<td class="r">${l.amount}</td></tr>`,
+    )
+    .join('');
+  const extra = (label: string, value: string) =>
+    `<tr><td></td><td class="r"><i>${label}</i></td>${'<td></td>'.repeat(n - 3)}<td class="r">${value}</td></tr>`;
+  const tail = `
+    ${d.totals.chargesRaw > 0 ? extra(d.totals.chargesLabel, d.totals.charges) : ''}
+    ${d.totals.roundOffRaw !== 0 ? extra('Round Off', d.totals.roundOff) : ''}
     <tr class="tot"><td></td><td class="r">TOTAL</td>${g ? '<td></td>' : ''}<td class="r">${d.totalQty}</td><td></td>
       <td class="r">${d.totals.discountRaw ? d.totals.discount : ''}</td>${g ? `<td class="r">${d.totals.taxTotal}</td><td></td>` : ''}
       <td class="r">${d.totals.total}</td></tr>
-    ${d.totals.receivedRaw > 0 ? `<tr><td></td><td class="r b">${d.isCreditNote ? 'REFUND PAID' : 'RECEIVED AMOUNT'}</td><td colspan="${cols - 3}"></td><td class="r">${d.totals.received}</td></tr>` : ''}
-  </tbody></table>
+    ${
+      d.totals.receivedRaw > 0
+        ? `<tr class="tot"><td></td><td class="r">${d.isCreditNote ? 'REFUND PAID' : 'RECEIVED AMOUNT'}</td>${'<td></td>'.repeat(
+            n - 3,
+          )}<td class="r">${d.totals.received}</td></tr>`
+        : ''
+    }`;
+  const body = `${gridHeader(d)}
+  ${stretchTable(widths, head, rows, tail)}
   ${hsnTable(d, '#111')}
-  <table class="grid" style="margin-top:8px"><tr><td><span class="b">Total Amount (in words):</span> ${d.totals.words}</td></tr></table>
-  <table class="grid" style="border-top:none"><tr>
-    <td style="width:50%">${termsBlock(d)}</td><td>${bankBlock(d)}</td></tr>
-    <tr><td></td><td>${signBlock(d)}</td></tr></table>`;
+  <table class="grid" style="margin-top:8px"><tr><td><span class="b">Total Amount (in words):</span> ${d.totals.words}</td>
+    ${
+      !d.isCreditNote && (d.totals.receivedRaw > 0 || d.totals.creditedRaw > 0)
+        ? `<td class="r nowrap" style="width:200px">Balance Due: <b>${d.totals.balance}</b></td>`
+        : ''
+    }</tr></table>
+  ${gridBottom(d)}`;
   return page(d.meta.invoiceNo, gridCss(d), body, d);
 }
 
 // ---------- 5. Advance GST (Tally style: taxes as rows in the item table) ----------
 function tally(d: Doc): string {
   const g = d.applyGst;
-  const cols = g ? 7 : 6;
+  const widths = g ? [6, 36, 11, 11, 11, 11, 14] : [7, 43, 12, 12, 12, 14];
+  const n = widths.length;
+  const head = `<th>S.No.</th><th>Items</th>${g ? '<th>HSN</th>' : ''}<th>Qty.</th><th>Rate</th><th>Disc.</th><th>Amount</th>`;
+  const rows = d.lines
+    .map(
+      (l) => `<tr><td class="c">${l.sno}</td><td>${l.name}</td>${g ? `<td class="c">${l.hsn}</td>` : ''}
+      <td class="r nowrap">${l.qty}</td><td class="r">${l.rate}</td>${discCell(l)}<td class="r">${l.taxable}</td></tr>`,
+    )
+    .join('');
   const extra = (label: string, value: string) =>
-    `<tr><td></td><td class="r"><i>${label}</i></td><td colspan="${cols - 3}"></td><td class="r">${value}</td></tr>`;
-  const body = `${gridHeader(d)}
-  <table class="grid items" style="border-top:none"><thead><tr>
-    <th>S.No.</th><th>Items</th>${g ? '<th>HSN</th>' : ''}<th>Qty.</th><th>Rate</th><th>Disc.</th><th>Amount</th></tr></thead><tbody>
-    ${d.lines
-      .map(
-        (l) => `<tr><td class="c">${l.sno}</td><td>${l.name}</td>${g ? `<td class="c">${l.hsn}</td>` : ''}
-      <td class="r nowrap">${l.qty}</td><td class="r">${l.rate}</td><td class="r">${l.discount || '-'}${
-        l.discountPct ? `<div class="small muted">(${l.discountPct})</div>` : ''
-      }</td><td class="r">${l.taxable}</td></tr>`,
-      )
-      .join('')}
-    <tr class="fill"><td colspan="${cols}"></td></tr>
+    `<tr><td></td><td class="r"><i>${label}</i></td>${'<td></td>'.repeat(n - 3)}<td class="r">${value}</td></tr>`;
+  const tail = `
     ${d.totals.chargesRaw > 0 ? extra(d.totals.chargesLabel, d.totals.charges) : ''}
     ${d.taxLines.map((x) => extra(x.label, x.amount)).join('')}
     ${d.totals.roundOffRaw !== 0 ? extra('Round Off', d.totals.roundOff) : ''}
     <tr class="tot"><td></td><td class="r">TOTAL</td>${g ? '<td></td>' : ''}<td class="r">${d.totalQty}</td><td></td>
-      <td class="r">${d.totals.discountRaw ? d.totals.discount : ''}</td><td class="r">${d.totals.total}</td></tr>
-  </tbody></table>
+      <td class="r">${d.totals.discountRaw ? d.totals.discount : ''}</td><td class="r">${d.totals.total}</td></tr>`;
+  const body = `${gridHeader(d)}
+  ${stretchTable(widths, head, rows, tail)}
   ${hsnTable(d, '#111')}
   <table class="grid" style="margin-top:8px"><tr><td><span class="b">Total Amount (in words):</span> ${d.totals.words}</td>
     ${
-      d.totals.receivedRaw > 0 && !d.isCreditNote
+      !d.isCreditNote && (d.totals.receivedRaw > 0 || d.totals.creditedRaw > 0)
         ? `<td class="r nowrap" style="width:220px">Received: <b>${d.totals.received}</b><br/>Balance: <b>${d.totals.balance}</b></td>`
         : ''
     }</tr></table>
-  <table class="grid" style="border-top:none"><tr>
-    <td style="width:50%">${termsBlock(d)}</td><td>${bankBlock(d)}</td></tr>
-    <tr><td class="small muted">Declaration: We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.</td>
-    <td>${signBlock(d)}</td></tr></table>`;
+  ${gridBottom(
+    d,
+    'Declaration: We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.',
+  )}`;
   return page(d.meta.invoiceNo, gridCss(d), body, d);
 }
 

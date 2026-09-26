@@ -21,7 +21,8 @@ export function forPreview(html: string): string {
 }
 
 async function makePdf(html: string, invoiceNo: string): Promise<string> {
-  const { uri } = await Print.printToFileAsync({ html });
+  // A4 in points (595 × 842). Without this Android makes US Letter pages.
+  const { uri } = await Print.printToFileAsync({ html, width: 595, height: 842 });
   // Give the file a readable name like INV-26-27-5.pdf (shown in WhatsApp).
   try {
     const name = `${invoiceNo.replace(/[^A-Za-z0-9-]+/g, '-')}.pdf`;
