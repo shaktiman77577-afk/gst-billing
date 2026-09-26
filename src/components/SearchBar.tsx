@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
-import { colors, radius } from '../theme';
+import { colors } from '../theme';
 
 export function SearchBar({
   value,
@@ -36,9 +36,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: colors.card,
-    borderRadius: radius.md,
+    backgroundColor: '#EEF2F7',
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 14,
     paddingHorizontal: 12,
+    minHeight: 46,
   },
   input: { flex: 1, paddingVertical: 11, fontSize: 15, color: colors.text },
 });

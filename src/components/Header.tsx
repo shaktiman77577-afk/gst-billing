@@ -1,9 +1,10 @@
 import { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, radius } from '../theme';
+import { colors, text } from '../theme';
 
-// Navy page header used on the main tabs.
+// Light, professional page header used on the main tabs.
+// `children` (e.g. a SearchBar) renders below the title row.
 export function Header({
   title,
   subtitle,
@@ -17,7 +18,7 @@ export function Header({
 }) {
   const insets = useSafeAreaInsets();
   return (
-    <View style={[styles.wrap, { paddingTop: insets.top + 14 }]}>
+    <View style={[styles.wrap, { paddingTop: insets.top + 10 }]}>
       <View style={styles.row}>
         <View style={styles.flex}>
           {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
@@ -34,15 +35,15 @@ export function Header({
 
 const styles = StyleSheet.create({
   wrap: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.white,
     paddingHorizontal: 16,
-    paddingBottom: 20,
-    borderBottomLeftRadius: radius.xl,
-    borderBottomRightRadius: radius.xl,
+    paddingBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
     gap: 12,
   },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   flex: { flex: 1 },
-  subtitle: { color: 'rgba(255,255,255,0.75)', fontSize: 14 },
-  title: { color: colors.white, fontSize: 22, fontWeight: '800', marginTop: 2 },
+  subtitle: { color: colors.muted, fontSize: text.sm, fontWeight: '600' },
+  title: { color: colors.text, fontSize: text.xl, fontWeight: '800', marginTop: 1 },
 });

@@ -35,7 +35,7 @@ export default function MoreScreen() {
 
   return (
     <View style={styles.flex}>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
       <Header title={t('tabMore')} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Card>

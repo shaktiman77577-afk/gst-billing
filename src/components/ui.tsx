@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { ComponentProps, ReactNode } from 'react';
+import { ComponentProps, ReactNode, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -15,7 +15,7 @@ import {
   ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, radius, shadow } from '../theme';
+import { colors, radius, shadow, shadowSm } from '../theme';
 
 export type IconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -56,7 +56,7 @@ export function SectionHeader({ icon, title, subtitle }: { icon: IconName; title
   return (
     <View style={styles.sectionHeader}>
       <View style={styles.sectionIcon}>
-        <Ionicons name={icon} size={18} color={colors.primary} />
+        <Ionicons name={icon} size={17} color={colors.primary} />
       </View>
       <View style={styles.flex}>
         <Text style={styles.sectionTitle}>{title}</Text>
@@ -131,16 +131,34 @@ type FieldProps = TextInputProps & {
   icon?: IconName;
 };
 
-export function Field({ label, optionalLabel, error, helper, icon, style, ...rest }: FieldProps) {
+export function Field({ label, optionalLabel, error, helper, icon, style, onFocus, onBlur, ...rest }: FieldProps) {
+  const [focused, setFocused] = useState(false);
   return (
     <View style={styles.field}>
       <Text style={styles.label}>
         {label}
         {optionalLabel ? <Text style={styles.optional}>  ({optionalLabel})</Text> : null}
       </Text>
-      <View style={[styles.inputWrap, error ? { borderColor: colors.danger } : null]}>
+      <View
+        style={[
+          styles.inputWrap,
+          error ? { borderColor: colors.danger } : focused ? { borderColor: colors.primary } : null,
+        ]}
+      >
         {icon ? <Ionicons name={icon} size={18} color={colors.faint} style={{ marginRight: 8 }} /> : null}
-        <TextInput placeholderTextColor={colors.faint} style={[styles.input, style]} {...rest} />
+        <TextInput
+          placeholderTextColor={colors.faint}
+          style={[styles.input, style]}
+          onFocus={(e) => {
+            setFocused(true);
+            onFocus?.(e);
+          }}
+          onBlur={(e) => {
+            setFocused(false);
+            onBlur?.(e);
+          }}
+          {...rest}
+        />
       </View>
       {error ? <Text style={styles.error}>{error}</Text> : null}
       {!error && helper ? (
@@ -179,7 +197,7 @@ export function Chips<T extends string>({
             style={[styles.chip, selected && styles.chipSelected]}
           >
             {o.icon ? (
-              <Ionicons name={o.icon} size={16} color={selected ? colors.primary : colors.muted} />
+              <Ionicons name={o.icon} size={16} color={selected ? colors.white : colors.muted} />
             ) : null}
             <Text style={[styles.chipLabel, selected && styles.chipLabelSelected]}>{o.label}</Text>
           </Pressable>
@@ -213,6 +231,8 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
     borderRadius: radius.lg,
     padding: 16,
     gap: 12,
@@ -220,16 +240,16 @@ const styles = StyleSheet.create({
   },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 2 },
   sectionIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: radius.sm,
-    backgroundColor: colors.primarySoft,
+    width: 34,
+    height: 34,
+    borderRadius: radius.md,
+    backgroundColor: colors.primaryTint,
     alignItems: 'center',
     justifyContent: 'center',
   },
   sectionTitle: { fontSize: 16, fontWeight: '700', color: colors.text },
   sectionSubtitle: { fontSize: 12, color: colors.muted, marginTop: 1 },
-  title: { fontSize: 24, fontWeight: '700', color: colors.text },
+  title: { fontSize: 22, fontWeight: '700', color: colors.text },
   hint: { fontSize: 14, color: colors.muted },
   errorBox: {
     flexDirection: 'row',
@@ -245,13 +265,13 @@ const styles = StyleSheet.create({
   helper: { color: colors.success, fontSize: 13 },
   button: {
     minHeight: 52,
-    borderRadius: radius.md,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 16,
   },
   buttonRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  buttonPrimary: { backgroundColor: colors.primary },
+  buttonPrimary: { backgroundColor: colors.primary, ...shadowSm },
   buttonOutline: { borderWidth: 1.5, borderColor: colors.primary, backgroundColor: colors.card },
   buttonDanger: { borderWidth: 1.5, borderColor: colors.dangerSoft, backgroundColor: colors.dangerSoft },
   buttonTextOnly: { minHeight: 40 },
@@ -262,10 +282,11 @@ const styles = StyleSheet.create({
   inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
+    minHeight: 52,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.md,
-    backgroundColor: colors.background,
+    backgroundColor: colors.card,
     paddingHorizontal: 12,
   },
   input: { flex: 1, paddingVertical: 12, fontSize: 16, color: colors.text },
@@ -281,9 +302,9 @@ const styles = StyleSheet.create({
     paddingVertical: 9,
     backgroundColor: colors.card,
   },
-  chipSelected: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
-  chipLabel: { fontSize: 14, color: colors.text },
-  chipLabelSelected: { color: colors.primary, fontWeight: '700' },
+  chipSelected: { borderColor: colors.primary, backgroundColor: colors.primary },
+  chipLabel: { fontSize: 14, fontWeight: '600', color: colors.text },
+  chipLabelSelected: { color: colors.white, fontWeight: '700' },
   madeWrap: { alignItems: 'center', gap: 2, paddingVertical: 8 },
   made: { fontSize: 13, color: colors.muted, fontWeight: '600' },
   madeHindi: { fontSize: 12, color: colors.faint },

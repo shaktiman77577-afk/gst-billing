@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { InvoiceListRow } from '../db/invoices';
 import { formatDate } from '../lib/dates';
 import { formatPaise } from '../lib/money';
-import { colors, radius, shadow } from '../theme';
+import { colors, radius, shadowSm } from '../theme';
 import { StatusBadge } from './StatusBadge';
 
 export function BillRow({ bill, flat = false }: { bill: InvoiceListRow; flat?: boolean }) {
@@ -46,11 +46,19 @@ export function BillRow({ bill, flat = false }: { bill: InvoiceListRow; flat?: b
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 },
-  card: { backgroundColor: colors.card, borderRadius: radius.md, paddingHorizontal: 12, paddingVertical: 12, ...shadow },
+  card: {
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    ...shadowSm,
+  },
   flex: { flex: 1 },
   party: { fontSize: 15, fontWeight: '700', color: colors.text },
-  sub: { fontSize: 12, color: colors.muted, marginTop: 2 },
+  sub: { fontSize: 12.5, color: colors.muted, marginTop: 2 },
   right: { alignItems: 'flex-end', gap: 4 },
-  amount: { fontSize: 15, fontWeight: '800', color: colors.text },
-  due: { fontSize: 12, fontWeight: '700', color: '#B45309' },
+  amount: { fontSize: 16, fontWeight: '800', color: colors.text },
+  due: { fontSize: 12, fontWeight: '700', color: colors.warning },
 });

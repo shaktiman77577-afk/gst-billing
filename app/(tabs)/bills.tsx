@@ -45,7 +45,7 @@ export default function BillsScreen() {
 
   return (
     <View style={styles.flex}>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
       <Header title={t('tabBills')}>
         <SearchBar value={query} onChange={setQuery} placeholder={t('searchBills')} />
       </Header>

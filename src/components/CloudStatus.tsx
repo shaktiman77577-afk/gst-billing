@@ -8,9 +8,9 @@ import { IconName } from './ui';
 
 const LOOK: Record<SyncStatus, { icon: IconName; color: string; bg: string; key: StringKey }> = {
   synced: { icon: 'cloud-done', color: colors.success, bg: colors.successSoft, key: 'cloudSynced' },
-  pending: { icon: 'cloud-upload-outline', color: '#B45309', bg: colors.accentSoft, key: 'cloudPending' },
+  pending: { icon: 'cloud-upload-outline', color: colors.warning, bg: colors.accentSoft, key: 'cloudPending' },
   syncing: { icon: 'sync', color: colors.primary, bg: colors.primarySoft, key: 'cloudSyncing' },
-  offline: { icon: 'cloud-offline-outline', color: '#B45309', bg: colors.accentSoft, key: 'cloudOffline' },
+  offline: { icon: 'cloud-offline-outline', color: colors.warning, bg: colors.accentSoft, key: 'cloudOffline' },
   error: { icon: 'alert-circle-outline', color: colors.danger, bg: colors.dangerSoft, key: 'cloudError' },
   off: { icon: 'cloud-outline', color: colors.muted, bg: colors.border, key: 'cloudOff' },
 };
@@ -55,14 +55,14 @@ export function CloudStatusCard() {
   );
 }
 
-/** Small pill for the Home header. */
+/** Small pill for the light Home header. */
 export function CloudPill() {
   const { status } = useSync();
   if (status === 'off') return null;
   const look = LOOK[status];
   return (
     <View style={styles.pill}>
-      <Ionicons name={look.icon} size={14} color={colors.white} />
+      <Ionicons name={look.icon} size={15} color={look.color} />
     </View>
   );
 }
@@ -83,10 +83,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   pill: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: colors.primaryTint,
+    borderWidth: 1,
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },

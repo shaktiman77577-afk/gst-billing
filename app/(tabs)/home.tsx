@@ -17,7 +17,7 @@ import { useBusiness } from '../../src/hooks/useBusiness';
 import { StringKey } from '../../src/i18n/strings';
 import { monthStartIso } from '../../src/lib/dates';
 import { formatPaise } from '../../src/lib/money';
-import { colors, radius, shadow } from '../../src/theme';
+import { colors, radius, shadowSm } from '../../src/theme';
 
 function greetingKey(): StringKey {
   const h = new Date().getHours();
@@ -63,7 +63,7 @@ export default function HomeScreen() {
     {
       icon: 'add-circle',
       label: t('addItem'),
-      color: '#B45309',
+      color: colors.warning,
       bg: colors.accentSoft,
       onPress: () => router.push('/item/new'),
     },
@@ -71,9 +71,9 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.flex}>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
       <Header
-        subtitle={`${t(greetingKey())} 👋`}
+        subtitle={t(greetingKey())}
         title={business?.name ?? ''}
         right={
           <Pressable onPress={() => router.push('/settings/backup')} hitSlop={8}>
@@ -83,7 +83,7 @@ export default function HomeScreen() {
       >
         {business?.gstin ? (
           <View style={styles.gstChip}>
-            <Ionicons name="checkmark-circle" size={14} color={colors.accent} />
+            <Ionicons name="checkmark-circle" size={14} color={colors.primary} />
             <Text style={styles.gstText}>GSTIN {business.gstin}</Text>
           </View>
         ) : null}
@@ -91,27 +91,31 @@ export default function HomeScreen() {
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.stats}>
-          <View style={[styles.stat, { borderLeftColor: colors.success }]}>
-            <View style={styles.statTop}>
-              <Ionicons name="arrow-down-circle" size={18} color={colors.success} />
+          <View style={styles.stat}>
+            <View style={[styles.statIcon, { backgroundColor: colors.successSoft }]}>
+              <Ionicons name="arrow-down-circle" size={20} color={colors.success} />
+            </View>
+            <View style={styles.flexOnly}>
               <Text style={styles.statLabel}>{t('toCollect')}</Text>
+              <Text style={[styles.statValue, { color: colors.success }]}>{formatPaise(totals.toCollect)}</Text>
             </View>
-            <Text style={[styles.statValue, { color: colors.success }]}>{formatPaise(totals.toCollect)}</Text>
           </View>
-          <View style={[styles.stat, { borderLeftColor: colors.danger }]}>
-            <View style={styles.statTop}>
-              <Ionicons name="arrow-up-circle" size={18} color={colors.danger} />
-              <Text style={styles.statLabel}>{t('toPay')}</Text>
+          <View style={styles.stat}>
+            <View style={[styles.statIcon, { backgroundColor: colors.dangerSoft }]}>
+              <Ionicons name="arrow-up-circle" size={20} color={colors.danger} />
             </View>
-            <Text style={[styles.statValue, { color: colors.danger }]}>{formatPaise(totals.toPay)}</Text>
+            <View style={styles.flexOnly}>
+              <Text style={styles.statLabel}>{t('toPay')}</Text>
+              <Text style={[styles.statValue, { color: colors.danger }]}>{formatPaise(totals.toPay)}</Text>
+            </View>
           </View>
         </View>
 
         {remind ? (
           <Pressable style={styles.reminder} onPress={() => router.push('/settings/backup')}>
-            <Ionicons name="cloud-upload-outline" size={20} color="#B45309" />
+            <Ionicons name="cloud-upload-outline" size={20} color={colors.warning} />
             <Text style={styles.reminderText}>{t('backupReminder')}</Text>
-            <Ionicons name="chevron-forward" size={18} color="#B45309" />
+            <Ionicons name="chevron-forward" size={18} color={colors.warning} />
           </Pressable>
         ) : null}
 
@@ -152,7 +156,11 @@ export default function HomeScreen() {
           {recent.length === 0 ? (
             <EmptyState icon="receipt-outline" title={t('noBillsYet')} hint={t('noBillsHint')} />
           ) : (
-            recent.map((b) => <BillRow key={b.id} bill={b} flat />)
+            recent.map((b, i) => (
+              <View key={b.id} style={i < recent.length - 1 ? styles.rowSep : undefined}>
+                <BillRow bill={b} flat />
+              </View>
+            ))
           )}
         </Card>
       </ScrollView>
@@ -163,76 +171,92 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.background },
   flexOnly: { flex: 1 },
-  reminder: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: colors.accentSoft,
-    borderRadius: radius.md,
-    padding: 12,
-  },
-  reminderText: { flex: 1, fontSize: 13, color: '#92400E', fontWeight: '600' },
-  monthCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: colors.card,
-    borderRadius: radius.lg,
-    padding: 14,
-    ...shadow,
-  },
-  monthIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.md,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  monthValue: { fontSize: 20, fontWeight: '800', color: colors.text, marginTop: 2 },
-  monthCount: { fontSize: 12, color: colors.muted, fontWeight: '600' },
   content: { padding: 16, gap: 14, paddingBottom: 32 },
   gstChip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: colors.primaryTint,
+    borderWidth: 1,
+    borderColor: colors.border,
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: radius.pill,
   },
-  gstText: { color: colors.white, fontSize: 12, fontWeight: '600', letterSpacing: 0.3 },
+  gstText: { color: colors.primary, fontSize: 12, fontWeight: '600', letterSpacing: 0.3 },
   stats: { flexDirection: 'row', gap: 12 },
   stat: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
     backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
     borderRadius: radius.lg,
     padding: 14,
-    gap: 6,
-    borderLeftWidth: 4,
-    ...shadow,
+    ...shadowSm,
   },
-  statTop: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  statLabel: { fontSize: 13, color: colors.muted, fontWeight: '600' },
-  statValue: { fontSize: 20, fontWeight: '800' },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: colors.text, marginTop: 4 },
-  actions: { flexDirection: 'row', gap: 12 },
-  action: {
-    flex: 1,
-    backgroundColor: colors.card,
-    borderRadius: radius.lg,
-    paddingVertical: 14,
-    alignItems: 'center',
-    gap: 8,
-    ...shadow,
-  },
-  actionIcon: {
-    width: 48,
-    height: 48,
+  statIcon: {
+    width: 40,
+    height: 40,
     borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  actionLabel: { fontSize: 13, fontWeight: '600', color: colors.text },
+  statLabel: { fontSize: 12, color: colors.muted, fontWeight: '600' },
+  statValue: { fontSize: 20, fontWeight: '800', marginTop: 2 },
+  reminder: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: colors.accentSoft,
+    borderRadius: 14,
+    padding: 12,
+  },
+  reminderText: { flex: 1, fontSize: 13, color: colors.warning, fontWeight: '600' },
+  monthCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    padding: 14,
+    ...shadowSm,
+  },
+  monthIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.md,
+    backgroundColor: colors.primaryTint,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  monthValue: { fontSize: 20, fontWeight: '800', color: colors.text, marginTop: 2 },
+  monthCount: { fontSize: 12, color: colors.muted, fontWeight: '600' },
+  sectionTitle: { fontSize: 15, fontWeight: '700', letterSpacing: 0.2, color: colors.muted, marginTop: 4 },
+  actions: { flexDirection: 'row', gap: 12 },
+  action: {
+    flex: 1,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    paddingVertical: 14,
+    alignItems: 'center',
+    gap: 8,
+    ...shadowSm,
+  },
+  actionIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionLabel: { fontSize: 12.5, fontWeight: '600', color: colors.text },
+  rowSep: { borderBottomWidth: 1, borderBottomColor: colors.border },
 });

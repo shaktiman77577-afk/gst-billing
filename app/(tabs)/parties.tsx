@@ -55,7 +55,7 @@ export default function PartiesScreen() {
 
   return (
     <View style={styles.flex}>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
       <Header title={t('tabParties')}>
         <SearchBar value={query} onChange={setQuery} placeholder={t('searchParties')} />
       </Header>

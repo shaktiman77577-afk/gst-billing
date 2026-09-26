@@ -47,7 +47,7 @@ export default function ItemsScreen() {
 
   return (
     <View style={styles.flex}>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
       <Header title={t('tabItems')}>
         <SearchBar value={query} onChange={setQuery} placeholder={t('searchItems')} />
       </Header>
