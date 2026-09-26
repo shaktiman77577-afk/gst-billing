@@ -1,7 +1,8 @@
 // GSTR-1 CSV export (Feature F2) — invoice-wise export for the user's CA.
 //
-// One CSV, two sections marked by the `section` column:
-//   B2B  — live tax invoices: kind='invoice', doc_type='tax_invoice'
+// One CSV, three sections marked by the `section` column:
+//   B2B  — live tax invoices to GST-registered parties (party has a GSTIN)
+//   B2C  — live tax invoices to unregistered parties / consumers (no GSTIN)
 //   CDNR — live credit notes: kind='credit_note', all money values NEGATED
 //          so the CA can sum the whole sheet directly (see NOTES.md).
 //
@@ -16,7 +17,11 @@ import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-export type Gstr1Section = 'B2B' | 'CDNR';
+// Real GSTR-1 sections: B2B = supplies to GST-registered parties (has a
+// GSTIN), B2C = supplies to unregistered/consumers (no GSTIN), CDNR =
+// credit notes issued. Never label a no-GSTIN bill as B2B — the CA needs
+// the split to file correctly.
+export type Gstr1Section = 'B2B' | 'B2C' | 'CDNR';
 
 export type Gstr1Row = {
   section: Gstr1Section;
@@ -67,7 +72,8 @@ function toRow(r: DbRow, section: Gstr1Section, negate: boolean): Gstr1Row {
   };
 }
 
-// Returns B2B rows first (oldest first), then CDNR rows (oldest first).
+// Returns B2B rows first (oldest first), then B2C (oldest first), then
+// CDNR rows (oldest first).
 export async function fetchGstr1Rows(db: SQLiteDatabase, businessId: string): Promise<Gstr1Row[]> {
   const invoices = await db.getAllAsync<DbRow>(
     `SELECT ${COLS} FROM invoices
@@ -81,10 +87,14 @@ export async function fetchGstr1Rows(db: SQLiteDatabase, businessId: string): Pr
      ORDER BY invoice_date ASC, invoice_no ASC`,
     businessId,
   );
-  return [
-    ...invoices.map((r) => toRow(r, 'B2B', false)),
-    ...creditNotes.map((r) => toRow(r, 'CDNR', true)),
-  ];
+  const b2b: Gstr1Row[] = [];
+  const b2c: Gstr1Row[] = [];
+  for (const r of invoices) {
+    // A GSTIN on the party = registered recipient = B2B; otherwise B2C.
+    const section: Gstr1Section = r.party_gstin && r.party_gstin.trim() ? 'B2B' : 'B2C';
+    (section === 'B2B' ? b2b : b2c).push(toRow(r, section, false));
+  }
+  return [...b2b, ...b2c, ...creditNotes.map((r) => toRow(r, 'CDNR', true))];
 }
 
 // Paise -> "1234.56" at the CSV boundary. Negated rows print "-12.50".

@@ -28,8 +28,11 @@ export function formatRange(from: string, to: string): string {
 }
 
 // Real sale bills only: invoices (not credit notes), both doc types,
-// never cancelled or soft-deleted.
-const LIVE_SALE = `kind = 'invoice' AND doc_type IN ('tax_invoice', 'bill_of_supply') AND cancelled_at IS NULL AND deleted_at IS NULL`;
+// never cancelled or soft-deleted. Takes a table qualifier because every
+// predicate must stay unambiguous when invoices is joined (both invoices
+// and invoice_items have a deleted_at column).
+const LIVE_SALE = (t: string) =>
+  `${t}.kind = 'invoice' AND ${t}.doc_type IN ('tax_invoice', 'bill_of_supply') AND ${t}.cancelled_at IS NULL AND ${t}.deleted_at IS NULL`;
 
 export type SalesSummary = {
   totalPaise: number;
@@ -50,7 +53,7 @@ export async function salesSummary(
             COALESCE(SUM(cgst_paise + sgst_paise + igst_paise), 0) AS taxPaise,
             COALESCE(SUM(taxable_paise), 0) AS taxablePaise
      FROM invoices
-     WHERE business_id = ? AND ${LIVE_SALE} AND invoice_date >= ? AND invoice_date <= ?`,
+     WHERE invoices.business_id = ? AND ${LIVE_SALE('invoices')} AND invoices.invoice_date >= ? AND invoices.invoice_date <= ?`,
     businessId,
     from,
     to,
@@ -67,7 +70,8 @@ export type GstRateRow = {
 };
 
 // Per-rate breakup derived from invoice lines. Intra-state tax is split
-// evenly into CGST/SGST (the odd paise, if any, goes to SGST).
+// evenly into CGST/SGST — the same Math.round(tax / 2) split the bill's
+// canonical GST calculation uses, so the report always matches the bill.
 export async function gstSummary(
   db: SQLiteDatabase,
   businessId: string,
@@ -81,7 +85,7 @@ export async function gstSummary(
             COALESCE(SUM(CASE WHEN i.is_igst = 0 THEN li.tax_paise ELSE 0 END), 0) AS intraTaxPaise
      FROM invoice_items li
      JOIN invoices i ON i.id = li.invoice_id
-     WHERE i.business_id = ? AND i.${LIVE_SALE} AND li.deleted_at IS NULL
+     WHERE i.business_id = ? AND ${LIVE_SALE('i')} AND li.deleted_at IS NULL
        AND i.invoice_date >= ? AND i.invoice_date <= ?
      GROUP BY li.gst_rate
      ORDER BY li.gst_rate ASC`,
@@ -116,7 +120,7 @@ export async function topItems(
             COALESCE(SUM(li.amount_paise), 0) AS amountPaise
      FROM invoice_items li
      JOIN invoices i ON i.id = li.invoice_id
-     WHERE i.business_id = ? AND i.${LIVE_SALE} AND li.deleted_at IS NULL
+     WHERE i.business_id = ? AND ${LIVE_SALE('i')} AND li.deleted_at IS NULL
        AND i.invoice_date >= ? AND i.invoice_date <= ?
      GROUP BY li.name
      ORDER BY amountPaise DESC
@@ -140,8 +144,8 @@ export async function topParties(
   return db.getAllAsync<TopParty>(
     `SELECT party_name AS name, COALESCE(SUM(total_paise), 0) AS amountPaise
      FROM invoices
-     WHERE business_id = ? AND ${LIVE_SALE} AND invoice_date >= ? AND invoice_date <= ?
-     GROUP BY party_name
+     WHERE invoices.business_id = ? AND ${LIVE_SALE('invoices')} AND invoices.invoice_date >= ? AND invoices.invoice_date <= ?
+     GROUP BY invoices.party_name
      ORDER BY amountPaise DESC
      LIMIT ?`,
     businessId,
@@ -158,7 +162,7 @@ export async function receivablesTotal(db: SQLiteDatabase, businessId: string): 
                               THEN total_paise - received_paise - credited_paise
                               ELSE 0 END), 0) AS total
      FROM invoices
-     WHERE business_id = ? AND ${LIVE_SALE}`,
+     WHERE invoices.business_id = ? AND ${LIVE_SALE('invoices')}`,
     businessId,
   );
   return row?.total ?? 0;
@@ -177,8 +181,8 @@ export async function billsInRange(
   return db.getAllAsync<InvoiceListRow>(
     `SELECT ${BILL_COLS}
      FROM invoices
-     WHERE business_id = ? AND ${LIVE_SALE} AND invoice_date >= ? AND invoice_date <= ?
-     ORDER BY invoice_date DESC, created_at DESC
+     WHERE invoices.business_id = ? AND ${LIVE_SALE('invoices')} AND invoices.invoice_date >= ? AND invoices.invoice_date <= ?
+     ORDER BY invoices.invoice_date DESC, invoices.created_at DESC
      LIMIT ?`,
     businessId,
     from,

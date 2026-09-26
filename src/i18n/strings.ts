@@ -253,7 +253,7 @@ const en = {
   // GSTR-1 CSV export (F2)
   g1_exportTitle: 'GSTR-1 CSV export',
   g1_export: 'Export GSTR-1 CSV',
-  g1_exportHint: 'Invoice-wise CSV for your CA: live B2B bills plus credit notes (CDNR, shown negative). Works offline.',
+  g1_exportHint: 'Invoice-wise CSV for your CA: live B2B and B2C bills plus credit notes (CDNR, shown negative). Works offline.',
   g1_doneTitle: 'CSV ready',
   g1_done: 'The GSTR-1 CSV has been created — share it with your CA.',
   g1_noDataTitle: 'Nothing to export',
@@ -728,7 +728,7 @@ const hi: Record<StringKey, string> = {
   // GSTR-1 CSV export (F2)
   g1_exportTitle: 'GSTR-1 CSV export',
   g1_export: 'GSTR-1 CSV export karein',
-  g1_exportHint: 'CA ke liye invoice-wise CSV: live B2B bill aur credit notes (CDNR, minus me). Bina internet ke chalega.',
+  g1_exportHint: 'CA ke liye invoice-wise CSV: live B2B aur B2C bill aur credit notes (CDNR, minus me). Bina internet ke chalega.',
   g1_doneTitle: 'CSV taiyaar hai',
   g1_done: 'GSTR-1 CSV ban gaya hai — ise apne CA ko bhejein.',
   g1_noDataTitle: 'Export karne ko kuch nahi',
