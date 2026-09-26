@@ -12,10 +12,11 @@ import { Card, IconName } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import { needsBackupReminder } from '../../src/db/backup';
 import { InvoiceListRow, listInvoices, salesSummary } from '../../src/db/invoices';
+import { totalExpenses } from '../../src/db/expenses';
 import { partyTotals } from '../../src/db/parties';
 import { useBusiness } from '../../src/hooks/useBusiness';
 import { StringKey } from '../../src/i18n/strings';
-import { monthStartIso } from '../../src/lib/dates';
+import { monthStartIso, todayIso } from '../../src/lib/dates';
 import { formatPaise } from '../../src/lib/money';
 import { colors, radius, shadowSm } from '../../src/theme';
 
@@ -33,6 +34,7 @@ export default function HomeScreen() {
   const [totals, setTotals] = useState({ toCollect: 0, toPay: 0 });
   const [recent, setRecent] = useState<InvoiceListRow[]>([]);
   const [month, setMonth] = useState({ total: 0, count: 0 });
+  const [monthExp, setMonthExp] = useState(0);
   const [remind, setRemind] = useState(false);
 
   useFocusEffect(
@@ -41,6 +43,7 @@ export default function HomeScreen() {
       partyTotals(db, businessId).then(setTotals);
       listInvoices(db, businessId, 5).then(setRecent);
       salesSummary(db, businessId, monthStartIso()).then(setMonth);
+      totalExpenses(db, businessId, monthStartIso(), todayIso()).then(setMonthExp);
       needsBackupReminder(db, businessId).then(setRemind);
     }, [db, businessId]),
   );
@@ -68,6 +71,8 @@ export default function HomeScreen() {
       onPress: () => router.push('/item/new'),
     },
   ];
+
+  const profit = month.total - monthExp;
 
   return (
     <View style={styles.flex}>
@@ -132,6 +137,26 @@ export default function HomeScreen() {
           </Text>
           <Ionicons name="chevron-forward" size={18} color={colors.faint} />
         </Pressable>
+
+        <View style={styles.monthCard}>
+          <View style={styles.monthIcon}>
+            <Ionicons name="wallet-outline" size={22} color={colors.primary} />
+          </View>
+          <View style={styles.flexOnly}>
+            <Text style={styles.statLabel}>{t('e_profitMonth')}</Text>
+            <Text style={[styles.monthValue, { color: profit >= 0 ? colors.success : colors.danger }]}>
+              {formatPaise(profit)}
+            </Text>
+          </View>
+          <View style={styles.profitBreak}>
+            <Text style={styles.profitLine}>
+              {t('thisMonthSales')}: {formatPaise(month.total)}
+            </Text>
+            <Text style={styles.profitLine}>
+              {t('e_expenses')}: {formatPaise(monthExp)}
+            </Text>
+          </View>
+        </View>
 
         <Text style={styles.sectionTitle}>{t('quickActions')}</Text>
         <View style={styles.actions}>
@@ -237,6 +262,8 @@ const styles = StyleSheet.create({
   },
   monthValue: { fontSize: 20, fontWeight: '800', color: colors.text, marginTop: 2 },
   monthCount: { fontSize: 12, color: colors.muted, fontWeight: '600' },
+  profitBreak: { alignItems: 'flex-end' },
+  profitLine: { fontSize: 11, color: colors.muted, fontWeight: '600', marginTop: 2 },
   sectionTitle: { fontSize: 15, fontWeight: '700', letterSpacing: 0.2, color: colors.muted, marginTop: 4 },
   actions: { flexDirection: 'row', gap: 12 },
   action: {

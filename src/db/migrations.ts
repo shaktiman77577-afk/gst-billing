@@ -197,6 +197,24 @@ const MIGRATIONS: string[] = [
   CREATE INDEX IF NOT EXISTS idx_invoices_kind_seq ON invoices(business_id, kind, fy, seq);
   CREATE INDEX IF NOT EXISTS idx_invoices_ref ON invoices(ref_invoice_id);
   `,
+
+  // v7: expenses (kharcha tracking). Money is stored in paise (integer).
+  `
+  CREATE TABLE IF NOT EXISTS expenses (
+    id TEXT PRIMARY KEY NOT NULL,
+    business_id TEXT NOT NULL,
+    date TEXT NOT NULL,
+    category TEXT NOT NULL,
+    amount_paise INTEGER NOT NULL,
+    note TEXT,
+    payment_mode TEXT NOT NULL DEFAULT 'cash',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    deleted_at TEXT
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_expenses_business_date ON expenses(business_id, date);
+  `,
 ];
 
 export async function migrateDb(db: SQLiteDatabase): Promise<void> {

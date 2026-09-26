@@ -97,6 +97,17 @@ export default function MoreScreen() {
             <Ionicons name="chevron-forward" size={18} color={colors.faint} />
           </Pressable>
           <View style={styles.sep} />
+          <Pressable style={styles.row} onPress={() => router.push('/expenses')}>
+            <View style={styles.rowIcon}>
+              <Ionicons name="wallet" size={18} color={colors.primary} />
+            </View>
+            <View style={styles.flexOnly}>
+              <Text style={styles.rowText}>{t('e_expenses')}</Text>
+              <Text style={styles.meta}>{t('e_expensesHint')}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.faint} />
+          </Pressable>
+          <View style={styles.sep} />
           <View style={styles.row}>
             <View style={styles.rowIcon}>
               <Ionicons name="language" size={18} color={colors.primary} />
