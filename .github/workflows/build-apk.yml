@@ -46,6 +46,9 @@ jobs:
         working-directory: android
         run: ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a --no-daemon
 
+      - name: Show signing SHA-1 (add this in Firebase)
+        run: keytool -list -v -keystore android/app/debug.keystore -storepass android -alias androiddebugkey | grep -E 'SHA1|SHA256'
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:

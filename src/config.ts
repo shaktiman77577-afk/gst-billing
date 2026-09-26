@@ -1,7 +1,5 @@
-// Supabase project details.
-// Supabase dashboard → Project Settings → API (or "API Keys").
-// Paste the Project URL and the anon / publishable key here.
-// The anon/publishable key is meant to be inside apps, so this is safe.
-
-export const SUPABASE_URL = 'https://YOUR-PROJECT-ID.supabase.co';
-export const SUPABASE_ANON_KEY = 'PASTE-YOUR-ANON-OR-PUBLISHABLE-KEY-HERE';
+// Google login settings (Firebase project: gst-billing-6af3d).
+// This is the "Web client ID" (client_type 3) from google-services.json.
+// Google login needs it to get a login token for Firebase.
+export const GOOGLE_WEB_CLIENT_ID =
+  '643161340591-gdgvp5iici529nc9gs0rb2e8cr7aignd.apps.googleusercontent.com';

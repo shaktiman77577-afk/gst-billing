@@ -1,6 +1,6 @@
 {
   "name": "gst-billing",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "main": "expo-router/entry",
   "scripts": {
@@ -8,8 +8,9 @@
     "android": "expo run:android"
   },
   "dependencies": {
-    "@react-native-async-storage/async-storage": "*",
-    "@supabase/supabase-js": "^2.0.0",
+    "@react-native-firebase/app": "*",
+    "@react-native-firebase/auth": "*",
+    "@react-native-google-signin/google-signin": "*",
     "expo": "~57.0.0",
     "expo-constants": "*",
     "expo-crypto": "*",
@@ -20,8 +21,7 @@
     "react": "~19.2.0",
     "react-native": "~0.86.0",
     "react-native-safe-area-context": "*",
-    "react-native-screens": "*",
-    "react-native-url-polyfill": "*"
+    "react-native-screens": "*"
   },
   "devDependencies": {
     "@types/react": "~19.2.0",

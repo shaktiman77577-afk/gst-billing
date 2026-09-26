@@ -3,14 +3,20 @@
     "name": "GST Billing",
     "slug": "gst-billing",
     "scheme": "gstbilling",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
-    "plugins": ["expo-router", "expo-sqlite"],
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
+      "@react-native-firebase/app",
+      "@react-native-firebase/auth"
+    ],
     "android": {
       "package": "com.gstbilling.invoicemaker",
-      "versionCode": 2,
-      "softwareKeyboardLayoutMode": "resize"
+      "versionCode": 3,
+      "softwareKeyboardLayoutMode": "resize",
+      "googleServicesFile": "./google-services.json"
     }
   }
 }

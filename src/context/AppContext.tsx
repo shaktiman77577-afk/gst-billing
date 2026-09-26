@@ -3,7 +3,7 @@ import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, 
 import { getFirstBusinessForUser } from '../db/businesses';
 import { getMeta, setMeta } from '../db/meta';
 import { Language, STRINGS, StringKey } from '../i18n/strings';
-import { supabase } from '../lib/supabase';
+import { logoutGoogle } from '../lib/auth';
 
 type AppState = {
   ready: boolean;
@@ -79,11 +79,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(async () => {
-    try {
-      await supabase.auth.signOut({ scope: 'local' });
-    } catch {
-      // Offline logout is fine; the local login is cleared below.
-    }
+    await logoutGoogle();
     await setMeta(db, 'user_id', null);
     await setMeta(db, 'email', null);
     await setMeta(db, 'active_business_id', null);
