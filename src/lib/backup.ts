@@ -347,6 +347,27 @@ export function markDirty(db: SQLiteDatabase): void {
 }
 
 /**
+ * App-background flush: clears the pending debounce timer (if any) and runs
+ * the pending dirty backup immediately, fire-and-forget. Without this, data
+ * changed just before the app is backgrounded/killed would wait for the
+ * 60s timer that never fires while suspended. Never throws.
+ */
+export function flushPendingBackupNow(): void {
+  try {
+    if (dirtyTimer) {
+      clearTimeout(dirtyTimer);
+      dirtyTimer = null;
+    }
+    if (!dirtyDb) return;
+    const target = dirtyDb;
+    dirtyDb = null;
+    void flushDirtyBackup(target);
+  } catch {
+    // ignore
+  }
+}
+
+/**
  * App-foreground retry point: runs the pending dirty backup now, but only
  * when its debounce timer already fired (i.e. a previous upload failed and
  * the flag is still set). When the timer is still pending, it fires on its
