@@ -10,10 +10,12 @@ import { Button, Card, MadeInIndia } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import { stateName } from '../../src/data/states';
 import { useBusiness } from '../../src/hooks/useBusiness';
+import { parity_recycle } from '../../src/i18n/parity_recycle';
 import { colors, radius, text } from '../../src/theme';
 
 export default function MoreScreen() {
-  const { t, email, logout } = useApp();
+  const { t, email, logout, language } = useApp();
+  const rtr = parity_recycle[language ?? 'en'];
   const business = useBusiness();
   const version = Constants.expoConfig?.version ?? '';
 
@@ -93,6 +95,17 @@ export default function MoreScreen() {
             <View style={styles.flexOnly}>
               <Text style={styles.rowText}>{t('mem_title')}</Text>
               <Text style={styles.meta}>{t('mem_rowHint')}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.faint} />
+          </Pressable>
+          <View style={styles.sep} />
+          <Pressable style={styles.row} onPress={() => router.push('/settings/recycle')}>
+            <View style={styles.rowIcon}>
+              <Ionicons name="trash-bin-outline" size={18} color={colors.primary} />
+            </View>
+            <View style={styles.flexOnly}>
+              <Text style={styles.rowText}>{rtr.rc_menuTitle}</Text>
+              <Text style={styles.meta}>{rtr.rc_menuHint}</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.faint} />
           </Pressable>
