@@ -2,7 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
-import { StyleSheet, View, Alert } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { FormHeader } from '../src/components/FormHeader';
 import { LanguageToggle } from '../src/components/LanguageToggle';
 import { StatePicker } from '../src/components/StatePicker';
@@ -10,6 +10,7 @@ import {
   Button,
   Card,
   Chips,
+  ErrorText,
   Field,
   Hint,
   Label,
@@ -21,7 +22,7 @@ import {
 import { useApp } from '../src/context/AppContext';
 import { BusinessType, createBusiness, updateBusiness } from '../src/db/businesses';
 import { useBusiness } from '../src/hooks/useBusiness';
-import { supabase } from '../src/lib/supabase';
+import { loginWithGoogle } from '../src/lib/auth';
 import {
   isValidGstin,
   normalizeGstin,
@@ -38,7 +39,7 @@ const clean = (v: string) => {
 
 export default function BusinessSetupScreen() {
   const db = useSQLiteContext();
-  const { t, userId, businessId, setActiveBusiness } = useApp();
+  const { t, userId, businessId, setActiveBusiness, completeLogin } = useApp();
   const { edit } = useLocalSearchParams<{ edit?: string }>();
   const isEdit = edit === '1';
   const existing = useBusiness();
@@ -56,6 +57,8 @@ export default function BusinessSetupScreen() {
   const [businessType, setBusinessType] = useState<BusinessType>('retail');
   const [errors, setErrors] = useState<Errors>({});
   const [saving, setSaving] = useState(false);
+  const [loggingIn, setLoggingIn] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   // Editing: fill the form with the saved business once.
   useEffect(() => {
@@ -73,19 +76,27 @@ export default function BusinessSetupScreen() {
     setPrefilled(true);
   }, [isEdit, existing, prefilled]);
 
-  // Cloud restore entry: only useful when logged in with Google (the cloud
-  // backup list lives on the Backup screen). No session → hide the button.
-  const goCloudRestore = async () => {
+  // Google login on the setup screen: after login the cloud is checked
+  // silently (full backup first, business profile as fallback) and the user
+  // lands on the home screen when their data is found. Otherwise they stay
+  // here and fill the form manually below.
+  const onGoogleLogin = async () => {
+    setLoginError(null);
+    setLoggingIn(true);
     try {
-      const { data } = await supabase.auth.getSession();
-      if (data.session) {
-        router.push('/settings/backup');
+      const result = await loginWithGoogle();
+      if (!result.ok) {
+        if (result.reason === 'cancelled') return;
+        if (result.reason === 'noInternet') setLoginError(t('noInternet'));
+        else if (result.reason === 'noPlayServices') setLoginError(t('noPlayServices'));
+        else setLoginError(t('somethingWrong'));
         return;
       }
-    } catch {
-      // fall through to the "not logged in" message
+      await completeLogin(result.uid, result.email);
+      router.replace('/');
+    } finally {
+      setLoggingIn(false);
     }
-    Alert.alert(t('bk_cloudTitle'), t('bk_noSession'));
   };
 
   const gstinOk = gstRegistered === 'yes' && isValidGstin(gstin);
@@ -170,13 +181,18 @@ export default function BusinessSetupScreen() {
             <LanguageToggle />
           </View>
         )}
-        {isEdit || !userId ? null : (
-          <Button
-            variant="outline"
-            icon="cloud-download-outline"
-            label={t('restore')}
-            onPress={goCloudRestore}
-          />
+        {isEdit || userId ? null : (
+          <Card>
+            <Button
+              icon="logo-google"
+              label={t('setupGoogleCta')}
+              onPress={onGoogleLogin}
+              loading={loggingIn}
+            />
+            <Hint>{t('setupGoogleHint')}</Hint>
+            <ErrorText>{loginError}</ErrorText>
+            <Hint>{t('setupManualFallback')}</Hint>
+          </Card>
         )}
 
       <Card>

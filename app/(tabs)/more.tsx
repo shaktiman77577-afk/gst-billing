@@ -3,7 +3,6 @@ import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { CloudStatusCard } from '../../src/components/CloudStatus';
 import { Header } from '../../src/components/Header';
 import { LanguageToggle } from '../../src/components/LanguageToggle';
 import { Button, Card, MadeInIndia } from '../../src/components/ui';
@@ -60,10 +59,6 @@ export default function MoreScreen() {
         </Card>
 
         <Card>
-          <CloudStatusCard />
-        </Card>
-
-        <Card>
           <Pressable style={styles.row} onPress={() => router.push('/settings/bill')}>
             <View style={styles.rowIcon}>
               <Ionicons name="document-text" size={18} color={colors.primary} />
@@ -71,17 +66,6 @@ export default function MoreScreen() {
             <View style={styles.flexOnly}>
               <Text style={styles.rowText}>{t('billSettings')}</Text>
               <Text style={styles.meta}>{t('billDesignHint')}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.faint} />
-          </Pressable>
-          <View style={styles.sep} />
-          <Pressable style={styles.row} onPress={() => router.push('/settings/backup')}>
-            <View style={styles.rowIcon}>
-              <Ionicons name="cloud-upload" size={18} color={colors.primary} />
-            </View>
-            <View style={styles.flexOnly}>
-              <Text style={styles.rowText}>{t('backup')}</Text>
-              <Text style={styles.meta}>{t('backupHint')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.faint} />
           </Pressable>

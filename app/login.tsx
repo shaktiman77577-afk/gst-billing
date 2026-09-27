@@ -1,17 +1,14 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useSQLiteContext } from 'expo-sqlite';
 import { useState } from 'react';
-import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LanguageToggle } from '../src/components/LanguageToggle';
 import { ErrorText, IconName, MadeInIndia } from '../src/components/ui';
 import { useApp } from '../src/context/AppContext';
 import { StringKey } from '../src/i18n/strings';
-import { getFirstBusinessForUser } from '../src/db/businesses';
 import { loginWithGoogle } from '../src/lib/auth';
-import { pullChanges, syncEnabled } from '../src/sync/engine';
 import { colors, radius, shadow } from '../src/theme';
 
 const BENEFITS: { icon: IconName; key: StringKey }[] = [
@@ -21,30 +18,10 @@ const BENEFITS: { icon: IconName; key: StringKey }[] = [
 ];
 
 export default function LoginScreen() {
-  const db = useSQLiteContext();
-  const { t, completeLogin, setActiveBusiness } = useApp();
+  const { t, completeLogin } = useApp();
   const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(false);
-
-  // New phone: bring back this account's business and bills from the cloud.
-  const restoreFromCloud = async (uid: string): Promise<void> => {
-    setChecking(true);
-    try {
-      await pullChanges(db, uid);
-      const b = await getFirstBusinessForUser(db, uid);
-      if (b) await setActiveBusiness(b.id);
-      router.replace('/');
-    } catch {
-      setChecking(false);
-      Alert.alert(t('cloudBackup'), t('cloudCheckFailed'), [
-        { text: t('continueSetup'), onPress: () => router.replace('/') },
-        { text: t('retry'), onPress: () => restoreFromCloud(uid) },
-      ]);
-      return;
-    }
-    setChecking(false);
-  };
   const [error, setError] = useState<string | null>(null);
 
   const onGoogle = async () => {
@@ -53,10 +30,14 @@ export default function LoginScreen() {
     try {
       const result = await loginWithGoogle();
       if (result.ok) {
-        const existing = await completeLogin(result.uid, result.email);
-        if (!existing && syncEnabled()) {
-          await restoreFromCloud(result.uid);
-          return;
+        // completeLogin records the identity and silently restores the cloud
+        // (full backup first, business profile as fallback) when this phone
+        // has no business yet. Local data is never overwritten.
+        setChecking(true);
+        try {
+          await completeLogin(result.uid, result.email);
+        } finally {
+          setChecking(false);
         }
         router.replace('/');
         return;

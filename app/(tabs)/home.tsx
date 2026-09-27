@@ -5,7 +5,6 @@ import { StatusBar } from 'expo-status-bar';
 import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { BillRow } from '../../src/components/BillRow';
-import { CloudPill } from '../../src/components/CloudStatus';
 import { DateRangeButton } from '../../src/components/DateRangeButton';
 import { DateRangePicker } from '../../src/components/DateRangePicker';
 import { EmptyState } from '../../src/components/EmptyState';
@@ -13,7 +12,6 @@ import { GstDeadlinesCard } from '../../src/components/GstDeadlinesCard';
 import { Header } from '../../src/components/Header';
 import { Card, IconName } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
-import { getMeta } from '../../src/db/meta';
 import { InvoiceListRow, listInvoices, salesSummary } from '../../src/db/invoices';
 import { totalExpenses } from '../../src/db/expenses';
 import { partyTotals } from '../../src/db/parties';
@@ -40,7 +38,6 @@ export default function HomeScreen() {
   const [recent, setRecent] = useState<InvoiceListRow[]>([]);
   const [month, setMonth] = useState({ total: 0, count: 0 });
   const [monthExp, setMonthExp] = useState(0);
-  const [remind, setRemind] = useState(false);
   const [alerts, setAlerts] = useState({ lowStock: 0, overdueCount: 0, overdueTotal: 0 });
   // Last chosen range for this screen (useState only — no schema changes).
   // Null = unfiltered, showing the 5 most recent bills as before.
@@ -72,11 +69,6 @@ export default function HomeScreen() {
       }
       salesSummary(db, businessId, monthStartIso()).then(setMonth);
       totalExpenses(db, businessId, monthStartIso(), todayIso()).then(setMonthExp);
-      // Remind when no cloud backup has succeeded in 7 days (backupNow stamps
-      // last_backup_at; change-triggered and manual uploads both count).
-      getMeta(db, 'last_backup_at').then((last) => {
-        setRemind(!last || Date.now() - new Date(last).getTime() > 7 * 86400000);
-      });
       getAlertCounts(db, businessId, todayIso()).then(setAlerts);
     }, [db, businessId, txRange]),
   );
@@ -113,11 +105,6 @@ export default function HomeScreen() {
       <Header
         subtitle={t(greetingKey())}
         title={business?.name ?? ''}
-        right={
-          <Pressable onPress={() => router.push('/settings/backup')} hitSlop={8}>
-            <CloudPill />
-          </Pressable>
-        }
       >
         {business?.gstin ? (
           <View style={styles.gstChip}>
@@ -165,14 +152,6 @@ export default function HomeScreen() {
             <Text style={[styles.payLabel, { color: colors.danger }]}>{t('paymentOutAction')}</Text>
           </Pressable>
         </View>
-
-        {remind ? (
-          <Pressable style={styles.reminder} onPress={() => router.push('/settings/backup')}>
-            <Ionicons name="cloud-upload-outline" size={20} color={colors.warning} />
-            <Text style={styles.reminderText}>{t('backupReminder')}</Text>
-            <Ionicons name="chevron-forward" size={18} color={colors.warning} />
-          </Pressable>
-        ) : null}
 
         {(alerts.lowStock > 0 || alerts.overdueCount > 0) ? (
           <View>
@@ -353,17 +332,6 @@ const styles = StyleSheet.create({
     ...shadowSm,
   },
   payLabel: { fontSize: text.md, fontWeight: '700' },
-  reminder: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: colors.accentSoft,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    padding: 12,
-  },
-  reminderText: { flex: 1, fontSize: text.sm, color: colors.warning, fontWeight: '600' },
   alerts: { gap: 10 },
   alertCard: {
     flexDirection: 'row',

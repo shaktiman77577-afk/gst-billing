@@ -29,6 +29,9 @@ const en = {
   // Business setup
   setupTitle: 'Set up your business',
   setupHint: 'These details will appear on your bills. You can edit them later.',
+  setupGoogleCta: 'Continue with Google — old data restores automatically',
+  setupGoogleHint: 'Used the app on another phone? Log in and your business, bills and items come back by themselves.',
+  setupManualFallback: 'New here? Fill your details below.',
   sectionBusiness: 'Business details',
   sectionGst: 'GST details',
   sectionAddress: 'Address',
@@ -752,6 +755,9 @@ const hi: Record<StringKey, string> = {
   // Business setup
   setupTitle: 'Apna business set up karein',
   setupHint: 'Ye details aapke bill par dikhengi. Baad mein badal sakte hain.',
+  setupGoogleCta: 'Google se login karo — purana data apne aap aa jayega',
+  setupGoogleHint: 'Dusre phone pe app use kiya tha? Login karte hi business, bill aur items apne aap wapas aa jayenge.',
+  setupManualFallback: 'Naye ho? Neeche apni details bharo.',
   sectionBusiness: 'Business ki details',
   sectionGst: 'GST details',
   sectionAddress: 'Pata',

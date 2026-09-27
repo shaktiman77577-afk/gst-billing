@@ -4,7 +4,7 @@ import { getFirstBusinessForUser } from '../db/businesses';
 import { getMeta, setMeta } from '../db/meta';
 import { Language, STRINGS, StringKey } from '../i18n/strings';
 import { logoutGoogle } from '../lib/auth';
-import { pullBusinessProfileIfMissing } from '../lib/businessProfile';
+import { autoRestoreAfterLogin } from '../lib/cloudRestore';
 import { pushChanges, resetSyncState, syncEnabled } from '../sync/engine';
 
 type AppState = {
@@ -43,17 +43,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const userId = await getMeta(db, 'user_id');
       const email = await getMeta(db, 'email');
       let businessId = await getMeta(db, 'active_business_id');
-      setState({ ready: true, language, userId, email, businessId });
       // App start: a Supabase session may exist while the local business table
-      // is empty (setup done on another phone). Pull the cloud profile in the
-      // background — local rows are never overwritten.
+      // is empty (fresh install, or a restore that failed while offline).
+      // Silently pull the cloud BEFORE first paint — local rows are never
+      // overwritten. If a full backup is restored the DB file is swapped and
+      // this handle is closed; the SQLiteProvider remount then re-runs this
+      // effect on the new file.
       if (userId && !businessId) {
-        const pulled = await pullBusinessProfileIfMissing(db, userId);
-        if (pulled) {
-          await setMeta(db, 'active_business_id', pulled);
-          setState((s) => ({ ...s, businessId: pulled }));
+        try {
+          if ((await autoRestoreAfterLogin(db)) === 'restored') {
+            try {
+              businessId = await getMeta(db, 'active_business_id');
+            } catch {
+              return; // file swapped — the remount re-runs this effect
+            }
+          }
+        } catch {
+          // silent — the app just keeps working locally
         }
       }
+      setState({ ready: true, language, userId, email, businessId });
     })();
   }, [db]);
 
@@ -76,11 +85,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (previous !== userId) await resetSyncState(db);
       await setMeta(db, 'user_id', userId);
       await setMeta(db, 'email', email);
-      // Same user logging in again on this phone: reopen their business.
-      // On a new phone the local table is empty — pull the cloud profile
-      // (if the session has one) so the setup screen is skipped. Local wins.
-      const pulled = await pullBusinessProfileIfMissing(db, userId);
-      const existing = pulled ? { id: pulled } : await getFirstBusinessForUser(db, userId);
+      // Silent cloud restore right after login. Gated on "no local business":
+      // existing local data is never overwritten. When a full backup restores,
+      // the DB file is swapped and this handle is closed — the provider remount
+      // rebuilds state from the new file, so the caller must navigate
+      // immediately without touching `db` again.
+      let restored = false;
+      try {
+        restored = (await autoRestoreAfterLogin(db)) === 'restored';
+      } catch {
+        // silent
+      }
+      if (restored) {
+        try {
+          const active = await getMeta(db, 'active_business_id');
+          if (active) {
+            // Fast path: the profile was pulled into the live DB.
+            setState((s) => ({ ...s, userId, email, businessId: active }));
+            return active;
+          }
+        } catch {
+          // Closed handle after a full restore — the remount rebuilds state.
+        }
+        setState((s) => ({ ...s, userId, email, businessId: null }));
+        return null;
+      }
+      const existing = await getFirstBusinessForUser(db, userId);
       await setMeta(db, 'active_business_id', existing?.id ?? null);
       setState((s) => ({ ...s, userId, email, businessId: existing?.id ?? null }));
       return existing?.id ?? null;
