@@ -97,8 +97,7 @@ export type Doc = {
   terms: string[];
   showFooter: boolean;
   copyLabel: string; // ORIGINAL FOR RECIPIENT / DUPLICATE FOR TRANSPORTER / TRIPLICATE FOR SUPPLIER
-  isPro: boolean; // white-label footer (no "Made with GST Billing" branding)
-  footerLinkText: string; // small linked text shown to Pro users without a logo
+  isPro: boolean; // Pro: no footer at all — completely clean professional bill
 };
 
 const esc = (s: string | null | undefined) =>
@@ -126,7 +125,7 @@ export function buildDoc(
   business: Business,
   inv: Invoice,
   lines: InvoiceLine[],
-  opts: { color?: string; showFooter?: boolean; copy?: CopyKind; isPro?: boolean; footerLinkText?: string } = {},
+  opts: { color?: string; showFooter?: boolean; copy?: CopyKind; isPro?: boolean } = {},
 ): Doc {
   const color = opts.color ?? business.theme_color ?? '#1E3A8A';
   const isQuotation = inv.doc_type === 'quotation';
@@ -301,6 +300,5 @@ export function buildDoc(
     showFooter: opts.showFooter ?? true,
     copyLabel: COPY_LABELS[opts.copy ?? 'original'],
     isPro: opts.isPro ?? false,
-    footerLinkText: opts.footerLinkText ?? 'Get this billing app',
   };
 }

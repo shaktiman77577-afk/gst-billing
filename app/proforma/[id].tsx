@@ -57,7 +57,7 @@ export default function ProformaDetailScreen() {
     if (!business) return;
     setBusy(kind);
     try {
-      const html = invoiceHtml(business, inv, lines, { isPro, footerLinkText: t('footerGetApp') });
+      const html = invoiceHtml(business, inv, lines, { isPro });
       if (kind === 'share') await sharePdf(html, inv.invoice_no);
       else await printBill(html);
     } catch (e) {
@@ -71,7 +71,7 @@ export default function ProformaDetailScreen() {
     if (!business) return;
     setBusy('whatsapp');
     try {
-      const html = invoiceHtml(business, inv, lines, { isPro, footerLinkText: t('footerGetApp') });
+      const html = invoiceHtml(business, inv, lines, { isPro });
       const caption = billWhatsappText(t as (key: string) => string, {
         name: inv.party_name,
         no: inv.invoice_no,

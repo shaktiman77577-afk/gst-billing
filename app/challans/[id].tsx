@@ -53,7 +53,7 @@ export default function ChallanDetailScreen() {
     if (!business) return;
     setBusy(kind);
     try {
-      const html = invoiceHtml(business, inv, lines, { isPro, footerLinkText: t('footerGetApp') });
+      const html = invoiceHtml(business, inv, lines, { isPro });
       if (kind === 'share') await sharePdf(html, inv.invoice_no);
       else await printBill(html);
     } catch (e) {
@@ -67,7 +67,7 @@ export default function ChallanDetailScreen() {
     if (!business) return;
     setBusy('whatsapp');
     try {
-      const html = invoiceHtml(business, inv, lines, { isPro, footerLinkText: t('footerGetApp') });
+      const html = invoiceHtml(business, inv, lines, { isPro });
       const caption = billWhatsappText(
         (k: string) => t(k as StringKey),
         {

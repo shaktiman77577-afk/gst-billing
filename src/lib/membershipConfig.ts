@@ -9,7 +9,7 @@ import type { Plan } from './membership';
 export const TRIAL_DAYS = 7;
 
 /** How many bills a free-tier user may create per calendar month. */
-export const FREE_BILLS_PER_MONTH = 50;
+export const FREE_BILLS_PER_MONTH = 10;
 
 /** Plans shown when the plans table can't be reached (offline / error). */
 export const FALLBACK_PLANS: Plan[] = [

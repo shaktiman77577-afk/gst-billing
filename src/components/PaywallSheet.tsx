@@ -70,7 +70,7 @@ export function PaywallSheet({ visible, onClose }: Props) {
           </View>
 
           <View style={styles.feats}>
-            {(['mem_featUnlimited', 'mem_featBackup', 'mem_featReports'] as const).map((k) => (
+            {(['mem_featUnlimited', 'mem_featWhiteLabel', 'mem_featAutoBackup', 'mem_featExports'] as const).map((k) => (
               <View key={k} style={styles.feat}>
                 <Ionicons name="checkmark-circle" size={16} color={colors.success} />
                 <Text style={styles.featText}>{t(k)}</Text>

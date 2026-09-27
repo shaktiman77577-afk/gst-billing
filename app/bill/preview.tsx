@@ -34,7 +34,7 @@ export default function BillPreviewScreen() {
   const html = useMemo(
     () =>
       business && data
-        ? invoiceHtml(business, data.invoice, data.lines, { isPro, footerLinkText: t('footerGetApp') })
+        ? invoiceHtml(business, data.invoice, data.lines, { isPro })
         : null,
     [business, data, isPro, t],
   );

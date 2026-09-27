@@ -9,9 +9,8 @@ import { CopyKind, buildDoc } from './data';
 import { renderInvoiceHtml } from './templates';
 
 export type InvoiceHtmlOpts = {
-  isPro?: boolean; // white-label footer (no "Made with GST Billing" branding)
+  isPro?: boolean; // Pro: no footer at all — completely clean professional bill
   copy?: CopyKind; // ORIGINAL / DUPLICATE / TRIPLICATE header label
-  footerLinkText?: string; // small linked footer text for Pro users without a logo
 };
 
 export function invoiceHtml(

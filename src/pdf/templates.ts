@@ -40,15 +40,11 @@ const BASE_CSS = `
 
 function footerHtml(d: Doc): string {
   if (!d.showFooter) return '';
+  // Pro: completely clean professional bill — no footer at all (no branding,
+  // no logo link, no "Made with" text). Free users keep the branding footer.
+  if (d.isPro) return '';
   const link = (inner: string) =>
     `<a href="${PLAY_STORE_URL}" style="color:#9ca3af;text-decoration:none">${inner}</a>`;
-  // Pro (white-label): business logo as a linked image; small linked text when no logo.
-  if (d.isPro && d.seller.logo)
-    return `<div class="footer">${link(
-      `<img src="${d.seller.logo}" style="height:30px;max-width:180px;object-fit:contain" alt=""/>`,
-    )}</div>`;
-  if (d.isPro) return `<div class="footer">${link(d.footerLinkText)}</div>`;
-  // Free: existing branding, now a link too.
   return `<div class="footer">${link('Invoice created using <b>GST Billing</b> · Made with 🤎 in India')}</div>`;
 }
 

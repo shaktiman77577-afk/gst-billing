@@ -1,8 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useState } from 'react';
-import { Alert, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { FormHeader } from '../../src/components/FormHeader';
 import { Button, Card, IconName, Screen, SectionHeader } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
@@ -30,7 +30,16 @@ function planPerLabel(plan: Plan, t: T): string {
   return t('mem_perMonth');
 }
 
-const FEATURE_KEYS: StringKey[] = ['mem_featUnlimited', 'mem_featBackup', 'mem_featReports'];
+// Honest Pro feature list — only features the app actually has.
+const PRO_FEATURES: { key: StringKey; icon: IconName }[] = [
+  { key: 'mem_featUnlimited', icon: 'infinite-outline' },
+  { key: 'mem_featWhiteLabel', icon: 'ribbon-outline' },
+  { key: 'mem_featThemes', icon: 'color-palette-outline' },
+  { key: 'mem_featRecycle', icon: 'trash-bin-outline' },
+  { key: 'mem_featAutoBackup', icon: 'cloud-upload-outline' },
+  { key: 'mem_featExports', icon: 'share-outline' },
+  { key: 'mem_featSupport', icon: 'headset-outline' },
+];
 
 export default function MembershipScreen() {
   const { t } = useApp();
@@ -41,6 +50,7 @@ export default function MembershipScreen() {
   const [history, setHistory] = useState<MembershipRow[]>([]);
   const [historyError, setHistoryError] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -72,6 +82,13 @@ export default function MembershipScreen() {
       void load();
     }, [load]),
   );
+
+  // Default to the yearly plan once plans load (best value, like the reference).
+  useEffect(() => {
+    if (selectedPlanId || plans.length === 0) return;
+    const yearly = plans.find((p) => p.duration_days >= 300);
+    setSelectedPlanId((yearly ?? plans[0]).id);
+  }, [plans, selectedPlanId]);
 
   const upgrade = async (plan: Plan) => {
     setProcessingId(plan.id);
@@ -120,11 +137,45 @@ export default function MembershipScreen() {
         ? { key: 'mem_statusTrial' as const, icon: 'time-outline' as IconName, bg: colors.warningSoft, fg: colors.warning }
         : { key: 'mem_statusFree' as const, icon: 'gift-outline' as IconName, bg: colors.primarySoft, fg: colors.primary };
 
+  const selectedPlan = plans.find((p) => p.id === selectedPlanId) ?? null;
+  const selectedIsCurrent = !!selectedPlan && mem.planId === selectedPlan.id;
+  const buying = processingId !== null;
+
+  const bottomBar =
+    loggedIn && plans.length > 0 && selectedPlan ? (
+      <View style={styles.bar}>
+        <View style={styles.barPrice}>
+          <Text style={styles.barAmount}>
+            {formatPaise(selectedPlan.price_paise)}
+            <Text style={styles.barPer}>
+              {' '}
+              / {planPerLabel(selectedPlan, t)}
+            </Text>
+          </Text>
+          {selectedPlan.duration_days >= 300 ? (
+            <Text style={styles.barNote}>{t('mem_billedAnnually')}</Text>
+          ) : null}
+        </View>
+        {selectedIsCurrent ? (
+          <View style={styles.currentPill}>
+            <Text style={styles.currentPillText}>{t('mem_currentPlan')}</Text>
+          </View>
+        ) : (
+          <Button
+            label={processingId === selectedPlan.id ? t('mem_processing') : t('mem_buyPro')}
+            onPress={() => upgrade(selectedPlan)}
+            loading={processingId === selectedPlan.id}
+            disabled={buying}
+          />
+        )}
+      </View>
+    ) : null;
+
   return (
     <View style={styles.flex}>
       <StatusBar style="dark" />
       <FormHeader title={t('mem_title')} />
-      <Screen edges={['bottom']}>
+      <Screen edges={['bottom']} footer={bottomBar} contentStyle={bottomBar ? styles.withBar : undefined}>
         {loggedIn === false ? (
           <Card>
             <Text style={styles.text}>{t('mem_loginNeeded')}</Text>
@@ -135,12 +186,12 @@ export default function MembershipScreen() {
             {/* ---------- Status ---------- */}
             <Card style={styles.status}>
               <View style={[styles.icon, { backgroundColor: statusMeta.bg }]}>
-                <Ionicons name={statusMeta.icon} size={28} color={statusMeta.fg} />
+                <Ionicons name={statusMeta.icon} size={26} color={statusMeta.fg} />
               </View>
               <View style={styles.flexOnly}>
                 <Text style={styles.big}>{t(statusMeta.key)}</Text>
                 {mem.status === 'free' ? (
-                  <Text style={styles.muted}>{t('mem_freeNote')}</Text>
+                  <Text style={styles.muted}>{t('mem_freeNote').replace('{limit}', String(mem.billsLimit))}</Text>
                 ) : mem.status === 'trial' ? (
                   <Text style={styles.muted}>{t('mem_trialLeft').replace('{d}', String(mem.trialDaysLeft))}</Text>
                 ) : mem.expiresAt ? (
@@ -173,57 +224,65 @@ export default function MembershipScreen() {
               <Text style={styles.offline}>{t('mem_offlineNote')}</Text>
             ) : null}
 
+            {/* ---------- What's included ---------- */}
+            <SectionHeader icon="sparkles-outline" title={t('mem_includesPro')} />
+            <Card style={styles.featCard}>
+              {PRO_FEATURES.map((f, i) => (
+                <View key={f.key}>
+                  {i > 0 ? <View style={styles.sep} /> : null}
+                  <View style={styles.featRow}>
+                    <View style={styles.featIcon}>
+                      <Ionicons name={f.icon} size={19} color={colors.primary} />
+                    </View>
+                    <Text style={styles.featText}>{t(f.key)}</Text>
+                  </View>
+                </View>
+              ))}
+            </Card>
+
             {/* ---------- Plans ---------- */}
             <SectionHeader icon="star-outline" title={t('mem_viewPlans')} />
             {plans.map((plan) => {
               const yearly = plan.duration_days >= 300;
               const current = mem.planId === plan.id;
+              const selected = plan.id === selectedPlanId;
               return (
-                <Card key={plan.id} style={current ? styles.currentCard : undefined}>
-                  <View style={styles.planHead}>
-                    <View style={styles.flexOnly}>
-                      <View style={styles.planTitleRow}>
-                        <Text style={styles.planName}>{planLabel(plan, t)}</Text>
-                        {yearly ? (
-                          <View style={styles.saveBadge}>
-                            <Text style={styles.saveText}>{t('mem_saveYearly')}</Text>
-                          </View>
-                        ) : null}
-                        {current ? (
-                          <View style={styles.currentBadge}>
-                            <Text style={styles.currentText}>{t('mem_currentPlan')}</Text>
-                          </View>
-                        ) : null}
-                      </View>
-                      <Text style={styles.price}>
-                        {formatPaise(plan.price_paise)}
-                        <Text style={styles.per}> · {planPerLabel(plan, t)}</Text>
-                      </Text>
-                    </View>
+                <Pressable
+                  key={plan.id}
+                  onPress={() => setSelectedPlanId(plan.id)}
+                  style={[styles.planCard, selected && styles.planCardSelected]}
+                >
+                  <View style={[styles.radio, selected && styles.radioOn]}>
+                    {selected ? <View style={styles.radioDot} /> : null}
                   </View>
-                  {FEATURE_KEYS.map((key) => (
-                    <View key={key} style={styles.feat}>
-                      <Ionicons name="checkmark-circle" size={16} color={colors.success} />
-                      <Text style={styles.featText}>{t(key)}</Text>
+                  <View style={styles.flexOnly}>
+                    <View style={styles.planTitleRow}>
+                      <Text style={styles.planName}>{planLabel(plan, t)}</Text>
+                      {yearly ? (
+                        <View style={styles.saveBadge}>
+                          <Text style={styles.saveText}>{t('mem_saveYearly')}</Text>
+                        </View>
+                      ) : null}
+                      {current ? (
+                        <View style={styles.currentBadge}>
+                          <Text style={styles.currentText}>{t('mem_currentPlan')}</Text>
+                        </View>
+                      ) : null}
                     </View>
-                  ))}
-                  {current ? null : (
-                    <Button
-                      icon="card-outline"
-                      label={processingId === plan.id ? t('mem_processing') : t('mem_upgrade')}
-                      onPress={() => upgrade(plan)}
-                      loading={processingId === plan.id}
-                      disabled={processingId !== null}
-                    />
-                  )}
-                </Card>
+                    <Text style={styles.price}>
+                      {formatPaise(plan.price_paise)}
+                      <Text style={styles.per}> / {planPerLabel(plan, t)}</Text>
+                    </Text>
+                    {yearly ? <Text style={styles.billedNote}>{t('mem_billedAnnually')}</Text> : null}
+                  </View>
+                </Pressable>
               );
             })}
 
             {/* ---------- Billing history ---------- */}
             <Card>
               <View style={styles.rowHead}>
-                <Ionicons name="receipt-outline" size={20} color={colors.primary} />
+                <Ionicons name="receipt-outline" size={19} color={colors.primary} />
                 <Text style={styles.head}>{t('mem_history')}</Text>
               </View>
               {history.length === 0 ? (
@@ -261,34 +320,85 @@ export default function MembershipScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.background },
   flexOnly: { flex: 1 },
+  withBar: { paddingBottom: 12 },
   status: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  icon: { width: 56, height: 56, borderRadius: radius.lg, alignItems: 'center', justifyContent: 'center' },
+  icon: { width: 54, height: 54, borderRadius: radius.lg, alignItems: 'center', justifyContent: 'center' },
   muted: { fontSize: 13, color: colors.muted },
-  big: { fontSize: 22, fontWeight: '800', color: colors.text },
+  big: { fontSize: 21, fontWeight: '800', color: colors.text },
   text: { fontSize: 14, color: colors.text, lineHeight: 20 },
   offline: { fontSize: 12, color: colors.faint, textAlign: 'center' },
   kv: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   kvVal: { fontSize: 14, fontWeight: '600', color: colors.text },
-  barTrack: { height: 8, borderRadius: 4, backgroundColor: colors.border, overflow: 'hidden' },
+  barTrack: { height: 8, borderRadius: 4, backgroundColor: colors.border, overflow: 'hidden', marginTop: 10 },
   barFill: { height: 8, borderRadius: 4, backgroundColor: colors.primary },
-  planHead: { marginBottom: 2 },
+  // Elegant compact feature list (myBillBook-style)
+  featCard: { paddingVertical: 6 },
+  featRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 9 },
+  featIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  featText: { fontSize: 15, color: colors.text, flex: 1, lineHeight: 21 },
+  // Selectable plan cards
+  planCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: colors.card,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    padding: 14,
+  },
+  planCardSelected: { borderColor: colors.primary, backgroundColor: colors.primaryTint },
+  radio: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radioOn: { borderColor: colors.primary },
+  radioDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: colors.primary },
   planTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
-  planName: { fontSize: 17, fontWeight: '800', color: colors.text },
+  planName: { fontSize: 16, fontWeight: '800', color: colors.text },
   saveBadge: { backgroundColor: colors.successSoft, borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 4 },
   saveText: { fontSize: 11, fontWeight: '800', color: colors.success },
   currentBadge: { backgroundColor: colors.primarySoft, borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 4 },
   currentText: { fontSize: 11, fontWeight: '800', color: colors.primary },
-  currentCard: { borderColor: colors.primary, borderWidth: 1.5 },
-  price: { fontSize: 20, fontWeight: '800', color: colors.primary, marginTop: 2 },
+  price: { fontSize: 19, fontWeight: '800', color: colors.primary, marginTop: 2 },
   per: { fontSize: 13, fontWeight: '400', color: colors.muted },
-  feat: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  featText: { fontSize: 14, color: colors.text },
+  billedNote: { fontSize: 12, color: colors.muted, marginTop: 2 },
+  // Bottom buy bar (myBillBook-style, anchored)
+  bar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    backgroundColor: colors.card,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  barPrice: { flex: 1 },
+  barAmount: { fontSize: 21, fontWeight: '800', color: colors.text },
+  barPer: { fontSize: 13, fontWeight: '400', color: colors.muted },
+  barNote: { fontSize: 12, color: colors.muted, marginTop: 1 },
+  currentPill: { backgroundColor: colors.successSoft, borderRadius: radius.pill, paddingHorizontal: 16, paddingVertical: 10 },
+  currentPillText: { fontSize: 14, fontWeight: '800', color: colors.success },
   rowHead: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
   head: { fontSize: 15, fontWeight: '700', color: colors.text },
   rowText: { fontSize: 15, fontWeight: '600', color: colors.text },
   histRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   statusPill: { backgroundColor: colors.primaryTint, borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 4 },
   statusPillText: { fontSize: 11, fontWeight: '700', color: colors.primary, textTransform: 'capitalize' },
-  sep: { height: 1, backgroundColor: colors.border, marginVertical: 10 },
+  sep: { height: 1, backgroundColor: colors.border, marginVertical: 2 },
   gap: { marginTop: 12 },
 });

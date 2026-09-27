@@ -92,7 +92,7 @@ export default function BillDetailScreen() {
     if (!business) return;
     setBusy(kind);
     try {
-      const html = invoiceHtml(business, inv, lines, { isPro, copy, footerLinkText: t('footerGetApp') });
+      const html = invoiceHtml(business, inv, lines, { isPro, copy });
       if (kind === 'share') await sharePdf(html, inv.invoice_no);
       else await printBill(html);
     } catch (e) {
@@ -106,7 +106,7 @@ export default function BillDetailScreen() {
     if (!business) return;
     setBusy('whatsapp');
     try {
-      const html = invoiceHtml(business, inv, lines, { isPro, copy, footerLinkText: t('footerGetApp') });
+      const html = invoiceHtml(business, inv, lines, { isPro, copy });
       const caption = billWhatsappText(t, {
         name: inv.party_name,
         no: inv.invoice_no,
