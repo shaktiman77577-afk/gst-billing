@@ -12,11 +12,12 @@ import { PartyPicker } from '../../src/components/PartyPicker';
 import { Button, Card, ErrorText, Field, Screen, SectionHeader } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import type { LineDraft } from '../../src/db/invoices';
-import { Item, listItems } from '../../src/db/items';
+import { Item, listItems, roundQty } from '../../src/db/items';
 import { listParties, PartyWithBalance } from '../../src/db/parties';
 import { getPurchase, savePurchase } from '../../src/db/purchases';
 import { todayIso } from '../../src/lib/dates';
 import type { LineResult } from '../../src/lib/gst';
+import { qtyTimesRatePaise } from '../../src/lib/gst';
 import { formatPaise } from '../../src/lib/money';
 import { colors, radius } from '../../src/theme';
 
@@ -28,7 +29,7 @@ const nextKey = () => `pl${++keySeq}`;
 
 // Purchases are plain qty × rate — no GST maths (they never feed GST reports).
 function lineAmount(l: Line): number {
-  return Math.round(l.qty * l.ratePaise);
+  return qtyTimesRatePaise(l.qty, l.ratePaise);
 }
 
 function toResult(amount: number): LineResult {
@@ -116,7 +117,7 @@ export default function PurchaseFormScreen() {
   const addItem = (item: Item) => {
     setLines((ls) => {
       const i = ls.findIndex((l) => l.itemId === item.id);
-      if (i >= 0) return ls.map((l, j) => (j === i ? { ...l, qty: l.qty + 1 } : l));
+      if (i >= 0) return ls.map((l, j) => (j === i ? { ...l, qty: roundQty(l.qty + 1) } : l));
       return [
         ...ls,
         {
@@ -141,9 +142,20 @@ export default function PurchaseFormScreen() {
   const removeOne = (item: Item) => {
     setLines((ls) =>
       ls
-        .map((l) => (l.itemId === item.id ? { ...l, qty: l.qty - 1 } : l))
+        .map((l) => (l.itemId === item.id ? { ...l, qty: Math.max(0, roundQty(l.qty - 1)) } : l))
         .filter((l) => l.itemId !== item.id || l.qty > 0),
     );
+  };
+
+  // Exact qty typed in the item picker (decimals allowed, e.g. 1.24 KG); 0 removes the line.
+  const setItemQty = (item: Item, qty: number) => {
+    const q = Math.max(0, roundQty(qty));
+    setLines((ls) => {
+      const i = ls.findIndex((l) => l.itemId === item.id);
+      if (i < 0) return ls;
+      if (q <= 0) return ls.filter((_, j) => j !== i);
+      return ls.map((l, j) => (j === i ? { ...l, qty: q } : l));
+    });
   };
 
   const pickSupplier = (p: PartyWithBalance | null) => {
@@ -309,6 +321,7 @@ export default function PurchaseFormScreen() {
         onClose={() => setItemsOpen(false)}
         onAdd={addItem}
         onRemoveOne={removeOne}
+        onSetQty={setItemQty}
         onAddNew={() => openNew('/item/new')}
       />
     </View>

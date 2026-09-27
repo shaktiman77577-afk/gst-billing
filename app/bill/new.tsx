@@ -24,7 +24,7 @@ import {
   saveInvoice,
 } from '../../src/db/invoices';
 import { nextQuotationNo, saveQuotation } from '../../src/db/quotations';
-import { Item, listItems } from '../../src/db/items';
+import { Item, listItems, roundQty } from '../../src/db/items';
 import { listParties, PartyWithBalance } from '../../src/db/parties';
 import { useBusiness } from '../../src/hooks/useBusiness';
 import { useMembership } from '../../src/hooks/useMembership';
@@ -186,7 +186,7 @@ export default function BillFormScreen() {
   const addItem = (item: Item) => {
     setLines((ls) => {
       const i = ls.findIndex((l) => l.itemId === item.id);
-      if (i >= 0) return ls.map((l, j) => (j === i ? { ...l, qty: l.qty + 1 } : l));
+      if (i >= 0) return ls.map((l, j) => (j === i ? { ...l, qty: roundQty(l.qty + 1) } : l));
       return [
         ...ls,
         {
@@ -211,9 +211,20 @@ export default function BillFormScreen() {
   const removeOne = (item: Item) => {
     setLines((ls) =>
       ls
-        .map((l) => (l.itemId === item.id ? { ...l, qty: l.qty - 1 } : l))
+        .map((l) => (l.itemId === item.id ? { ...l, qty: Math.max(0, roundQty(l.qty - 1)) } : l))
         .filter((l) => l.itemId !== item.id || l.qty > 0),
     );
+  };
+
+  // Exact qty typed in the item picker (decimals allowed, e.g. 1.24 KG); 0 removes the line.
+  const setItemQty = (item: Item, qty: number) => {
+    const q = Math.max(0, roundQty(qty));
+    setLines((ls) => {
+      const i = ls.findIndex((l) => l.itemId === item.id);
+      if (i < 0) return ls;
+      if (q <= 0) return ls.filter((_, j) => j !== i);
+      return ls.map((l, j) => (j === i ? { ...l, qty: q } : l));
+    });
   };
 
   const pickParty = (p: PartyWithBalance | null) => {
@@ -562,6 +573,7 @@ export default function BillFormScreen() {
         onClose={() => setItemsOpen(false)}
         onAdd={addItem}
         onRemoveOne={removeOne}
+        onSetQty={setItemQty}
         onAddNew={() => openNew('/item/new')}
       />
     </View>

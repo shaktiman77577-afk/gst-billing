@@ -2,7 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useApp } from '../context/AppContext';
-import { formatQty, GST_RATES } from '../db/items';
+import { formatQty, GST_RATES, roundQty } from '../db/items';
 import { LineDraft } from '../db/invoices';
 import { LineResult } from '../lib/gst';
 import { formatPaise, paiseToInput, toPaise } from '../lib/money';
@@ -17,7 +17,8 @@ type Props = {
   onRemove: () => void;
 };
 
-const QTY = /^\d*\.?\d{0,3}$/;
+// Quantity accepts up to 3 decimals (e.g. 1.24 KG). Shared with ItemPicker.
+export const QTY_PATTERN = /^\d*\.?\d{0,3}$/;
 
 export function BillLineCard({ line, result, applyGst, onChange, onRemove }: Props) {
   const { t } = useApp();
@@ -35,7 +36,7 @@ export function BillLineCard({ line, result, applyGst, onChange, onRemove }: Pro
 
   // Keep the qty box in sync when +/- buttons are used.
   const setQty = (q: number) => {
-    const next = Math.max(0, Math.round(q * 1000) / 1000);
+    const next = Math.max(0, roundQty(q));
     setQtyText(formatQty(next));
     onChange({ qty: next });
   };
@@ -74,7 +75,7 @@ export function BillLineCard({ line, result, applyGst, onChange, onRemove }: Pro
           <TextInput
             value={qtyText}
             onChangeText={(v) => {
-              if (!QTY.test(v)) return;
+              if (!QTY_PATTERN.test(v)) return;
               setQtyText(v);
               onChange({ qty: Number(v) || 0 });
             }}

@@ -1,11 +1,12 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useMemo, useState } from 'react';
-import { FlatList, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { FlatList, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
-import { formatQty, isLowStock, Item } from '../db/items';
+import { formatQty, isLowStock, Item, roundQty } from '../db/items';
 import { formatPaise } from '../lib/money';
 import { colors, radius, text } from '../theme';
+import { QTY_PATTERN } from './BillLineCard';
 import { SearchBar } from './SearchBar';
 import { Button } from './ui';
 
@@ -16,11 +17,57 @@ type Props = {
   onClose: () => void;
   onAdd: (item: Item) => void;
   onRemoveOne: (item: Item) => void;
+  onSetQty: (item: Item, qty: number) => void; // exact qty typed by the user (0 removes the line)
   onAddNew: () => void;
 };
 
+// Stepper with an editable qty box: tap +/- for whole steps, or type an
+// exact decimal (e.g. 1.24 KG) directly.
+function PickerQtyStepper({
+  item,
+  value,
+  onAdd,
+  onRemoveOne,
+  onSetQty,
+}: {
+  item: Item;
+  value: number;
+  onAdd: () => void;
+  onRemoveOne: () => void;
+  onSetQty: (qty: number) => void;
+}) {
+  const [qtyText, setQtyText] = useState(formatQty(value));
+
+  // Qty can change from the bill screen behind the modal; keep the box in sync.
+  useEffect(() => {
+    setQtyText((txt) => (Number(txt) === value ? txt : formatQty(value)));
+  }, [value]);
+
+  return (
+    <View style={styles.stepper}>
+      <Pressable onPress={onRemoveOne} hitSlop={8} style={styles.stepBtn}>
+        <Ionicons name="remove" size={18} color={colors.primary} />
+      </Pressable>
+      <TextInput
+        value={qtyText}
+        onChangeText={(v) => {
+          if (!QTY_PATTERN.test(v)) return;
+          setQtyText(v);
+          onSetQty(Math.max(0, roundQty(Number(v) || 0)));
+        }}
+        keyboardType="decimal-pad"
+        style={styles.countInput}
+        selectTextOnFocus
+      />
+      <Pressable onPress={onAdd} hitSlop={8} style={styles.stepBtn}>
+        <Ionicons name="add" size={18} color={colors.primary} />
+      </Pressable>
+    </View>
+  );
+}
+
 // Tap an item to add it; tap again to add one more.
-export function ItemPicker({ visible, items, counts, onClose, onAdd, onRemoveOne, onAddNew }: Props) {
+export function ItemPicker({ visible, items, counts, onClose, onAdd, onRemoveOne, onSetQty, onAddNew }: Props) {
   const { t } = useApp();
   const [query, setQuery] = useState('');
   const list = useMemo(() => {
@@ -72,15 +119,13 @@ export function ItemPicker({ visible, items, counts, onClose, onAdd, onRemoveOne
                   </Text>
                 </View>
                 {n > 0 ? (
-                  <View style={styles.stepper}>
-                    <Pressable onPress={() => onRemoveOne(item)} hitSlop={8} style={styles.stepBtn}>
-                      <Ionicons name="remove" size={18} color={colors.primary} />
-                    </Pressable>
-                    <Text style={styles.count}>{formatQty(n)}</Text>
-                    <Pressable onPress={() => onAdd(item)} hitSlop={8} style={styles.stepBtn}>
-                      <Ionicons name="add" size={18} color={colors.primary} />
-                    </Pressable>
-                  </View>
+                  <PickerQtyStepper
+                    item={item}
+                    value={n}
+                    onAdd={() => onAdd(item)}
+                    onRemoveOne={() => onRemoveOne(item)}
+                    onSetQty={(q) => onSetQty(item, q)}
+                  />
                 ) : (
                   <Ionicons name="add-circle" size={28} color={colors.primary} />
                 )}
@@ -150,5 +195,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   count: { minWidth: 24, textAlign: 'center', fontWeight: '800', fontSize: text.md, color: colors.primary },
+  countInput: {
+    minWidth: 48,
+    textAlign: 'center',
+    fontWeight: '800',
+    fontSize: text.md,
+    color: colors.primary,
+    paddingVertical: 2,
+  },
   footer: { padding: 16, backgroundColor: colors.card, borderTopWidth: 1, borderTopColor: colors.border },
 });

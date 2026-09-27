@@ -19,9 +19,16 @@ export type LineResult = {
   amountPaise: number; // taxable + tax
 };
 
+// qty is entered with at most 3 decimals everywhere; multiply in integer
+// space so stored paise never inherit binary float drift
+// (e.g. 1.24 × 75000 → exactly 93000, not 92999.9999…).
+export function qtyTimesRatePaise(qty: number, ratePaise: number): number {
+  return Math.round((Math.round(qty * 1000) * ratePaise) / 1000);
+}
+
 export function calcLine(line: LineInput, applyGst: boolean): LineResult {
   const rate = applyGst ? line.gstRate : 0;
-  const gross = Math.round(line.ratePaise * line.qty);
+  const gross = qtyTimesRatePaise(line.qty, line.ratePaise);
   let discount =
     line.discountType === 'pct'
       ? Math.round((gross * Math.min(Math.max(line.discountValue, 0), 100)) / 100)

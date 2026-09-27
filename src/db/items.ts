@@ -127,3 +127,9 @@ export function isLowStock(item: Item): boolean {
 export function formatQty(q: number): string {
   return Number.isInteger(q) ? String(q) : String(Number(q.toFixed(3)));
 }
+
+// Quantities support up to 3 decimals (e.g. 1.24 KG). Round to 3dp so
+// repeated +/- steps never accumulate binary float drift.
+export function roundQty(q: number): number {
+  return Math.round(q * 1000) / 1000;
+}
