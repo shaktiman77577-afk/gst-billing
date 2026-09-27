@@ -9,11 +9,15 @@ import { LanguageToggle } from '../../src/components/LanguageToggle';
 import { Button, Card, MadeInIndia } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import { stateName } from '../../src/data/states';
+import { en as grEn, hi as grHi, ParityGstRatesKey } from '../../src/i18n/parity_gstrates';
 import { useBusiness } from '../../src/hooks/useBusiness';
 import { colors, radius, text } from '../../src/theme';
 
 export default function MoreScreen() {
   const { t, email, logout, language } = useApp();
+  // GST rate finder strings live in parity_gstrates.ts until the coordinator
+  // merges them into strings.ts (then this can switch to t('gr_title')).
+  const g = (k: ParityGstRatesKey) => (language === 'hi' ? grHi[k] : grEn[k]);
   const business = useBusiness();
   const version = Constants.expoConfig?.version ?? '';
 
@@ -104,6 +108,17 @@ export default function MoreScreen() {
             <View style={styles.flexOnly}>
               <Text style={styles.rowText}>{t('rc_menuTitle')}</Text>
               <Text style={styles.meta}>{t('rc_menuHint')}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.faint} />
+          </Pressable>
+          <View style={styles.sep} />
+          <Pressable style={styles.row} onPress={() => router.push('/settings/gst-rates')}>
+            <View style={styles.rowIcon}>
+              <Ionicons name="search" size={18} color={colors.primary} />
+            </View>
+            <View style={styles.flexOnly}>
+              <Text style={styles.rowText}>{g('gr_title')}</Text>
+              <Text style={styles.meta}>{g('gr_searchPlaceholder')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.faint} />
           </Pressable>
