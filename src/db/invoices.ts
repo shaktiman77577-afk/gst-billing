@@ -4,10 +4,23 @@ import { newId, nowIso } from '../lib/id';
 import { markDirty } from '../lib/backup';
 
 export type InvoiceStatus = 'paid' | 'partial' | 'unpaid' | 'cancelled';
-export type InvoiceKind = 'invoice' | 'credit_note';
+export type InvoiceKind = 'invoice' | 'credit_note' | 'sales_return';
 export type PaymentDirection = 'in' | 'out';
 export type PaymentMode = 'cash' | 'upi' | 'card' | 'bank' | 'cheque';
 export type DocType = 'tax_invoice' | 'bill_of_supply' | 'quotation';
+
+/**
+ * A sales return is the credit-note twin: stock comes back IN and the party
+ * balance is reduced, but it gets its own SR/fy/seq series and stays
+ * distinguishable from credit notes in the UI. Everywhere below that
+ * special-cases 'credit_note', 'sales_return' is handled identically.
+ */
+export function isReturnKind(kind: InvoiceKind): boolean {
+  return kind === 'credit_note' || kind === 'sales_return';
+}
+
+/** SQL IN-list fragment for the return kinds (credit notes + sales returns). */
+export const RETURN_KINDS_SQL = `('credit_note', 'sales_return')`;
 
 export type Invoice = {
   id: string;
@@ -116,6 +129,8 @@ export function statusFor(total: number, settled: number): InvoiceStatus {
 }
 
 export const CREDIT_NOTE_PREFIX = 'CN';
+/** Number series for sales returns: SR/26-27/1, SR/26-27/2, … (own sequence per FY). */
+export const SALES_RETURN_PREFIX = 'SR';
 
 // Next sequence in this financial year. Counts deleted/cancelled bills too,
 // so a number is never reused. A per-series floor (Bill settings →
@@ -243,7 +258,7 @@ export async function salesSummary(
   fromDate: string,
 ): Promise<{ total: number; count: number }> {
   const row = await db.getFirstAsync<{ total: number | null; count: number }>(
-    `SELECT SUM(CASE WHEN kind = 'credit_note' THEN -total_paise ELSE total_paise END) AS total,
+    `SELECT SUM(CASE WHEN kind IN ${RETURN_KINDS_SQL} THEN -total_paise ELSE total_paise END) AS total,
             SUM(CASE WHEN kind = 'invoice' THEN 1 ELSE 0 END) AS count
      FROM invoices
      WHERE business_id = ? AND deleted_at IS NULL AND cancelled_at IS NULL AND doc_type != 'quotation'
@@ -284,9 +299,10 @@ export async function saveInvoice(
 ): Promise<string> {
   const { businessId, draft, lines, totals } = params;
   const kind: InvoiceKind = params.kind ?? 'invoice';
-  // A bill takes stock out; a credit note (goods returned) puts it back.
-  const stockSign = kind === 'credit_note' ? 1 : -1;
-  const payDirection: PaymentDirection = kind === 'credit_note' ? 'out' : 'in';
+  // A bill takes stock out; a return (credit note or sales return — goods
+  // come back) puts it back.
+  const stockSign = isReturnKind(kind) ? 1 : -1;
+  const payDirection: PaymentDirection = isReturnKind(kind) ? 'out' : 'in';
   const now = nowIso();
   let id = params.invoiceId ?? newId();
 
@@ -515,14 +531,14 @@ export async function refreshInvoiceStatus(db: SQLiteDatabase, invoiceId: string
   );
   const credited = await db.getFirstAsync<{ total: number | null }>(
     `SELECT SUM(total_paise) AS total FROM invoices
-     WHERE ref_invoice_id = ? AND kind = 'credit_note' AND deleted_at IS NULL AND cancelled_at IS NULL`,
+     WHERE ref_invoice_id = ? AND kind IN ${RETURN_KINDS_SQL} AND deleted_at IS NULL AND cancelled_at IS NULL`,
     invoiceId,
   );
   const received = paid?.total ?? 0;
   const credit = credited?.total ?? 0;
   let status: InvoiceStatus;
   if (inv.cancelled_at) status = 'cancelled';
-  else if (inv.kind === 'credit_note') status = 'paid';
+  else if (isReturnKind(inv.kind)) status = 'paid';
   else status = statusFor(inv.total_paise, received + credit);
   await db.runAsync(
     'UPDATE invoices SET received_paise = ?, credited_paise = ?, status = ?, updated_at = ? WHERE id = ?',
@@ -534,10 +550,11 @@ export async function refreshInvoiceStatus(db: SQLiteDatabase, invoiceId: string
   );
 }
 
+/** Returns linked to a bill: credit notes AND sales returns, oldest first. */
 export async function creditNotesFor(db: SQLiteDatabase, invoiceId: string): Promise<InvoiceListRow[]> {
   return db.getAllAsync<InvoiceListRow>(
     `SELECT ${LIST_COLS} FROM invoices
-     WHERE ref_invoice_id = ? AND kind = 'credit_note' AND deleted_at IS NULL
+     WHERE ref_invoice_id = ? AND kind IN ${RETURN_KINDS_SQL} AND deleted_at IS NULL
      ORDER BY created_at`,
     invoiceId,
   );
@@ -557,14 +574,14 @@ export async function cancelInvoice(db: SQLiteDatabase, invoiceId: string): Prom
   if (!inv || inv.cancelled_at) return 'ok';
   if (inv.kind === 'invoice') {
     const cn = await db.getFirstAsync<{ n: number }>(
-      `SELECT COUNT(*) AS n FROM invoices WHERE ref_invoice_id = ? AND kind = 'credit_note'
+      `SELECT COUNT(*) AS n FROM invoices WHERE ref_invoice_id = ? AND kind IN ${RETURN_KINDS_SQL}
        AND deleted_at IS NULL AND cancelled_at IS NULL`,
       invoiceId,
     );
     if ((cn?.n ?? 0) > 0) return 'has-credit-notes';
   }
   const now = nowIso();
-  const sign = inv.kind === 'credit_note' ? -1 : 1; // undo what saving did
+  const sign = isReturnKind(inv.kind) ? -1 : 1; // undo what saving did
   await db.withTransactionAsync(async () => {
     const lines = await db.getAllAsync<{ item_id: string | null; qty: number }>(
       'SELECT item_id, qty FROM invoice_items WHERE invoice_id = ? AND deleted_at IS NULL',
@@ -704,12 +721,12 @@ export async function deletePayment(db: SQLiteDatabase, paymentId: string): Prom
   });
 }
 
-/** How much of each item on a bill has already been returned (credit notes). */
+/** How much of each item on a bill has already been returned (credit notes + sales returns). */
 export async function returnedQty(db: SQLiteDatabase, invoiceId: string): Promise<Record<string, number>> {
   const rows = await db.getAllAsync<{ key: string; qty: number }>(
     `SELECT COALESCE(ii.item_id, ii.name) AS key, SUM(ii.qty) AS qty
      FROM invoice_items ii JOIN invoices cn ON cn.id = ii.invoice_id
-     WHERE cn.ref_invoice_id = ? AND cn.kind = 'credit_note' AND cn.deleted_at IS NULL
+     WHERE cn.ref_invoice_id = ? AND cn.kind IN ${RETURN_KINDS_SQL} AND cn.deleted_at IS NULL
        AND cn.cancelled_at IS NULL AND ii.deleted_at IS NULL
      GROUP BY COALESCE(ii.item_id, ii.name)`,
     invoiceId,
@@ -721,7 +738,7 @@ export async function returnedQty(db: SQLiteDatabase, invoiceId: string): Promis
 
 export type LedgerEntry = {
   id: string; // invoice id or payment group/id
-  type: 'opening' | 'invoice' | 'credit_note' | 'payment_in' | 'payment_out';
+  type: 'opening' | 'invoice' | 'credit_note' | 'sales_return' | 'payment_in' | 'payment_out';
   date: string;
   ref: string; // bill no. / mode
   amount_paise: number; // + increases what the party owes you
@@ -781,7 +798,7 @@ export async function partyLedger(db: SQLiteDatabase, partyId: string): Promise<
     });
   }
   for (const b of bills) {
-    const sign = b.kind === 'credit_note' ? -1 : 1;
+    const sign = isReturnKind(b.kind) ? -1 : 1;
     raw.push({
       id: b.id,
       type: b.kind,

@@ -268,6 +268,17 @@ const MIGRATIONS: string[] = [
     PRIMARY KEY (business_id, fy, kind)
   );
   `,
+
+  // v10: purchase returns (Worker B). A purchase return lives in `purchases`
+  // with kind='purchase_return' and its own PR/fy/seq number (the counter
+  // lives in invoice_series with kind='purchase_return'). Stock goes OUT
+  // for a return (reverse of a purchase's stock-in).
+  `
+  ALTER TABLE purchases ADD COLUMN kind TEXT NOT NULL DEFAULT 'purchase';
+  ALTER TABLE purchases ADD COLUMN return_no TEXT;
+
+  CREATE INDEX IF NOT EXISTS idx_purchases_kind ON purchases(kind, deleted_at);
+  `,
 ];
 
 export async function migrateDb(db: SQLiteDatabase): Promise<void> {

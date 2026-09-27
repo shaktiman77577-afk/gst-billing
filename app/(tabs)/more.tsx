@@ -8,12 +8,14 @@ import { Header } from '../../src/components/Header';
 import { LanguageToggle } from '../../src/components/LanguageToggle';
 import { Button, Card, MadeInIndia } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
+import { trReturns } from '../../src/i18n/parity_returns';
 import { stateName } from '../../src/data/states';
 import { useBusiness } from '../../src/hooks/useBusiness';
 import { colors, radius, text } from '../../src/theme';
 
 export default function MoreScreen() {
-  const { t, email, logout } = useApp();
+  const { t, email, logout, language } = useApp();
+  const tr = (k: Parameters<typeof trReturns>[1]) => trReturns(language, k);
   const business = useBusiness();
   const version = Constants.expoConfig?.version ?? '';
 
@@ -126,6 +128,28 @@ export default function MoreScreen() {
             <View style={styles.flexOnly}>
               <Text style={styles.rowText}>{t('pur_purchases')}</Text>
               <Text style={styles.meta}>{t('pur_purchasesHint')}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.faint} />
+          </Pressable>
+          <View style={styles.sep} />
+          <Pressable style={styles.row} onPress={() => router.push('/returns/sales')}>
+            <View style={styles.rowIcon}>
+              <Ionicons name="arrow-undo-outline" size={18} color={colors.primary} />
+            </View>
+            <View style={styles.flexOnly}>
+              <Text style={styles.rowText}>{tr('newSalesReturn')}</Text>
+              <Text style={styles.meta}>{tr('salesReturnHint')}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.faint} />
+          </Pressable>
+          <View style={styles.sep} />
+          <Pressable style={styles.row} onPress={() => router.push('/purchases/return')}>
+            <View style={styles.rowIcon}>
+              <Ionicons name="arrow-redo-outline" size={18} color={colors.primary} />
+            </View>
+            <View style={styles.flexOnly}>
+              <Text style={styles.rowText}>{tr('newPurchaseReturn')}</Text>
+              <Text style={styles.meta}>{tr('purchaseReturnHint')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.faint} />
           </Pressable>

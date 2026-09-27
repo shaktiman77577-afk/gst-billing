@@ -12,14 +12,15 @@ import { Chips } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import { getOverdueInvoices } from '../../src/lib/alerts';
 import { todayIso } from '../../src/lib/dates';
-import { InvoiceListRow, InvoiceStatus, listInvoices } from '../../src/db/invoices';
+import { InvoiceListRow, InvoiceStatus, isReturnKind, listInvoices } from '../../src/db/invoices';
+import { trReturns } from '../../src/i18n/parity_returns';
 import { colors } from '../../src/theme';
 
-type Filter = 'all' | InvoiceStatus | 'credit_note' | 'overdue' | 'quotation';
+type Filter = 'all' | InvoiceStatus | 'credit_note' | 'sales_return' | 'overdue' | 'quotation';
 
 export default function BillsScreen() {
   const db = useSQLiteContext();
-  const { t, businessId } = useApp();
+  const { t, businessId, language } = useApp();
   const [bills, setBills] = useState<InvoiceListRow[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [query, setQuery] = useState('');
@@ -49,7 +50,9 @@ export default function BillsScreen() {
           (filter === 'overdue'
             ? overdueIds.has(b.id)
             : filter === 'credit_note'
-              ? b.kind === 'credit_note'
+              ? isReturnKind(b.kind)
+              : filter === 'sales_return'
+                ? b.kind === 'sales_return'
               : filter === 'quotation'
                 ? b.doc_type === 'quotation'
                 : b.kind === 'invoice' && b.doc_type !== 'quotation' && b.status === filter)) &&
@@ -79,6 +82,7 @@ export default function BillsScreen() {
                   { value: 'partial', label: t('partial') },
                   { value: 'paid', label: t('paid') },
                   { value: 'credit_note', label: t('creditNotes') },
+                  { value: 'sales_return', label: trReturns(language, 'salesReturns') },
                   { value: 'quotation', label: t('q_quotations') },
                   { value: 'cancelled', label: t('cancelled') },
                 ]}

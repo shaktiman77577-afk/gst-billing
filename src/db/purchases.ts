@@ -1,6 +1,9 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
+import { financialYear, invoiceNumber } from '../lib/gst';
 import { newId, nowIso } from '../lib/id';
 import { markDirty } from '../lib/backup';
+
+export type PurchaseKind = 'purchase' | 'purchase_return';
 
 export type Purchase = {
   id: string;
@@ -11,10 +14,17 @@ export type Purchase = {
   supplier_bill_no: string | null;
   total_paise: number;
   note: string | null;
+  /** 'purchase' for a normal kharid bill, 'purchase_return' for goods sent back. (v10) */
+  kind: PurchaseKind;
+  /** PR/fy/seq number for purchase returns, e.g. PR/26-27/3. (v10) */
+  return_no: string | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
 };
+
+/** Number series for purchase returns: PR/26-27/1, PR/26-27/2, … (own sequence per FY). */
+export const PURCHASE_RETURN_PREFIX = 'PR';
 
 export type PurchaseLine = {
   id: string;
@@ -160,6 +170,118 @@ export async function savePurchase(
   return id;
 }
 
+/**
+ * Next purchase-return number: PR/fy/seq. The counter lives in the generic
+ * invoice_series table with kind='purchase_return' (one counter per business
+ * and FY, advanced on every use). The FY segment comes from the return date.
+ */
+export async function nextPurchaseReturnNo(
+  db: SQLiteDatabase,
+  businessId: string,
+  isoDate: string,
+): Promise<{ fy: string; seq: number; returnNo: string }> {
+  const fy = financialYear(isoDate);
+  const row = await db.getFirstAsync<{ next_seq: number | null }>(
+    `SELECT next_seq FROM invoice_series WHERE business_id = ? AND fy = ? AND kind = 'purchase_return'`,
+    businessId,
+    fy,
+  );
+  const seq = row?.next_seq ?? 1;
+  return { fy, seq, returnNo: invoiceNumber(PURCHASE_RETURN_PREFIX, fy, seq) };
+}
+
+/** Thrown when a purchase-return number is already used. Mirrors DUPLICATE_INVOICE_NO. */
+export const DUPLICATE_PURCHASE_RETURN_NO = 'duplicate-purchase-return-no';
+
+/**
+ * Creates a purchase return (goods sent back to a supplier). Mirrors
+ * savePurchase, but with kind='purchase_return', a PR/fy/seq return number,
+ * and stock going OUT (the reverse of a purchase's stock-in). supplier_bill_no
+ * is optional. Purchase returns never touch invoices, payments, GST reports
+ * or party balances — same as purchases.
+ */
+export async function createPurchaseReturn(
+  db: SQLiteDatabase,
+  params: {
+    businessId: string;
+    purchaseDate: string;
+    partyId: string | null;
+    partyName: string;
+    supplierBillNo: string | null;
+    note: string | null;
+    lines: PurchaseLineDraft[];
+  },
+): Promise<string> {
+  const { businessId, lines } = params;
+  const totalPaise = lines.reduce((s, l) => s + amountPaise(l), 0);
+  const now = nowIso();
+  const id = newId();
+
+  const no = await nextPurchaseReturnNo(db, businessId, params.purchaseDate);
+  const dup = await db.getFirstAsync<{ id: string }>(
+    `SELECT id FROM purchases WHERE business_id = ? AND return_no = ? AND id != ?`,
+    businessId,
+    no.returnNo,
+    id,
+  );
+  if (dup) throw new Error(DUPLICATE_PURCHASE_RETURN_NO);
+
+  await db.withTransactionAsync(async () => {
+    await db.runAsync(
+      `INSERT INTO purchases (id, business_id, purchase_date, party_id, party_name, supplier_bill_no,
+        total_paise, note, kind, return_no, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'purchase_return', ?, ?, ?)`,
+      id,
+      businessId,
+      params.purchaseDate,
+      params.partyId,
+      params.partyName,
+      params.supplierBillNo,
+      totalPaise,
+      params.note,
+      no.returnNo,
+      now,
+      now,
+    );
+
+    // Lines — stock goes OUT (reverse of a purchase).
+    for (let i = 0; i < lines.length; i++) {
+      const l = lines[i];
+      await db.runAsync(
+        `INSERT INTO purchase_items (id, purchase_id, item_id, item_type, name, unit, qty, rate_paise,
+          amount_paise, sort, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        newId(),
+        id,
+        l.itemId,
+        l.itemType,
+        l.name,
+        l.unit,
+        l.qty,
+        l.ratePaise,
+        amountPaise(l),
+        i,
+        now,
+        now,
+      );
+      if (l.itemId && l.itemType === 'product') await changeStock(db, l.itemId, -l.qty, now);
+    }
+
+    // Advance the PR counter past the number just used.
+    await db.runAsync(
+      `INSERT INTO invoice_series (business_id, fy, kind, next_seq) VALUES (?, ?, 'purchase_return', ?)
+       ON CONFLICT(business_id, fy, kind) DO UPDATE SET next_seq = excluded.next_seq`,
+      businessId,
+      no.fy,
+      no.seq + 1,
+    );
+  });
+
+  // Cloud backup: mark data as changed (debounced upload, never blocks the UI).
+  markDirty(db);
+  return id;
+}
+
 export async function getPurchase(
   db: SQLiteDatabase,
   id: string,
@@ -192,6 +314,7 @@ export async function listPurchases(
   );
 }
 
+/** Sums only real purchases — purchase returns are excluded (they are money-out reversals, not kharid). */
 export async function totalPurchases(
   db: SQLiteDatabase,
   businessId: string,
@@ -200,7 +323,7 @@ export async function totalPurchases(
 ): Promise<number> {
   const row = await db.getFirstAsync<{ total: number | null }>(
     `SELECT SUM(total_paise) AS total FROM purchases
-     WHERE business_id = ? AND deleted_at IS NULL AND purchase_date >= ? AND purchase_date <= ?`,
+     WHERE business_id = ? AND kind = 'purchase' AND deleted_at IS NULL AND purchase_date >= ? AND purchase_date <= ?`,
     businessId,
     from,
     to,
@@ -208,16 +331,36 @@ export async function totalPurchases(
   return row?.total ?? 0;
 }
 
-// Soft delete — the stock this purchase added is taken back out, so the
-// current stock stays honest. Sales bills, GST and balances are untouched.
+/** Picks the original-purchase list for the "link purchase" picker: live purchases only. */
+export async function linkablePurchases(
+  db: SQLiteDatabase,
+  businessId: string,
+): Promise<{ id: string; party_name: string; purchase_date: string; supplier_bill_no: string | null; total_paise: number }[]> {
+  return db.getAllAsync(
+    `SELECT id, party_name, purchase_date, supplier_bill_no, total_paise FROM purchases
+     WHERE business_id = ? AND kind = 'purchase' AND deleted_at IS NULL
+     ORDER BY purchase_date DESC, created_at DESC LIMIT 200`,
+    businessId,
+  );
+}
+
+// Soft delete — the stock movement this purchase made is undone, so the
+// current stock stays honest. A purchase added stock (take it back out); a
+// purchase return removed stock (put it back in). Sales bills, GST and
+// balances are untouched.
 export async function deletePurchase(db: SQLiteDatabase, id: string): Promise<void> {
   const now = nowIso();
+  const kindRow = await db.getFirstAsync<{ kind: string | null }>(
+    'SELECT kind FROM purchases WHERE id = ?',
+    id,
+  );
+  const stockSign = kindRow?.kind === 'purchase_return' ? 1 : -1;
   await db.withTransactionAsync(async () => {
     const old = await db.getAllAsync<{ item_id: string | null; qty: number }>(
       'SELECT item_id, qty FROM purchase_items WHERE purchase_id = ? AND deleted_at IS NULL',
       id,
     );
-    for (const l of old) if (l.item_id) await changeStock(db, l.item_id, -l.qty, now);
+    for (const l of old) if (l.item_id) await changeStock(db, l.item_id, stockSign * l.qty, now);
     await db.runAsync(
       'UPDATE purchase_items SET deleted_at = ?, updated_at = ? WHERE purchase_id = ? AND deleted_at IS NULL',
       now,

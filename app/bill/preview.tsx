@@ -9,7 +9,7 @@ import { WebView } from 'react-native-webview';
 import { FormHeader } from '../../src/components/FormHeader';
 import { Button } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
-import { getInvoice, Invoice, InvoiceLine } from '../../src/db/invoices';
+import { getInvoice, Invoice, InvoiceLine, isReturnKind } from '../../src/db/invoices';
 import { useBusiness } from '../../src/hooks/useBusiness';
 import { formatDate } from '../../src/lib/dates';
 import { formatPaise } from '../../src/lib/money';
@@ -57,7 +57,7 @@ export default function BillPreviewScreen() {
         no: inv.invoice_no,
         date: formatDate(inv.invoice_date),
         amount: formatPaise(inv.total_paise),
-        balance: inv.kind !== 'credit_note' && balance > 0 ? formatPaise(balance) : undefined,
+        balance: !isReturnKind(inv.kind) && balance > 0 ? formatPaise(balance) : undefined,
         business: business.name,
       });
       await sharePdfOnWhatsApp(html, inv.invoice_no, inv.party_phone, caption);

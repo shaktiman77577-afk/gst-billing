@@ -88,6 +88,9 @@ async function listPurchases(
       params.push(businessId);
     }
     if (names.has('deleted_at')) where.push('deleted_at IS NULL');
+    // Purchase returns (v10) are money coming back, not kharid — keep them
+    // out of the day's purchases. Guarded so old databases keep working.
+    if (names.has('kind')) where.push(`(kind IS NULL OR kind = 'purchase')`);
     where.push(`${dateCol} = ?`);
     params.push(date);
     const rows = await db.getAllAsync<DaybookPurchase>(
