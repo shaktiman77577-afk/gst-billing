@@ -221,9 +221,12 @@ const en = {
   recordPayment: 'Record payment',
   billSettings: 'Bill settings',
   invoicePrefix: 'Bill number prefix',
-  prefixHint: '1–6 letters or numbers, e.g. INV, RR',
+  prefixHint: 'Free format — letters, numbers, /, -, _ and space. e.g. INV, RR/SPR',
   nextBillNo: 'Next bill number',
-  errPrefix: 'Use 1–6 letters or numbers',
+  billNoPreview: 'Bill number preview',
+  errPrefix: "Prefix can't be empty",
+  errNextSeq: 'Enter 1 or a higher number',
+  errDuplicateBillNo: 'This bill number is already used. Please enter a different number.',
   saved: 'Saved',
 
   // PDF & bill design
@@ -770,9 +773,12 @@ const hi: Record<StringKey, string> = {
   recordPayment: 'Paisa mila jodein',
   billSettings: 'Bill settings',
   invoicePrefix: 'Bill number ka prefix',
-  prefixHint: '1–6 akshar ya number, jaise INV, RR',
+  prefixHint: 'Free format — akshar, number, /, -, _ aur space. jaise INV, RR/SPR',
   nextBillNo: 'Agla bill number',
-  errPrefix: '1–6 akshar ya number daalein',
+  billNoPreview: 'Bill number ka preview',
+  errPrefix: 'Prefix khaali nahi ho sakta',
+  errNextSeq: '1 ya usse bada number daalein',
+  errDuplicateBillNo: 'Ye bill number pehle se istemal ho chuka hai. Koi aur number daalein.',
   saved: 'Save ho gaya',
 
   // PDF & bill design

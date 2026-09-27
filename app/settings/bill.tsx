@@ -8,15 +8,20 @@ import { FormHeader } from '../../src/components/FormHeader';
 import { Button, Card, Field, Screen, SectionHeader } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import { updateBillDesign } from '../../src/db/businesses';
-import { nextInvoiceNo } from '../../src/db/invoices';
+import { getInvoiceNextSeq, setInvoiceNextSeq } from '../../src/db/invoices';
 import { useBusiness } from '../../src/hooks/useBusiness';
 import { todayIso } from '../../src/lib/dates';
+import { financialYear, invoiceNumber } from '../../src/lib/gst';
 import { pickImage } from '../../src/lib/pickImage';
 import { DEFAULT_TERMS } from '../../src/pdf/data';
 import { TEMPLATES } from '../../src/pdf/templates';
 import { colors, radius } from '../../src/theme';
 
-const PREFIX = /^[A-Z0-9-]{1,6}$/;
+const PREFIX_ALLOWED = /^[A-Z0-9/\-_ ]{1,20}$/;
+// Free text: letters, numbers, /, -, _, space — max 20 chars.
+const normalizePrefixInput = (v: string) =>
+  v.toUpperCase().replace(/[^A-Z0-9/\-_ ]/g, '').slice(0, 20);
+const finalizePrefix = (v: string) => v.trim().replace(/[/\s]+$/, '');
 const IFSC = /^[A-Z]{4}0[A-Z0-9]{6}$/;
 const clean = (v: string) => (v.trim() ? v.trim() : null);
 
@@ -26,7 +31,8 @@ export default function BillSettingsScreen() {
   const business = useBusiness();
   const [loaded, setLoaded] = useState(false);
   const [prefix, setPrefix] = useState('INV');
-  const [preview, setPreview] = useState('');
+  const [nextSeq, setNextSeq] = useState('');
+  const [nextSeqSeed, setNextSeqSeed] = useState(1);
   const [tagline, setTagline] = useState('');
   const [logo, setLogo] = useState<string | null>(null);
   const [signature, setSignature] = useState<string | null>(null);
@@ -36,7 +42,7 @@ export default function BillSettingsScreen() {
   const [bankName, setBankName] = useState('');
   const [upi, setUpi] = useState('');
   const [terms, setTerms] = useState(DEFAULT_TERMS);
-  const [errors, setErrors] = useState<{ prefix?: string; ifsc?: string }>({});
+  const [errors, setErrors] = useState<{ prefix?: string; ifsc?: string; nextSeq?: string }>({});
   const [saving, setSaving] = useState(false);
 
   // Fill the form once from the saved business.
@@ -56,9 +62,21 @@ export default function BillSettingsScreen() {
   }, [business, loaded]);
 
   useEffect(() => {
-    if (!businessId || !PREFIX.test(prefix)) return;
-    nextInvoiceNo(db, businessId, prefix, todayIso()).then((n) => setPreview(n.invoiceNo));
-  }, [db, businessId, prefix]);
+    if (!businessId) return;
+    // Seed the "next bill number" from the current counter (max used + 1).
+    getInvoiceNextSeq(db, businessId, todayIso(), 'invoice').then((n) => {
+      setNextSeq(String(n.seq));
+      setNextSeqSeed(n.seq);
+    });
+  }, [db, businessId]);
+
+  // Live preview of the full next bill number from the entered values.
+  const cleanPrefix = finalizePrefix(prefix);
+  const parsedNext = /^\d+$/.test(nextSeq.trim()) ? parseInt(nextSeq.trim(), 10) : NaN;
+  const previewNo =
+    PREFIX_ALLOWED.test(cleanPrefix) && parsedNext >= 1
+      ? invoiceNumber(cleanPrefix, financialYear(todayIso()), parsedNext)
+      : '';
 
   const choose = async (kind: 'logo' | 'signature') => {
     const img = await pickImage(kind === 'logo' ? [1, 1] : [3, 1]);
@@ -70,14 +88,17 @@ export default function BillSettingsScreen() {
 
   const onSave = async () => {
     const e: typeof errors = {};
-    if (!PREFIX.test(prefix)) e.prefix = t('errPrefix');
+    const cp = finalizePrefix(prefix);
+    if (!PREFIX_ALLOWED.test(cp)) e.prefix = t('errPrefix');
+    const ns = /^\d+$/.test(nextSeq.trim()) ? parseInt(nextSeq.trim(), 10) : NaN;
+    if (!(ns >= 1)) e.nextSeq = t('errNextSeq');
     if (ifsc && !IFSC.test(ifsc)) e.ifsc = 'IFSC: ABCD0123456';
     setErrors(e);
     if (Object.keys(e).length || !business || !businessId) return;
     setSaving(true);
     try {
       await updateBillDesign(db, businessId, {
-        invoicePrefix: prefix,
+        invoicePrefix: cp,
         template: business.template,
         themeColor: business.theme_color,
         logo,
@@ -90,6 +111,10 @@ export default function BillSettingsScreen() {
         terms: terms.trim(),
         tagline: clean(tagline),
       });
+      // Persist a raised "next bill number" so future auto numbers start there.
+      if (ns !== nextSeqSeed) {
+        await setInvoiceNextSeq(db, businessId, financialYear(todayIso()), 'invoice', ns);
+      }
       router.back();
     } finally {
       setSaving(false);
@@ -129,17 +154,25 @@ export default function BillSettingsScreen() {
           <Field
             label={t('invoicePrefix')}
             value={prefix}
-            onChangeText={(v) => setPrefix(v.toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 6))}
+            onChangeText={(v) => setPrefix(normalizePrefixInput(v))}
             autoCapitalize="characters"
             autoCorrect={false}
-            maxLength={6}
+            maxLength={20}
             icon="pricetag-outline"
             error={errors.prefix}
           />
-          {PREFIX.test(prefix) && preview ? (
+          <Field
+            label={t('nextBillNo')}
+            value={nextSeq}
+            onChangeText={(v) => setNextSeq(v.replace(/\D/g, '').slice(0, 6))}
+            keyboardType="number-pad"
+            icon="list-outline"
+            error={errors.nextSeq}
+          />
+          {previewNo ? (
             <View style={styles.preview}>
-              <Text style={styles.muted}>{t('nextBillNo')}</Text>
-              <Text style={styles.previewValue}>{preview}</Text>
+              <Text style={styles.muted}>{t('billNoPreview')}</Text>
+              <Text style={styles.previewValue}>{previewNo}</Text>
             </View>
           ) : null}
         </Card>

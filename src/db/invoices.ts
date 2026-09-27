@@ -117,8 +117,52 @@ export function statusFor(total: number, settled: number): InvoiceStatus {
 
 export const CREDIT_NOTE_PREFIX = 'CN';
 
-// Next number in this financial year. Counts deleted/cancelled bills too,
-// so a number is never reused.
+// Next sequence in this financial year. Counts deleted/cancelled bills too,
+// so a number is never reused. A per-series floor (Bill settings →
+// "Next bill number") can raise the counter but never lower it below used.
+export async function getInvoiceNextSeq(
+  db: SQLiteDatabase,
+  businessId: string,
+  isoDate: string,
+  kind: InvoiceKind = 'invoice',
+): Promise<{ fy: string; seq: number }> {
+  const fy = financialYear(isoDate);
+  const maxRow = await db.getFirstAsync<{ maxSeq: number | null }>(
+    `SELECT MAX(seq) AS maxSeq FROM invoices
+     WHERE business_id = ? AND fy = ? AND kind = ? AND doc_type != 'quotation'`,
+    businessId,
+    fy,
+    kind,
+  );
+  const floorRow = await db.getFirstAsync<{ next_seq: number | null }>(
+    `SELECT next_seq FROM invoice_series WHERE business_id = ? AND fy = ? AND kind = ?`,
+    businessId,
+    fy,
+    kind,
+  );
+  const seq = Math.max(maxRow?.maxSeq ?? 0, (floorRow?.next_seq ?? 1) - 1) + 1;
+  return { fy, seq };
+}
+
+/** Sets the auto-number floor for a series (Bill settings). Never lowers the counter below used numbers. */
+export async function setInvoiceNextSeq(
+  db: SQLiteDatabase,
+  businessId: string,
+  fy: string,
+  kind: InvoiceKind,
+  nextSeq: number,
+): Promise<void> {
+  await db.runAsync(
+    `INSERT INTO invoice_series (business_id, fy, kind, next_seq) VALUES (?, ?, ?, ?)
+     ON CONFLICT(business_id, fy, kind) DO UPDATE SET next_seq = excluded.next_seq`,
+    businessId,
+    fy,
+    kind,
+    nextSeq,
+  );
+}
+
+// Next number in this financial year: PREFIX/FY/SEQ.
 export async function nextInvoiceNo(
   db: SQLiteDatabase,
   businessId: string,
@@ -126,17 +170,31 @@ export async function nextInvoiceNo(
   isoDate: string,
   kind: InvoiceKind = 'invoice',
 ): Promise<{ fy: string; seq: number; invoiceNo: string }> {
-  const fy = financialYear(isoDate);
-  const row = await db.getFirstAsync<{ maxSeq: number | null }>(
-    `SELECT MAX(seq) AS maxSeq FROM invoices
-     WHERE business_id = ? AND fy = ? AND kind = ? AND doc_type != 'quotation'`,
-    businessId,
-    fy,
-    kind,
-  );
-  const seq = (row?.maxSeq ?? 0) + 1;
+  const { fy, seq } = await getInvoiceNextSeq(db, businessId, isoDate, kind);
   return { fy, seq, invoiceNo: invoiceNumber(prefix, fy, seq) };
 }
+
+/**
+ * Splits a hand-typed bill number into prefix + trailing sequence.
+ * "RR/SPR/26-27/83" → { prefix: "RR/SPR", seq: 83 }.
+ * Returns null when there are no trailing digits — the counter is then
+ * left alone (the row takes seq 0, which never moves MAX).
+ */
+function parseTypedInvoiceNo(typed: string): { prefix: string; seq: number } | null {
+  // Canonical shape PREFIX/FY/SEQ, e.g. RR/SPR/26-27/83.
+  let m = typed.match(/^(.*)\/(\d{2}-\d{2})\/(\d{1,12})$/);
+  if (m) return { prefix: m[1], seq: parseInt(m[3], 10) };
+  // Bare digits, e.g. 83 (prefix falls back to the settings prefix).
+  m = typed.match(/^(\d{1,12})$/);
+  if (m) return { prefix: '', seq: parseInt(m[1], 10) };
+  // Anything else ending in /digits, e.g. RR/SPR/90.
+  m = typed.match(/^(.*)\/(\d{1,12})$/);
+  if (m) return { prefix: m[1], seq: parseInt(m[2], 10) };
+  return null;
+}
+
+/** Thrown when a bill number is already used. The UI maps this to a friendly message. */
+export const DUPLICATE_INVOICE_NO = 'duplicate-invoice-no';
 
 export type InvoiceListRow = Pick<
   Invoice,
@@ -215,6 +273,8 @@ export async function saveInvoice(
     businessId: string;
     invoiceId: string | null;
     prefix: string;
+    /** Hand-typed bill number for a new bill (New Bill screen). Null/empty = auto-generate. */
+    invoiceNo?: string | null;
     draft: InvoiceDraft;
     lines: LineDraft[];
     totals: BillTotals;
@@ -288,7 +348,41 @@ export async function saveInvoice(
         id,
       );
     } else {
-      const no = await nextInvoiceNo(db, businessId, params.prefix, draft.invoiceDate, kind);
+      // New bill: use the hand-typed number when given, else auto-generate.
+      // The FY segment always comes from the bill date (back-dated bills land
+      // in the right financial year); the number text itself is kept verbatim.
+      const fy = financialYear(draft.invoiceDate);
+      let prefix = params.prefix;
+      let seq: number;
+      let invoiceNo: string;
+      const typed = params.invoiceNo?.trim();
+      if (typed) {
+        // GST: bill numbers must be unique. Block exact duplicates within the
+        // business — across financial years and series, including deleted and
+        // cancelled bills, so a number is never reused.
+        const dup = await db.getFirstAsync<{ id: string }>(
+          `SELECT id FROM invoices WHERE business_id = ? AND invoice_no = ? AND id != ?`,
+          businessId,
+          typed,
+          id,
+        );
+        if (dup) throw new Error(DUPLICATE_INVOICE_NO);
+        const parsed = parseTypedInvoiceNo(typed);
+        if (parsed) {
+          // Custom number ending in digits (e.g. RR/SPR/26-27/83): adopt the
+          // trailing digits as the sequence, bumping the counter past it.
+          prefix = parsed.prefix || params.prefix;
+          seq = parsed.seq;
+        } else {
+          // Unparseable: leave the counter alone (seq 0 never moves MAX).
+          seq = 0;
+        }
+        invoiceNo = typed;
+      } else {
+        const no = await nextInvoiceNo(db, businessId, params.prefix, draft.invoiceDate, kind);
+        seq = no.seq;
+        invoiceNo = no.invoiceNo;
+      }
       await db.runAsync(
         `INSERT INTO invoices (
           doc_type, invoice_date, due_date, party_id, party_name, party_phone,
@@ -303,10 +397,10 @@ export async function saveInvoice(
         ...header,
         id,
         businessId,
-        params.prefix,
-        no.fy,
-        no.seq,
-        no.invoiceNo,
+        prefix,
+        fy,
+        seq,
+        invoiceNo,
         kind,
         params.refInvoice?.id ?? null,
         params.refInvoice?.no ?? null,

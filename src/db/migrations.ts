@@ -255,6 +255,19 @@ const MIGRATIONS: string[] = [
 
   CREATE INDEX IF NOT EXISTS idx_purchase_items_purchase ON purchase_items(purchase_id, deleted_at);
   `,
+
+  // v9: per-series auto-number floor ("Next bill number" in Bill settings).
+  // The invoice counter itself stays derived from MAX(seq) so numbers are
+  // never reused; this table only stores an optional floor that raises it.
+  `
+  CREATE TABLE IF NOT EXISTS invoice_series (
+    business_id TEXT NOT NULL,
+    fy TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    next_seq INTEGER NOT NULL,
+    PRIMARY KEY (business_id, fy, kind)
+  );
+  `,
 ];
 
 export async function migrateDb(db: SQLiteDatabase): Promise<void> {

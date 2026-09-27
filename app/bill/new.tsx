@@ -15,6 +15,7 @@ import { useApp } from '../../src/context/AppContext';
 import { stateName } from '../../src/data/states';
 import {
   DocType,
+  DUPLICATE_INVOICE_NO,
   getInvoice,
   getInvoicePayment,
   LineDraft,
@@ -154,8 +155,16 @@ export default function BillFormScreen() {
   const isIgst = applyGst && !!business && placeOfSupply !== business.state_code;
 
   // New bill: preview the next number (own series for quotations).
+  // Once the user edits the number by hand, stop overwriting it; switching
+  // between bill and quotation resets it to that series' next number.
+  const numberTouched = useRef(false);
+  const prevIsQuotation = useRef(isQuotation);
   useEffect(() => {
-    if (editId || !business || !businessId) return;
+    if (prevIsQuotation.current !== isQuotation) {
+      prevIsQuotation.current = isQuotation;
+      numberTouched.current = false;
+    }
+    if (editId || !business || !businessId || numberTouched.current) return;
     if (isQuotation) nextQuotationNo(db, businessId, invoiceDate).then((n) => setInvoiceNo(n.quotationNo));
     else nextInvoiceNo(db, businessId, business.invoice_prefix, invoiceDate).then((n) => setInvoiceNo(n.invoiceNo));
   }, [db, editId, business, businessId, invoiceDate, isQuotation]);
@@ -254,6 +263,7 @@ export default function BillFormScreen() {
           businessId,
           invoiceId: editId,
           prefix: business.invoice_prefix,
+          invoiceNo: editId ? null : invoiceNo.trim() || null,
           lines: valid,
           totals: finalTotals,
           draft,
@@ -262,7 +272,8 @@ export default function BillFormScreen() {
       if (editId) router.back();
       else router.replace(`/bill/${savedId}`);
     } catch (e) {
-      setError(`${t('somethingWrong')} (${String((e as Error)?.message ?? e)})`);
+      if ((e as Error)?.message === DUPLICATE_INVOICE_NO) setError(t('errDuplicateBillNo'));
+      else setError(`${t('somethingWrong')} (${String((e as Error)?.message ?? e)})`);
     } finally {
       setSaving(false);
     }
@@ -296,7 +307,6 @@ export default function BillFormScreen() {
       <StatusBar style="dark" />
       <FormHeader
         title={editId ? (isQuotation ? t('q_editQuotation') : t('editBill')) : isQuotation ? t('q_newQuotation') : t('newBill')}
-        right={<Text style={styles.headerNo}>{invoiceNo}</Text>}
       />
       <Screen
         edges={['bottom']}
@@ -328,6 +338,18 @@ export default function BillFormScreen() {
 
         {/* Number & dates */}
         <Card>
+          <Field
+            label={t('billNo')}
+            value={invoiceNo}
+            onChangeText={(v) => {
+              setInvoiceNo(v);
+              numberTouched.current = true;
+            }}
+            editable={!editId && !isQuotation}
+            autoCapitalize="characters"
+            autoCorrect={false}
+            icon="document-text-outline"
+          />
           <View style={styles.row}>
             <DateField label={t('billDate')} value={invoiceDate} onChange={(d) => d && setInvoiceDate(d)} />
             <DateField label={t('dueDate')} value={dueDate} onChange={setDueDate} placeholder="—" clearable />
@@ -572,7 +594,6 @@ function SumRow({
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: 'transparent' },
   row: { flexDirection: 'row', gap: 12 },
-  headerNo: { fontSize: text.sm, fontWeight: '700', color: colors.muted },
   note: { fontSize: text.xs, color: colors.warning, backgroundColor: colors.accentSoft, padding: 8, borderRadius: radius.sm },
   partyBox: {
     flexDirection: 'row',
