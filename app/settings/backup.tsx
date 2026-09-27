@@ -8,9 +8,6 @@ import { CloudStatusCard } from '../../src/components/CloudStatus';
 import { FormHeader } from '../../src/components/FormHeader';
 import { Button, Card, IconName, Screen } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
-import { exportBackup, lastBackupAt, markBackedUp } from '../../src/db/backup';
-import { useRestore } from '../../src/hooks/useRestore';
-import { shareBackupFile } from '../../src/lib/backupFile';
 import {
   BackupError,
   CloudBackupRow,
@@ -60,10 +57,7 @@ function formatDate(iso: string): string {
 
 export default function BackupScreen() {
   const db = useSQLiteContext();
-  const { t, userId } = useApp();
-  const { start: restore, restoring } = useRestore();
-  const [last, setLast] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const { t } = useApp();
 
   // ---- cloud backup state ----
   const [cloud, setCloud] = useState<CloudBackupRow[]>([]);
@@ -71,10 +65,6 @@ export default function BackupScreen() {
   const [cloudBusy, setCloudBusy] = useState(false);
   const [autoOn, setAutoOn] = useState(false);
   const [rowBusy, setRowBusy] = useState<string | null>(null);
-
-  const refresh = useCallback(() => {
-    lastBackupAt(db).then(setLast);
-  }, [db]);
 
   const refreshCloud = useCallback(async () => {
     setCloudLoading(true);
@@ -95,32 +85,17 @@ export default function BackupScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      refresh();
       void refreshCloud();
-    }, [refresh, refreshCloud]),
+    }, [refreshCloud]),
   );
 
+  const lastCloud = cloud[0]?.created_at ?? null;
   const ago = (() => {
-    if (!last) return t('never');
-    const days = Math.floor((Date.now() - new Date(last).getTime()) / 86400000);
+    if (!lastCloud) return t('never');
+    const days = Math.floor((Date.now() - new Date(lastCloud).getTime()) / 86400000);
     return days <= 0 ? t('today') : t('daysAgo').replace('{n}', String(days));
   })();
-  const old = !last || Date.now() - new Date(last).getTime() > 7 * 86400000;
-
-  const backup = async () => {
-    if (!userId) return;
-    setBusy(true);
-    try {
-      const data = await exportBackup(db, userId);
-      await shareBackupFile(JSON.stringify(data));
-      await markBackedUp(db);
-      refresh();
-    } catch (e) {
-      Alert.alert(t('backup'), `${t('somethingWrong')} (${String((e as Error)?.message ?? e)})`);
-    } finally {
-      setBusy(false);
-    }
-  };
+  const old = !lastCloud || Date.now() - new Date(lastCloud).getTime() > 7 * 86400000;
 
   const cloudBackupNow = async () => {
     setCloudBusy(true);
@@ -128,7 +103,6 @@ export default function BackupScreen() {
       await backupNow(db);
       Alert.alert(t('bk_cloudTitle'), t('bk_done'));
       await refreshCloud();
-      refresh();
     } catch (e) {
       const key = e instanceof BackupError ? cloudErrorKey(e.code) : 'bk_failed';
       Alert.alert(t('bk_cloudTitle'), t(key));
@@ -208,8 +182,6 @@ export default function BackupScreen() {
     { icon: 'phone-portrait-outline', key: 'backupTip3' },
   ];
 
-  const lastCloud = cloud[0]?.created_at ?? null;
-
   return (
     <View style={styles.flex}>
       <StatusBar style="dark" />
@@ -231,18 +203,6 @@ export default function BackupScreen() {
             <Text style={styles.muted}>{t('lastBackup')}</Text>
             <Text style={styles.big}>{ago}</Text>
           </View>
-        </Card>
-
-        <Card>
-          <Text style={styles.text}>{t('backupHow')}</Text>
-          <Button icon="cloud-upload-outline" label={t('backupNow')} onPress={backup} loading={busy} />
-          <Button
-            variant="outline"
-            icon="cloud-download-outline"
-            label={t('restore')}
-            onPress={restore}
-            loading={restoring}
-          />
         </Card>
 
         {/* ---------- Cloud backup (Supabase) ---------- */}

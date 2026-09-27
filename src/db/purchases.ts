@@ -1,5 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { newId, nowIso } from '../lib/id';
+import { markDirty } from '../lib/backup';
 
 export type Purchase = {
   id: string;
@@ -154,6 +155,8 @@ export async function savePurchase(
     }
   });
 
+  // Cloud backup: mark data as changed (debounced upload, never blocks the UI).
+  markDirty(db);
   return id;
 }
 
@@ -222,5 +225,7 @@ export async function deletePurchase(db: SQLiteDatabase, id: string): Promise<vo
       id,
     );
     await db.runAsync('UPDATE purchases SET deleted_at = ?, updated_at = ? WHERE id = ?', now, now, id);
+    // Cloud backup: mark data as changed (debounced upload, never blocks the UI).
+    markDirty(db);
   });
 }

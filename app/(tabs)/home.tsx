@@ -11,7 +11,7 @@ import { GstDeadlinesCard } from '../../src/components/GstDeadlinesCard';
 import { Header } from '../../src/components/Header';
 import { Card, IconName } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
-import { needsBackupReminder } from '../../src/db/backup';
+import { getMeta } from '../../src/db/meta';
 import { InvoiceListRow, listInvoices, salesSummary } from '../../src/db/invoices';
 import { totalExpenses } from '../../src/db/expenses';
 import { partyTotals } from '../../src/db/parties';
@@ -47,7 +47,11 @@ export default function HomeScreen() {
       listInvoices(db, businessId, 5).then((rows) => setRecent(rows.filter((r) => r.doc_type !== 'quotation')));
       salesSummary(db, businessId, monthStartIso()).then(setMonth);
       totalExpenses(db, businessId, monthStartIso(), todayIso()).then(setMonthExp);
-      needsBackupReminder(db, businessId).then(setRemind);
+      // Remind when no cloud backup has succeeded in 7 days (backupNow stamps
+      // last_backup_at; change-triggered and manual uploads both count).
+      getMeta(db, 'last_backup_at').then((last) => {
+        setRemind(!last || Date.now() - new Date(last).getTime() > 7 * 86400000);
+      });
       getAlertCounts(db, businessId, todayIso()).then(setAlerts);
     }, [db, businessId]),
   );

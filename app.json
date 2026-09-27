@@ -24,7 +24,8 @@
         {
           "photosPermission": "Allow GST Billing to use your photos for the business logo and signature."
         }
-      ]
+      ],
+      "./plugins/withStableDebugKeystore"
     ],
     "android": {
       "package": "com.gstbilling.invoicemaker",

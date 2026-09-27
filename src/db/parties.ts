@@ -1,5 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { newId, nowIso } from '../lib/id';
+import { markDirty } from '../lib/backup';
 
 export type PartyType = 'customer' | 'supplier';
 
@@ -83,6 +84,8 @@ export async function createParty(db: SQLiteDatabase, businessId: string, input:
     now,
     now,
   );
+  // Cloud backup: mark data as changed (debounced upload, never blocks the UI).
+  markDirty(db);
   return id;
 }
 
@@ -104,12 +107,16 @@ export async function updateParty(db: SQLiteDatabase, id: string, input: PartyIn
     nowIso(),
     id,
   );
+  // Cloud backup: mark data as changed (debounced upload, never blocks the UI).
+  markDirty(db);
 }
 
 // Soft delete: kept in the database (for future sync), hidden everywhere.
 export async function deleteParty(db: SQLiteDatabase, id: string): Promise<void> {
   const now = nowIso();
   await db.runAsync('UPDATE parties SET deleted_at = ?, updated_at = ? WHERE id = ?', now, now, id);
+  // Cloud backup: mark data as changed (debounced upload, never blocks the UI).
+  markDirty(db);
 }
 
 export async function partyTotals(

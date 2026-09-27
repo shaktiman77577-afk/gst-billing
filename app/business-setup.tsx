@@ -2,7 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, Alert } from 'react-native';
 import { FormHeader } from '../src/components/FormHeader';
 import { LanguageToggle } from '../src/components/LanguageToggle';
 import { StatePicker } from '../src/components/StatePicker';
@@ -21,7 +21,7 @@ import {
 import { useApp } from '../src/context/AppContext';
 import { BusinessType, createBusiness, updateBusiness } from '../src/db/businesses';
 import { useBusiness } from '../src/hooks/useBusiness';
-import { useRestore } from '../src/hooks/useRestore';
+import { supabase } from '../src/lib/supabase';
 import {
   isValidGstin,
   normalizeGstin,
@@ -42,7 +42,6 @@ export default function BusinessSetupScreen() {
   const { edit } = useLocalSearchParams<{ edit?: string }>();
   const isEdit = edit === '1';
   const existing = useBusiness();
-  const { start: startRestore, restoring } = useRestore();
   const [prefilled, setPrefilled] = useState(false);
 
   const [name, setName] = useState('');
@@ -73,6 +72,21 @@ export default function BusinessSetupScreen() {
     setBusinessType(existing.business_type);
     setPrefilled(true);
   }, [isEdit, existing, prefilled]);
+
+  // Cloud restore entry: only useful when logged in with Google (the cloud
+  // backup list lives on the Backup screen). No session → hide the button.
+  const goCloudRestore = async () => {
+    try {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        router.push('/settings/backup');
+        return;
+      }
+    } catch {
+      // fall through to the "not logged in" message
+    }
+    Alert.alert(t('bk_cloudTitle'), t('bk_noSession'));
+  };
 
   const gstinOk = gstRegistered === 'yes' && isValidGstin(gstin);
 
@@ -156,13 +170,12 @@ export default function BusinessSetupScreen() {
             <LanguageToggle />
           </View>
         )}
-        {isEdit ? null : (
+        {isEdit || !userId ? null : (
           <Button
             variant="outline"
             icon="cloud-download-outline"
-            label={t('haveBackup')}
-            onPress={startRestore}
-            loading={restoring}
+            label={t('restore')}
+            onPress={goCloudRestore}
           />
         )}
 

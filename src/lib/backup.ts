@@ -299,6 +299,71 @@ export async function restoreBackup(db: SQLiteDatabase, row: CloudBackupRow): Pr
 }
 
 // ---------------------------------------------------------------------------
+// Change-triggered cloud backup (debounced)
+//
+// Domain write functions (src/db/*) call markDirty(db) after a successful
+// save. A full snapshot upload runs ~60s after the LAST change — the timer
+// resets on every call, so 20 quick bill saves produce a single upload.
+// Fire-and-forget: never throws, never blocks the caller.
+//
+// If the upload fails (offline, logged out), the dirty flag is kept and the
+// upload is retried on the next markDirty() or when the app comes back to
+// the foreground (see retryPendingBackup, wired in useAutoBackup).
+// ---------------------------------------------------------------------------
+
+const DIRTY_DEBOUNCE_MS = 60 * 1000;
+
+let dirtyDb: SQLiteDatabase | null = null;
+let dirtyTimer: ReturnType<typeof setTimeout> | null = null;
+
+async function flushDirtyBackup(db: SQLiteDatabase): Promise<void> {
+  try {
+    await backupNow(db);
+    // A change-triggered upload also counts for the daily safety net below.
+    await setMeta(db, 'backup_last_auto', new Date().toISOString());
+  } catch {
+    // Stay dirty: the next markDirty() or an app-foreground retry picks it up.
+    dirtyDb = db;
+  }
+}
+
+/**
+ * Mark local data as changed and (re)start the ~60s debounce timer.
+ * Safe to call from any domain write — never throws.
+ */
+export function markDirty(db: SQLiteDatabase): void {
+  try {
+    dirtyDb = db;
+    if (dirtyTimer) clearTimeout(dirtyTimer);
+    dirtyTimer = setTimeout(() => {
+      dirtyTimer = null;
+      const target = dirtyDb;
+      dirtyDb = null;
+      if (target) void flushDirtyBackup(target);
+    }, DIRTY_DEBOUNCE_MS);
+  } catch {
+    // Backup bookkeeping must never disturb a save.
+  }
+}
+
+/**
+ * App-foreground retry point: runs the pending dirty backup now, but only
+ * when its debounce timer already fired (i.e. a previous upload failed and
+ * the flag is still set). When the timer is still pending, it fires on its
+ * own — leave it alone.
+ */
+export function retryPendingBackup(): void {
+  try {
+    if (dirtyTimer || !dirtyDb) return;
+    const target = dirtyDb;
+    dirtyDb = null;
+    void flushDirtyBackup(target);
+  } catch {
+    // ignore
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Auto-backup (at most once per 24h, only when the user enabled it)
 // ---------------------------------------------------------------------------
 

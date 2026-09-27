@@ -1,6 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { BillTotals, DiscountType, financialYear, invoiceNumber } from '../lib/gst';
 import { newId, nowIso } from '../lib/id';
+import { markDirty } from '../lib/backup';
 
 export type InvoiceStatus = 'paid' | 'partial' | 'unpaid' | 'cancelled';
 export type InvoiceKind = 'invoice' | 'credit_note';
@@ -390,6 +391,8 @@ export async function saveInvoice(
     if (params.refInvoice) await refreshInvoiceStatus(db, params.refInvoice.id);
   });
 
+  // Cloud backup: mark data as changed (debounced upload, never blocks the UI).
+  markDirty(db);
   return id;
 }
 
@@ -489,6 +492,8 @@ export async function cancelInvoice(db: SQLiteDatabase, invoiceId: string): Prom
     await refreshInvoiceStatus(db, invoiceId);
     if (inv.ref_invoice_id) await refreshInvoiceStatus(db, inv.ref_invoice_id);
   });
+  // Cloud backup: mark data as changed (debounced upload, never blocks the UI).
+  markDirty(db);
   return 'ok';
 }
 
@@ -580,6 +585,8 @@ export async function recordPayment(
       await insert(null, p.amountPaise);
     }
     for (const id of touched) await refreshInvoiceStatus(db, id);
+    // Cloud backup: mark data as changed (debounced upload, never blocks the UI).
+    markDirty(db);
   });
 }
 
@@ -598,6 +605,8 @@ export async function deletePayment(db: SQLiteDatabase, paymentId: string): Prom
       await db.runAsync('UPDATE payments SET deleted_at = ?, updated_at = ? WHERE id = ?', now, now, r.id);
     }
     for (const r of rows) if (r.invoice_id) await refreshInvoiceStatus(db, r.invoice_id);
+    // Cloud backup: mark data as changed (debounced upload, never blocks the UI).
+    markDirty(db);
   });
 }
 

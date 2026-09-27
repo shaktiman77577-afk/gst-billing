@@ -1,5 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { newId, nowIso } from '../lib/id';
+import { markDirty } from '../lib/backup';
 
 export type ItemType = 'product' | 'service';
 
@@ -76,6 +77,8 @@ export async function createItem(db: SQLiteDatabase, businessId: string, input: 
     now,
     now,
   );
+  // Cloud backup: mark data as changed (debounced upload, never blocks the UI).
+  markDirty(db);
   return id;
 }
 
@@ -104,11 +107,15 @@ export async function updateItem(db: SQLiteDatabase, id: string, input: ItemInpu
     nowIso(),
     id,
   );
+  // Cloud backup: mark data as changed (debounced upload, never blocks the UI).
+  markDirty(db);
 }
 
 export async function deleteItem(db: SQLiteDatabase, id: string): Promise<void> {
   const now = nowIso();
   await db.runAsync('UPDATE items SET deleted_at = ?, updated_at = ? WHERE id = ?', now, now, id);
+  // Cloud backup: mark data as changed (debounced upload, never blocks the UI).
+  markDirty(db);
 }
 
 export function isLowStock(item: Item): boolean {

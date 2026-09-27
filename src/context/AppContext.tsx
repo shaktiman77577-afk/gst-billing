@@ -4,6 +4,7 @@ import { getFirstBusinessForUser } from '../db/businesses';
 import { getMeta, setMeta } from '../db/meta';
 import { Language, STRINGS, StringKey } from '../i18n/strings';
 import { logoutGoogle } from '../lib/auth';
+import { pullBusinessProfileIfMissing } from '../lib/businessProfile';
 import { pushChanges, resetSyncState, syncEnabled } from '../sync/engine';
 
 type AppState = {
@@ -41,8 +42,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const language = (await getMeta(db, 'language')) as Language | null;
       const userId = await getMeta(db, 'user_id');
       const email = await getMeta(db, 'email');
-      const businessId = await getMeta(db, 'active_business_id');
+      let businessId = await getMeta(db, 'active_business_id');
       setState({ ready: true, language, userId, email, businessId });
+      // App start: a Supabase session may exist while the local business table
+      // is empty (setup done on another phone). Pull the cloud profile in the
+      // background — local rows are never overwritten.
+      if (userId && !businessId) {
+        const pulled = await pullBusinessProfileIfMissing(db, userId);
+        if (pulled) {
+          await setMeta(db, 'active_business_id', pulled);
+          setState((s) => ({ ...s, businessId: pulled }));
+        }
+      }
     })();
   }, [db]);
 
@@ -66,7 +77,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       await setMeta(db, 'user_id', userId);
       await setMeta(db, 'email', email);
       // Same user logging in again on this phone: reopen their business.
-      const existing = await getFirstBusinessForUser(db, userId);
+      // On a new phone the local table is empty — pull the cloud profile
+      // (if the session has one) so the setup screen is skipped. Local wins.
+      const pulled = await pullBusinessProfileIfMissing(db, userId);
+      const existing = pulled ? { id: pulled } : await getFirstBusinessForUser(db, userId);
       await setMeta(db, 'active_business_id', existing?.id ?? null);
       setState((s) => ({ ...s, userId, email, businessId: existing?.id ?? null }));
       return existing?.id ?? null;

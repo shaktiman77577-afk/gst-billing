@@ -2,6 +2,7 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 import { todayIso } from '../lib/dates';
 import { BillTotals, calcBill, financialYear, invoiceNumber } from '../lib/gst';
 import { newId, nowIso } from '../lib/id';
+import { markDirty } from '../lib/backup';
 import {
   InvoiceDraft,
   LineDraft,
@@ -169,6 +170,8 @@ export async function saveQuotation(
     }
 
     await refreshInvoiceStatus(db, id);
+    // Cloud backup: mark data as changed (debounced upload, never blocks the UI).
+    markDirty(db);
   });
 
   return id;

@@ -1,5 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { newId, nowIso } from '../lib/id';
+import { markDirty } from '../lib/backup';
 
 export type ExpenseCategory = 'rent' | 'salary' | 'utilities' | 'transport' | 'marketing' | 'other';
 export type ExpenseMode = 'cash' | 'upi' | 'bank';
@@ -63,6 +64,8 @@ export async function addExpense(
     now,
     now,
   );
+  // Cloud backup: mark data as changed (debounced upload, never blocks the UI).
+  markDirty(db);
   return id;
 }
 
@@ -94,12 +97,16 @@ export async function updateExpense(
     nowIso(),
     id,
   );
+  // Cloud backup: mark data as changed (debounced upload, never blocks the UI).
+  markDirty(db);
 }
 
 // Soft delete — keeps history intact for reports and sync.
 export async function deleteExpense(db: SQLiteDatabase, id: string): Promise<void> {
   const now = nowIso();
   await db.runAsync('UPDATE expenses SET deleted_at = ?, updated_at = ? WHERE id = ?', now, now, id);
+  // Cloud backup: mark data as changed (debounced upload, never blocks the UI).
+  markDirty(db);
 }
 
 export async function listExpenses(

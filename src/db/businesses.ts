@@ -1,5 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { newId, nowIso } from '../lib/id';
+import { markDirty } from '../lib/backup';
+import { scheduleBusinessProfilePush } from '../lib/businessProfile';
 
 export type BusinessType = 'retail' | 'wholesale' | 'both';
 
@@ -73,6 +75,10 @@ export async function createBusiness(
     now,
     now,
   );
+  // Cloud backup: mark data as changed (debounced upload, never blocks the UI).
+  markDirty(db);
+  // Cloud profile sync: fire-and-forget (never blocks the UI).
+  scheduleBusinessProfilePush(db, id);
   return id;
 }
 
@@ -100,6 +106,8 @@ export async function setInvoicePrefix(db: SQLiteDatabase, id: string, prefix: s
     nowIso(),
     id,
   );
+  // Cloud backup: mark data as changed (debounced upload, never blocks the UI).
+  markDirty(db);
 }
 
 export async function updateBusiness(db: SQLiteDatabase, id: string, input: NewBusiness): Promise<void> {
@@ -121,6 +129,10 @@ export async function updateBusiness(db: SQLiteDatabase, id: string, input: NewB
     nowIso(),
     id,
   );
+  // Cloud backup: mark data as changed (debounced upload, never blocks the UI).
+  markDirty(db);
+  // Cloud profile sync: fire-and-forget (never blocks the UI).
+  scheduleBusinessProfilePush(db, id);
 }
 
 export type BillDesign = {
@@ -160,6 +172,10 @@ export async function updateBillDesign(db: SQLiteDatabase, id: string, d: BillDe
     nowIso(),
     id,
   );
+  // Cloud backup: mark data as changed (debounced upload, never blocks the UI).
+  markDirty(db);
+  // Cloud profile sync: fire-and-forget (never blocks the UI).
+  scheduleBusinessProfilePush(db, id);
 }
 
 export async function setTemplateDesign(
@@ -175,4 +191,6 @@ export async function setTemplateDesign(
     nowIso(),
     id,
   );
+  // Cloud backup: mark data as changed (debounced upload, never blocks the UI).
+  markDirty(db);
 }
