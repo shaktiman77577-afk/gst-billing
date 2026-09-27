@@ -118,11 +118,11 @@ export async function getDaybook(
   businessId: string,
   date: string,
 ): Promise<Daybook> {
-  // Live sales only: quotations, deleted and cancelled bills never count.
+  // Live sales only: quotations, delivery challans, proformas, deleted and cancelled bills never count.
   const sales = await db.getAllAsync<DaybookSale>(
     `SELECT id, invoice_no, party_name, total_paise
      FROM invoices
-     WHERE business_id = ? AND kind = 'invoice' AND doc_type != 'quotation'
+     WHERE business_id = ? AND kind = 'invoice' AND doc_type NOT IN ('quotation', 'delivery_challan', 'proforma')
        AND deleted_at IS NULL AND cancelled_at IS NULL AND invoice_date = ?
      ORDER BY invoice_no`,
     businessId,
@@ -183,11 +183,11 @@ export async function getDaybookRange(
   from: string,
   to: string,
 ): Promise<Daybook> {
-  // Live sales only: quotations, deleted and cancelled bills never count.
+  // Live sales only: quotations, delivery challans, proformas, deleted and cancelled bills never count.
   const sales = await db.getAllAsync<DaybookSale>(
     `SELECT id, invoice_no, party_name, total_paise
      FROM invoices
-     WHERE business_id = ? AND kind = 'invoice' AND doc_type != 'quotation'
+     WHERE business_id = ? AND kind = 'invoice' AND doc_type NOT IN ('quotation', 'delivery_challan', 'proforma')
        AND deleted_at IS NULL AND cancelled_at IS NULL
        AND invoice_date >= ? AND invoice_date <= ?
      ORDER BY invoice_date DESC, invoice_no`,

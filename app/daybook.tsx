@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useState } from 'react';
@@ -10,6 +10,7 @@ import { DateRangePicker } from '../src/components/DateRangePicker';
 import { Card, IconName, SectionHeader } from '../src/components/ui';
 import { useApp } from '../src/context/AppContext';
 import { Daybook, getDaybook, getDaybookRange } from '../src/db/daybook';
+import { expenseCategoryLabel } from '../src/db/expenses';
 import { DateRange } from '../src/lib/dateRange';
 import { formatDate, fromIsoDate, toIsoDate, todayIso } from '../src/lib/dates';
 import { formatPaise } from '../src/lib/money';
@@ -83,9 +84,15 @@ export default function DaybookScreen() {
     total: number,
     count: number,
     children: React.ReactNode,
+    action?: React.ReactNode,
   ) => (
     <Card>
-      <SectionHeader icon={icon} title={title} subtitle={`${count} · ${formatPaise(total)}`} />
+      <View style={styles.sectionHead}>
+        <View style={styles.sectionGrow}>
+          <SectionHeader icon={icon} title={title} subtitle={`${count} · ${formatPaise(total)}`} />
+        </View>
+        {action}
+      </View>
       <View style={styles.list}>{children}</View>
     </Card>
   );
@@ -214,13 +221,22 @@ export default function DaybookScreen() {
             : data!.expenses.map((e) => (
                 <EntryRow
                   key={e.id}
-                  // e_cat_* keys exist in both languages (repo pattern, see app/expenses/index.tsx)
-                  title={t(`e_cat_${e.category}`)}
+                  title={expenseCategoryLabel(e.category, t)}
                   meta={[e.payment_mode, e.note].filter(Boolean).join(' · ') || null}
                   amount={e.amount_paise}
                   tint={colors.danger}
                 />
               )),
+          // Quick-add from the daybook: only in single-day mode, date prefilled.
+          !dbRange ? (
+            <Pressable
+              onPress={() => router.push({ pathname: '/expenses/new', params: { date: day } })}
+              hitSlop={10}
+              style={styles.addBtn}
+            >
+              <Ionicons name="add" size={22} color={colors.primary} />
+            </Pressable>
+          ) : undefined,
         )}
 
         {section(
@@ -252,6 +268,16 @@ export default function DaybookScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.background },
   content: { padding: 16, gap: 14, paddingBottom: 32 },
+  sectionHead: { flexDirection: 'row', alignItems: 'center' },
+  sectionGrow: { flex: 1 },
+  addBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   dateNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   navBtn: {
     width: 40,

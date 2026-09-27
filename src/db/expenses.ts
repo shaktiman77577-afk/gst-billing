@@ -1,6 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { newId, nowIso } from '../lib/id';
 import { markDirty } from '../lib/backup';
+import { getMeta, setMeta } from './meta';
 
 export type ExpenseCategory = 'rent' | 'salary' | 'utilities' | 'transport' | 'marketing' | 'other';
 export type ExpenseMode = 'cash' | 'upi' | 'bank';
@@ -14,13 +15,42 @@ export const EXPENSE_CATEGORIES: ExpenseCategory[] = [
   'other',
 ];
 
+/** Custom (user-added) categories are stored in the TEXT column with this
+ *  prefix so they can never collide with built-in slugs. No schema migration
+ *  needed — the column was always plain TEXT. */
+export const CUSTOM_CATEGORY_PREFIX = 'custom:';
+
+export function isCustomCategory(category: string): boolean {
+  return category.startsWith(CUSTOM_CATEGORY_PREFIX);
+}
+
+export function isBuiltinCategory(category: string): category is ExpenseCategory {
+  return (EXPENSE_CATEGORIES as readonly string[]).includes(category);
+}
+
+/** The user's own name for a custom category (built-ins pass through). */
+export function customCategoryName(category: string): string {
+  return isCustomCategory(category) ? category.slice(CUSTOM_CATEGORY_PREFIX.length) : category;
+}
+
+/** Display label for an expense category value: built-ins go through i18n
+ *  (e_cat_*), customs show the user's own name in either language. */
+export function expenseCategoryLabel(
+  category: string,
+  t: (key: `e_cat_${ExpenseCategory}`) => string,
+): string {
+  if (isCustomCategory(category)) return customCategoryName(category);
+  if (isBuiltinCategory(category)) return t(`e_cat_${category}`);
+  return category; // legacy/unknown value: show raw rather than a missing key
+}
+
 export const EXPENSE_MODES: ExpenseMode[] = ['cash', 'upi', 'bank'];
 
 export type Expense = {
   id: string;
   business_id: string;
   date: string; // YYYY-MM-DD
-  category: ExpenseCategory;
+  category: string; // built-in slug ('rent', ...) or 'custom:<user name>'
   amount_paise: number;
   note: string | null;
   payment_mode: ExpenseMode;
@@ -43,7 +73,7 @@ export async function addExpense(
   e: {
     businessId: string;
     date: string;
-    category: ExpenseCategory;
+    category: string;
     amountPaise: number;
     note: string | null;
     paymentMode: ExpenseMode;
@@ -80,7 +110,7 @@ export async function updateExpense(
   id: string,
   e: {
     date: string;
-    category: ExpenseCategory;
+    category: string;
     amountPaise: number;
     note: string | null;
     paymentMode: ExpenseMode;
@@ -155,4 +185,90 @@ export async function expensesByCategory(
     from,
     to,
   );
+}
+
+// ---------------------------------------------------------------------------
+// Custom (user-added) expense categories.
+//
+// Stored as JSON in app_meta under 'expense_categories':
+//   { "<businessId>": ["Fuel", "Packaging", ...] }
+// The expenses.category column holds 'custom:<name>'. No schema migration
+// needed. Deleting a category only removes it from the selectable list —
+// existing expenses keep their 'custom:<name>' value and still render.
+// ---------------------------------------------------------------------------
+
+type CustomCategoryMap = Record<string, string[]>; // businessId -> names
+
+async function readCustomCategoryMap(db: SQLiteDatabase): Promise<CustomCategoryMap> {
+  const raw = await getMeta(db, 'expense_categories');
+  if (!raw) return {};
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      const out: CustomCategoryMap = {};
+      for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
+        if (Array.isArray(v)) out[k] = v.filter((s): s is string => typeof s === 'string');
+      }
+      return out;
+    }
+  } catch {
+    // Corrupted value: start fresh rather than crash the expenses screen.
+  }
+  return {};
+}
+
+async function writeCustomCategories(
+  db: SQLiteDatabase,
+  businessId: string,
+  names: string[],
+): Promise<void> {
+  const map = await readCustomCategoryMap(db);
+  map[businessId] = names;
+  await setMeta(db, 'expense_categories', JSON.stringify(map));
+  // Cloud backup: mark data as changed (debounced upload, never blocks the UI).
+  markDirty(db);
+}
+
+/** User-added category names for this business (raw names, no prefix). */
+export async function getCustomCategories(
+  db: SQLiteDatabase,
+  businessId: string,
+): Promise<string[]> {
+  return (await readCustomCategoryMap(db))[businessId] ?? [];
+}
+
+/** All selectable category values: built-in slugs first, then 'custom:<name>'. */
+export async function getAllCategories(db: SQLiteDatabase, businessId: string): Promise<string[]> {
+  const customs = await getCustomCategories(db, businessId);
+  return [...EXPENSE_CATEGORIES, ...customs.map((n) => `${CUSTOM_CATEGORY_PREFIX}${n}`)];
+}
+
+/** Adds a custom category name. ':' is stripped (it is the storage separator),
+ *  names are capped at 30 chars, and case-insensitive duplicates are ignored.
+ *  Returns the updated name list. */
+export async function addCustomCategory(
+  db: SQLiteDatabase,
+  businessId: string,
+  name: string,
+): Promise<string[]> {
+  const clean = name.trim().replace(/:/g, '').slice(0, 30);
+  if (!clean) throw new Error('empty category name');
+  const cur = await getCustomCategories(db, businessId);
+  if (!cur.some((c) => c.toLowerCase() === clean.toLowerCase())) {
+    cur.push(clean);
+    await writeCustomCategories(db, businessId, cur);
+  }
+  return cur;
+}
+
+/** Removes a custom category from the selectable list. Existing expenses that
+ *  used it keep their value and still render. Returns the updated name list. */
+export async function removeCustomCategory(
+  db: SQLiteDatabase,
+  businessId: string,
+  name: string,
+): Promise<string[]> {
+  const cur = (await getCustomCategories(db, businessId)).filter((c) => c !== name);
+  await writeCustomCategories(db, businessId, cur);
+  return cur;
 }

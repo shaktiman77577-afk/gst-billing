@@ -25,7 +25,7 @@ export type DocLine = {
 export type HsnRow = { hsn: string; taxable: string; rate: string; cgst: string; sgst: string; igst: string; tax: string };
 
 export type Doc = {
-  title: string; // TAX INVOICE / BILL OF SUPPLY / CREDIT NOTE / QUOTATION
+  title: string; // TAX INVOICE / BILL OF SUPPLY / CREDIT NOTE / QUOTATION / DELIVERY CHALLAN / PROFORMA INVOICE
   isCreditNote: boolean;
   cancelled: boolean;
   applyGst: boolean;
@@ -118,8 +118,13 @@ export function buildDoc(
 ): Doc {
   const color = opts.color ?? business.theme_color ?? '#1E3A8A';
   const isQuotation = inv.doc_type === 'quotation';
-  // Quotations of a GST-registered business carry GST like a tax invoice.
-  const applyGst = inv.doc_type === 'tax_invoice' || (isQuotation && inv.cgst_paise + inv.sgst_paise + inv.igst_paise > 0);
+  const isChallan = inv.doc_type === 'delivery_challan';
+  const isProforma = inv.doc_type === 'proforma';
+  // Quotations/proformas of a GST-registered business carry GST like a tax invoice.
+  // Delivery challans never carry GST (stock moves, nothing is billed).
+  const applyGst =
+    inv.doc_type === 'tax_invoice' ||
+    ((isQuotation || isProforma) && inv.cgst_paise + inv.sgst_paise + inv.igst_paise > 0);
   const isIgst = applyGst && inv.is_igst === 1;
   const sellerState = stateName(business.state_code);
 
@@ -165,15 +170,28 @@ export function buildDoc(
   const cancelled = !!inv.cancelled_at;
   const balance = isCreditNote ? 0 : inv.total_paise - inv.received_paise - inv.credited_paise;
   const upi = business.upi_id?.trim() ?? '';
-  // QR only when something is still to be paid on a live bill — never on a quotation.
+  // QR only when something is still to be paid on a live bill — never on a
+  // quotation, proforma or delivery challan (no money moves on any of them).
   const qr =
-    upi && !isCreditNote && !isQuotation && !cancelled && balance > 0
+    upi && !isCreditNote && !isQuotation && !isProforma && !isChallan && !cancelled && balance > 0
       ? qrSvg(upiLink(upi, business.name, balance, inv.invoice_no))
       : '';
   const totalQty = lines.reduce((s, l) => s + l.qty, 0);
 
   return {
-    title: isSalesReturn ? 'SALES RETURN' : isCreditNote ? 'CREDIT NOTE' : isQuotation ? 'QUOTATION' : applyGst ? 'TAX INVOICE' : 'BILL OF SUPPLY',
+    title: isChallan
+      ? 'DELIVERY CHALLAN'
+      : isProforma
+        ? 'PROFORMA INVOICE'
+      : isSalesReturn
+        ? 'SALES RETURN'
+        : isCreditNote
+          ? 'CREDIT NOTE'
+          : isQuotation
+            ? 'QUOTATION'
+            : applyGst
+              ? 'TAX INVOICE'
+              : 'BILL OF SUPPLY',
     isCreditNote,
     cancelled,
     applyGst,
@@ -259,9 +277,10 @@ export function buildDoc(
         : null,
     upiId: esc(upi),
     qr,
-    notes: isQuotation
-      ? ['This is not a tax invoice.', esc(inv.notes)].filter(Boolean).join('<br/>')
-      : esc(inv.notes),
+    notes:
+      isQuotation || isProforma
+        ? ['This is not a tax invoice.', esc(inv.notes)].filter(Boolean).join('<br/>')
+        : esc(inv.notes),
     terms: (business.terms ?? DEFAULT_TERMS)
       .split('\n')
       .map((t) => t.trim())

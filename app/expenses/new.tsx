@@ -1,7 +1,7 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { DateField } from '../../src/components/DateField';
 import { FormHeader } from '../../src/components/FormHeader';
@@ -12,13 +12,19 @@ import {
   EXPENSE_CATEGORIES,
   EXPENSE_MODES,
   ExpenseCategory,
+  expenseCategoryLabel,
   ExpenseMode,
+  getAllCategories,
   getExpense,
+  isBuiltinCategory,
   updateExpense,
 } from '../../src/db/expenses';
 import { todayIso } from '../../src/lib/dates';
 import { paiseToInput, toPaise } from '../../src/lib/money';
 import { colors } from '../../src/theme';
+
+/** Sentinel chip value — tapping it opens the category manager instead. */
+const NEW_CATEGORY = '__new_category__';
 
 const CATEGORY_ICONS: Record<ExpenseCategory, IconName> = {
   rent: 'home-outline',
@@ -31,12 +37,16 @@ const CATEGORY_ICONS: Record<ExpenseCategory, IconName> = {
 
 export default function ExpenseFormScreen() {
   const db = useSQLiteContext();
-  const { t, businessId } = useApp();
-  const { id } = useLocalSearchParams<{ id?: string }>();
+  const { t, language, businessId } = useApp();
+  const { id, date: dateParam } = useLocalSearchParams<{ id?: string; date?: string }>();
   const editing = !!id;
 
-  const [date, setDate] = useState(todayIso());
-  const [category, setCategory] = useState<ExpenseCategory>('other');
+  // Daybook quick-add passes ?date=YYYY-MM-DD to prefill the date.
+  const initialDate =
+    !editing && dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : todayIso();
+  const [date, setDate] = useState(initialDate);
+  const [category, setCategory] = useState<string>('other');
+  const [allCats, setAllCats] = useState<string[]>([...EXPENSE_CATEGORIES]);
   const [amount, setAmount] = useState('');
   const [mode, setMode] = useState<ExpenseMode>('cash');
   const [note, setNote] = useState('');
@@ -55,6 +65,20 @@ export default function ExpenseFormScreen() {
       setNote(e.note ?? '');
     })();
   }, [db, id]);
+
+  // Reload categories every time the screen gains focus so a category added
+  // via the "+ New" chip is immediately selectable.
+  useFocusEffect(
+    useCallback(() => {
+      if (!businessId) return;
+      getAllCategories(db, businessId).then(setAllCats);
+    }, [db, businessId]),
+  );
+
+  const onCategoryChange = (v: string) => {
+    if (v === NEW_CATEGORY) router.push('/expenses/categories');
+    else setCategory(v);
+  };
 
   const onSave = async () => {
     const paise = toPaise(amount);
@@ -101,13 +125,16 @@ export default function ExpenseFormScreen() {
         <Card>
           <Label>{t('e_category')}</Label>
           <Chips
-            options={EXPENSE_CATEGORIES.map((c) => ({
-              value: c,
-              label: t(`e_cat_${c}`),
-              icon: CATEGORY_ICONS[c],
-            }))}
+            options={[
+              ...allCats.map((c) => ({
+                value: c,
+                label: expenseCategoryLabel(c, t),
+                icon: (isBuiltinCategory(c) ? CATEGORY_ICONS[c] : 'pricetag-outline') as IconName,
+              })),
+              { value: NEW_CATEGORY, label: t('pe_newChip'), icon: 'add-outline' as IconName },
+            ]}
             value={category}
-            onChange={setCategory}
+            onChange={onCategoryChange}
           />
           <Label>{t('paymentMode')}</Label>
           <Chips options={EXPENSE_MODES.map((m) => ({ value: m, label: t(m) }))} value={mode} onChange={setMode} />

@@ -108,6 +108,17 @@ export default function MoreScreen() {
             <Ionicons name="chevron-forward" size={18} color={colors.faint} />
           </Pressable>
           <View style={styles.sep} />
+          <Pressable style={styles.row} onPress={() => router.push('/settings/gst-rates')}>
+            <View style={styles.rowIcon}>
+              <Ionicons name="search" size={18} color={colors.primary} />
+            </View>
+            <View style={styles.flexOnly}>
+              <Text style={styles.rowText}>{t('gr_title')}</Text>
+              <Text style={styles.meta}>{t('gr_searchPlaceholder')}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.faint} />
+          </Pressable>
+          <View style={styles.sep} />
           <Pressable style={styles.row} onPress={() => router.push('/reports')}>
             <View style={styles.rowIcon}>
               <Ionicons name="bar-chart" size={18} color={colors.primary} />
@@ -163,6 +174,27 @@ export default function MoreScreen() {
             <Ionicons name="chevron-forward" size={18} color={colors.faint} />
           </Pressable>
           <View style={styles.sep} />
+          <Pressable style={styles.row} onPress={() => router.push('/challans')}>
+            <View style={styles.rowIcon}>
+              <Ionicons name="car-outline" size={18} color={colors.primary} />
+            </View>
+            <View style={styles.flexOnly}>
+              <Text style={styles.rowText}>{t('ch_menuTitle')}</Text>
+              <Text style={styles.meta}>{t('ch_menuHint')}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.faint} />
+          </Pressable>
+          <View style={styles.sep} />
+          <Pressable style={styles.row} onPress={() => router.push('/proforma')}>
+            <View style={styles.rowIcon}>
+              <Ionicons name="clipboard-outline" size={18} color={colors.primary} />
+            </View>
+            <View style={styles.flexOnly}>
+              <Text style={styles.rowText}>{t('pf_menuTitle')}</Text>
+              <Text style={styles.meta}>{t('pf_menuHint')}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.faint} />
+          </Pressable>
           <Pressable style={styles.row} onPress={() => router.push('/daybook')}>
             <View style={styles.rowIcon}>
               <Ionicons name="book-outline" size={18} color={colors.primary} />

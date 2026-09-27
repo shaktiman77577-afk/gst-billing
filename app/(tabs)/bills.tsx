@@ -51,7 +51,7 @@ export default function BillsScreen() {
     const q = query.trim().toLowerCase();
     return bills.filter(
       (b) =>
-        (filter === 'all' ||
+        ((filter === 'all' && b.doc_type !== 'proforma') ||
           (filter === 'overdue'
             ? overdueIds.has(b.id)
             : filter === 'credit_note'
@@ -60,7 +60,7 @@ export default function BillsScreen() {
                 ? b.kind === 'sales_return'
               : filter === 'quotation'
                 ? b.doc_type === 'quotation'
-                : b.kind === 'invoice' && b.doc_type !== 'quotation' && b.status === filter)) &&
+                : b.kind === 'invoice' && b.doc_type !== 'quotation' && b.doc_type !== 'delivery_challan' && b.doc_type !== 'proforma' && b.status === filter)) &&
         (!billRange || (b.invoice_date >= billRange.from && b.invoice_date <= billRange.to)) &&
         (!q || b.party_name.toLowerCase().includes(q) || b.invoice_no.toLowerCase().includes(q)),
     );

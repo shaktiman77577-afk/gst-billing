@@ -110,7 +110,7 @@ export async function linkableBills(
 ): Promise<{ id: string; invoice_no: string; party_name: string; invoice_date: string }[]> {
   return db.getAllAsync(
     `SELECT id, invoice_no, party_name, invoice_date FROM invoices
-     WHERE business_id = ? AND kind = 'invoice' AND doc_type != 'quotation'
+     WHERE business_id = ? AND kind = 'invoice' AND doc_type NOT IN ('quotation', 'delivery_challan', 'proforma')
        AND deleted_at IS NULL AND cancelled_at IS NULL
      ORDER BY invoice_date DESC, created_at DESC LIMIT 200`,
     businessId,
