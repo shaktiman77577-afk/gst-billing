@@ -14,6 +14,7 @@ import { cancelInvoice, getInvoice, Invoice, InvoiceLine } from '../../src/db/in
 import { convertChallanToBill } from '../../src/db/challans';
 import { formatQty } from '../../src/db/items';
 import { useBusiness } from '../../src/hooks/useBusiness';
+import { useMembership } from '../../src/hooks/useMembership';
 import { formatDate } from '../../src/lib/dates';
 import { amountInWords } from '../../src/lib/gst';
 import { formatPaise } from '../../src/lib/money';
@@ -26,6 +27,7 @@ export default function ChallanDetailScreen() {
   const db = useSQLiteContext();
   const { t, businessId, language } = useApp();
   const business = useBusiness();
+  const isPro = useMembership().status === 'pro';
   const { id } = useLocalSearchParams<{ id: string }>();
   const [data, setData] = useState<Data | null>(null);
   const [busy, setBusy] = useState<'share' | 'print' | 'whatsapp' | 'convert' | null>(null);
@@ -51,7 +53,7 @@ export default function ChallanDetailScreen() {
     if (!business) return;
     setBusy(kind);
     try {
-      const html = invoiceHtml(business, inv, lines);
+      const html = invoiceHtml(business, inv, lines, { isPro, footerLinkText: t('footerGetApp') });
       if (kind === 'share') await sharePdf(html, inv.invoice_no);
       else await printBill(html);
     } catch (e) {
@@ -65,7 +67,7 @@ export default function ChallanDetailScreen() {
     if (!business) return;
     setBusy('whatsapp');
     try {
-      const html = invoiceHtml(business, inv, lines);
+      const html = invoiceHtml(business, inv, lines, { isPro, footerLinkText: t('footerGetApp') });
       const caption = billWhatsappText(
         (k: string) => t(k as StringKey),
         {

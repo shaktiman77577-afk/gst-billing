@@ -240,6 +240,11 @@ const en = {
   pdfError: 'Could not make the PDF. Please try again.',
   waMessage: 'Hello {name}, your bill {no} dated {date} for {amount} is ready. Thank you for your business!',
   waBalance: 'Balance due: {balance}',
+  invoiceCopy: 'Invoice copy',
+  copyOriginal: 'Original',
+  copyDuplicate: 'Duplicate',
+  copyTriplicate: 'Triplicate',
+  footerGetApp: 'Get this billing app',
 
   // Catalog (price list) share (F4)
   cat_title: 'Price List',
@@ -966,6 +971,11 @@ const hi: Record<StringKey, string> = {
   pdfError: 'PDF nahi bani. Dobara try karein.',
   waMessage: 'Namaste {name} ji, aapka bill {no} ({date}) {amount} ka taiyaar hai. Dhanyavaad!',
   waBalance: 'Baaki rakam: {balance}',
+  invoiceCopy: 'Invoice copy',
+  copyOriginal: 'Original',
+  copyDuplicate: 'Duplicate',
+  copyTriplicate: 'Triplicate',
+  footerGetApp: 'Ye billing app download karo',
 
   // Catalog (price list) share (F4)
   cat_title: 'Rate List',

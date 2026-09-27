@@ -24,6 +24,15 @@ export type DocLine = {
 
 export type HsnRow = { hsn: string; taxable: string; rate: string; cgst: string; sgst: string; igst: string; tax: string };
 
+// Invoice copy for the PDF header label (standard GST copies).
+export type CopyKind = 'original' | 'duplicate' | 'triplicate';
+
+export const COPY_LABELS: Record<CopyKind, string> = {
+  original: 'ORIGINAL FOR RECIPIENT',
+  duplicate: 'DUPLICATE FOR TRANSPORTER',
+  triplicate: 'TRIPLICATE FOR SUPPLIER',
+};
+
 export type Doc = {
   title: string; // TAX INVOICE / BILL OF SUPPLY / CREDIT NOTE / QUOTATION / DELIVERY CHALLAN / PROFORMA INVOICE
   isCreditNote: boolean;
@@ -87,6 +96,9 @@ export type Doc = {
   notes: string;
   terms: string[];
   showFooter: boolean;
+  copyLabel: string; // ORIGINAL FOR RECIPIENT / DUPLICATE FOR TRANSPORTER / TRIPLICATE FOR SUPPLIER
+  isPro: boolean; // white-label footer (no "Made with GST Billing" branding)
+  footerLinkText: string; // small linked text shown to Pro users without a logo
 };
 
 const esc = (s: string | null | undefined) =>
@@ -114,7 +126,7 @@ export function buildDoc(
   business: Business,
   inv: Invoice,
   lines: InvoiceLine[],
-  opts: { color?: string; showFooter?: boolean } = {},
+  opts: { color?: string; showFooter?: boolean; copy?: CopyKind; isPro?: boolean; footerLinkText?: string } = {},
 ): Doc {
   const color = opts.color ?? business.theme_color ?? '#1E3A8A';
   const isQuotation = inv.doc_type === 'quotation';
@@ -287,5 +299,8 @@ export function buildDoc(
       .filter(Boolean)
       .map(esc),
     showFooter: opts.showFooter ?? true,
+    copyLabel: COPY_LABELS[opts.copy ?? 'original'],
+    isPro: opts.isPro ?? false,
+    footerLinkText: opts.footerLinkText ?? 'Get this billing app',
   };
 }

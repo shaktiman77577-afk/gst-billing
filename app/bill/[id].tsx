@@ -26,22 +26,32 @@ import {
 } from '../../src/db/invoices';
 import { convertQuotationToBill } from '../../src/db/quotations';
 import { useBusiness } from '../../src/hooks/useBusiness';
+import { useMembership } from '../../src/hooks/useMembership';
 import { formatDate } from '../../src/lib/dates';
-import { amountInWords } from '../../src/lib/gst';
 import { formatPaise } from '../../src/lib/money';
+import { CopyKind } from '../../src/pdf/data';
 import { billWhatsappText, invoiceHtml, printBill, sharePdf, sharePdfOnWhatsApp } from '../../src/pdf/share';
 import { qrDataUrl, upiLink } from '../../src/pdf/qr';
 import { colors, radius, text } from '../../src/theme';
 
 type Data = { invoice: Invoice; lines: InvoiceLine[]; payments: Payment[]; creditNotes: InvoiceListRow[] };
 
+const COPIES: { kind: CopyKind; key: 'copyOriginal' | 'copyDuplicate' | 'copyTriplicate' }[] = [
+  { kind: 'original', key: 'copyOriginal' },
+  { kind: 'duplicate', key: 'copyDuplicate' },
+  { kind: 'triplicate', key: 'copyTriplicate' },
+];
+
 export default function BillDetailScreen() {
   const db = useSQLiteContext();
   const { t, businessId, language } = useApp();
   const business = useBusiness();
+  const mem = useMembership();
+  const isPro = mem.status === 'pro';
   const { id } = useLocalSearchParams<{ id: string }>();
   const [data, setData] = useState<Data | null>(null);
   const [busy, setBusy] = useState<'share' | 'print' | 'whatsapp' | 'convert' | null>(null);
+  const [copy, setCopy] = useState<CopyKind>('original');
 
   const load = useCallback(async () => {
     const d = await getInvoice(db, id);
@@ -82,7 +92,7 @@ export default function BillDetailScreen() {
     if (!business) return;
     setBusy(kind);
     try {
-      const html = invoiceHtml(business, inv, lines);
+      const html = invoiceHtml(business, inv, lines, { isPro, copy, footerLinkText: t('footerGetApp') });
       if (kind === 'share') await sharePdf(html, inv.invoice_no);
       else await printBill(html);
     } catch (e) {
@@ -96,7 +106,7 @@ export default function BillDetailScreen() {
     if (!business) return;
     setBusy('whatsapp');
     try {
-      const html = invoiceHtml(business, inv, lines);
+      const html = invoiceHtml(business, inv, lines, { isPro, copy, footerLinkText: t('footerGetApp') });
       const caption = billWhatsappText(t, {
         name: inv.party_name,
         no: inv.invoice_no,
@@ -166,7 +176,8 @@ export default function BillDetailScreen() {
       <StatusBar style="dark" />
       <FormHeader title={inv.invoice_no} />
       <SafeAreaView style={styles.flex} edges={['bottom']}>
-        <ScrollView contentContainerStyle={styles.content}>
+        {/* Fixed action zone — summary + actions visible without scrolling */}
+        <View style={styles.topZone}>
           {cancelled ? (
             <View style={styles.cancelBanner}>
               <Ionicons name="close-circle" size={18} color={colors.muted} />
@@ -174,20 +185,18 @@ export default function BillDetailScreen() {
             </View>
           ) : null}
 
-          {/* Summary */}
-          <Card>
+          {/* Compact summary */}
+          <Card style={styles.summaryCard}>
             <View style={styles.rowBetween}>
               <Text style={styles.docType}>
                 {isQuotation ? t('q_quotation') : isCn ? t('creditNote') : gst ? t('taxInvoice') : t('billOfSupply')}
               </Text>
               <StatusBadge status={inv.status} kind={inv.kind} />
             </View>
-            <Text style={[styles.total, cancelled && styles.strike]}>{formatPaise(inv.total_paise)}</Text>
-            <Text style={styles.words}>{amountInWords(inv.total_paise)}</Text>
-            <View style={styles.metaRow}>
-              <Meta icon="calendar-outline" text={formatDate(inv.invoice_date)} />
-              {inv.due_date ? <Meta icon="alarm-outline" text={`${t('dueDate')}: ${formatDate(inv.due_date)}`} /> : null}
-            </View>
+            <Text style={[styles.totalCompact, cancelled && styles.strike]}>{formatPaise(inv.total_paise)}</Text>
+            <Text style={styles.partyLine} numberOfLines={1}>
+              {inv.party_name} · {formatDate(inv.invoice_date)}
+            </Text>
             {isCn && inv.ref_invoice_id ? (
               <Pressable onPress={() => router.push(`/bill/${inv.ref_invoice_id}`)} hitSlop={10} style={styles.refLink}>
                 <Ionicons name="link-outline" size={16} color={colors.primary} />
@@ -206,6 +215,60 @@ export default function BillDetailScreen() {
             ) : null}
           </Card>
 
+          {/* Original / Duplicate / Triplicate */}
+          <View style={styles.copyRow}>
+            <Text style={styles.copyLabel}>{t('invoiceCopy')}</Text>
+            <View style={styles.chips}>
+              {COPIES.map((c) => (
+                <Pressable
+                  key={c.kind}
+                  onPress={() => setCopy(c.kind)}
+                  style={[styles.chip, copy === c.kind && styles.chipActive]}
+                >
+                  <Text style={[styles.chipText, copy === c.kind && styles.chipTextActive]}>{t(c.key)}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+
+          {!cancelled ? (
+            <Pressable
+              onPress={onWhatsapp}
+              disabled={busy === 'whatsapp'}
+              style={({ pressed }) => [styles.wa, pressed && { opacity: 0.85 }, busy === 'whatsapp' && { opacity: 0.7 }]}
+            >
+              {busy === 'whatsapp' ? (
+                <ActivityIndicator color={colors.white} />
+              ) : (
+                <>
+                  <Ionicons name="logo-whatsapp" size={22} color={colors.white} />
+                  <Text style={styles.waText}>{t('whatsapp')}</Text>
+                </>
+              )}
+            </Pressable>
+          ) : null}
+          <View style={styles.actions}>
+            <View style={styles.flexOnly}>
+              <Button
+                variant="outline"
+                icon="print-outline"
+                label={t('print')}
+                onPress={() => run('print')}
+                loading={busy === 'print'}
+              />
+            </View>
+            <View style={styles.flexOnly}>
+              <Button
+                icon="share-social-outline"
+                label={t('sharePdf')}
+                onPress={() => run('share')}
+                loading={busy === 'share'}
+              />
+            </View>
+          </View>
+        </View>
+
+        <ScrollView contentContainerStyle={styles.content}>
           {/* Scan to Pay */}
           {showQr && qrUri ? (
             <Card>
@@ -354,7 +417,7 @@ export default function BillDetailScreen() {
             </Card>
           ) : null}
 
-          {/* Actions */}
+          {/* Actions (edit/preview stay in scroll; WhatsApp/Print/Share are fixed on top) */}
           <View style={styles.actions}>
             {!isCn && !cancelled ? (
               <View style={styles.flexOnly}>
@@ -375,41 +438,6 @@ export default function BillDetailScreen() {
               />
             </View>
           </View>
-          <View style={styles.actions}>
-            <View style={styles.flexOnly}>
-              <Button
-                variant="outline"
-                icon="print-outline"
-                label={t('print')}
-                onPress={() => run('print')}
-                loading={busy === 'print'}
-              />
-            </View>
-            <View style={styles.flexOnly}>
-              <Button
-                icon="share-social-outline"
-                label={t('sharePdf')}
-                onPress={() => run('share')}
-                loading={busy === 'share'}
-              />
-            </View>
-          </View>
-          {!cancelled ? (
-            <Pressable
-              onPress={onWhatsapp}
-              disabled={busy === 'whatsapp'}
-              style={({ pressed }) => [styles.wa, pressed && { opacity: 0.85 }, busy === 'whatsapp' && { opacity: 0.7 }]}
-            >
-              {busy === 'whatsapp' ? (
-                <ActivityIndicator color={colors.white} />
-              ) : (
-                <>
-                  <Ionicons name="logo-whatsapp" size={22} color={colors.white} />
-                  <Text style={styles.waText}>{t('whatsapp')}</Text>
-                </>
-              )}
-            </Pressable>
-          ) : null}
           {isQuotation && !cancelled ? (
             <Button
               icon="document-text"
@@ -441,15 +469,6 @@ export default function BillDetailScreen() {
   );
 }
 
-function Meta({ icon, text }: { icon: 'calendar-outline' | 'alarm-outline'; text: string }) {
-  return (
-    <View style={styles.metaItem}>
-      <Ionicons name={icon} size={14} color={colors.muted} />
-      <Text style={styles.meta}>{text}</Text>
-    </View>
-  );
-}
-
 function Row({ label, value, bold, color }: { label: string; value: string; bold?: boolean; color?: string }) {
   return (
     <View style={styles.rowBetween}>
@@ -463,6 +482,31 @@ const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.background },
   flexOnly: { flex: 1 },
   content: { padding: 16, gap: 14, paddingBottom: 32 },
+  topZone: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 12, gap: 10 },
+  summaryCard: { paddingVertical: 10, gap: 2 },
+  totalCompact: { fontSize: text.xxl, fontWeight: '800', color: colors.primary },
+  partyLine: { fontSize: text.sm, color: colors.muted },
+  copyRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  copyLabel: {
+    fontSize: text.xs,
+    fontWeight: '700',
+    color: colors.faint,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  chips: { flex: 1, flexDirection: 'row', gap: 8 },
+  chip: {
+    flex: 1,
+    paddingVertical: 9,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.white,
+    alignItems: 'center',
+  },
+  chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  chipText: { fontSize: text.sm, fontWeight: '700', color: colors.muted },
+  chipTextActive: { color: colors.white },
   cancelBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -474,11 +518,7 @@ const styles = StyleSheet.create({
   cancelText: { fontSize: 14, fontWeight: '700', color: colors.muted },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
   docType: { fontSize: text.sm, fontWeight: '700', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.5 },
-  total: { fontSize: text.display, fontWeight: '800', color: colors.primary },
   strike: { textDecorationLine: 'line-through', color: colors.faint },
-  words: { fontSize: text.xs, color: colors.muted, fontStyle: 'italic', marginTop: -6 },
-  metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 14 },
-  metaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   refLink: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 4 },
   refText: { fontSize: 14, fontWeight: '700', color: colors.primary },
   cardLabel: { fontSize: text.xs, fontWeight: '700', color: colors.faint, textTransform: 'uppercase', letterSpacing: 0.6 },

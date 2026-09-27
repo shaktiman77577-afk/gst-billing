@@ -11,6 +11,7 @@ import { Button } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import { getInvoice, Invoice, InvoiceLine, isReturnKind } from '../../src/db/invoices';
 import { useBusiness } from '../../src/hooks/useBusiness';
+import { useMembership } from '../../src/hooks/useMembership';
 import { formatDate } from '../../src/lib/dates';
 import { formatPaise } from '../../src/lib/money';
 import { billWhatsappText, forPreview, invoiceHtml, printBill, sharePdf, sharePdfOnWhatsApp } from '../../src/pdf/share';
@@ -20,6 +21,8 @@ export default function BillPreviewScreen() {
   const db = useSQLiteContext();
   const { t } = useApp();
   const business = useBusiness();
+  const mem = useMembership();
+  const isPro = mem.status === 'pro';
   const { id } = useLocalSearchParams<{ id: string }>();
   const [data, setData] = useState<{ invoice: Invoice; lines: InvoiceLine[] } | null>(null);
   const [busy, setBusy] = useState<'share' | 'print' | 'whatsapp' | null>(null);
@@ -29,8 +32,11 @@ export default function BillPreviewScreen() {
   }, [db, id]);
 
   const html = useMemo(
-    () => (business && data ? invoiceHtml(business, data.invoice, data.lines) : null),
-    [business, data],
+    () =>
+      business && data
+        ? invoiceHtml(business, data.invoice, data.lines, { isPro, footerLinkText: t('footerGetApp') })
+        : null,
+    [business, data, isPro, t],
   );
 
   const run = async (kind: 'share' | 'print') => {

@@ -1,5 +1,6 @@
 // Five bill designs. Each returns a complete HTML page (A4) for printing / PDF.
 import { Doc } from './data';
+import { PLAY_STORE_URL } from '../lib/config';
 
 export type TemplateId = 'simple' | 'stylish' | 'luxury' | 'advance' | 'tally';
 
@@ -37,13 +38,25 @@ const BASE_CSS = `
     color: rgba(220, 38, 38, 0.16); transform: rotate(-24deg); letter-spacing: 8px; z-index: 10; pointer-events: none; }
 `;
 
+function footerHtml(d: Doc): string {
+  if (!d.showFooter) return '';
+  const link = (inner: string) =>
+    `<a href="${PLAY_STORE_URL}" style="color:#9ca3af;text-decoration:none">${inner}</a>`;
+  // Pro (white-label): business logo as a linked image; small linked text when no logo.
+  if (d.isPro && d.seller.logo)
+    return `<div class="footer">${link(
+      `<img src="${d.seller.logo}" style="height:30px;max-width:180px;object-fit:contain" alt=""/>`,
+    )}</div>`;
+  if (d.isPro) return `<div class="footer">${link(d.footerLinkText)}</div>`;
+  // Free: existing branding, now a link too.
+  return `<div class="footer">${link('Invoice created using <b>GST Billing</b> · Made with 🤎 in India')}</div>`;
+}
+
 function page(title: string, css: string, body: string, d: Doc): string {
   return `<!DOCTYPE html><html><head><meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>${title}</title><style>${BASE_CSS}${css}</style></head>
-<body><div class="page sheet">${d.cancelled ? '<div class="void">CANCELLED</div>' : ''}${body}${
-    d.showFooter ? `<div class="footer">Invoice created using <b>GST Billing</b> · Made with 🤎 in India</div>` : ''
-  }</div></body></html>`;
+<body><div class="page sheet">${d.cancelled ? '<div class="void">CANCELLED</div>' : ''}${body}${footerHtml(d)}</div></body></html>`;
 }
 
 const line = (label: string, value: string) => (value ? `<div><span class="muted">${label}</span> ${value}</div>` : '');
@@ -192,7 +205,7 @@ function simple(d: Doc): string {
   <div class="top"><table><tr>
     <td style="width:${d.seller.logo ? '120px' : '0'}">${d.seller.logo ? `<img class="logo" src="${d.seller.logo}"/>` : ''}</td>
     <td>${sellerBlock(d)}</td>
-    <td class="r" style="width:190px"><div class="title">${d.title}</div><div class="tag">ORIGINAL FOR RECIPIENT</div>
+    <td class="r" style="width:190px"><div class="title">${d.title}</div><div class="tag">${d.copyLabel}</div>
       <table class="meta" style="margin-top:8px">${metaItems(d)
         .map(([k, v]) => `<tr><td class="muted">${k}</td><td class="r b">${v}</td></tr>`)
         .join('')}</table></td>
@@ -247,7 +260,7 @@ function stylish(d: Doc): string {
   <div class="band"><table><tr>
     ${d.seller.logo ? `<td style="width:100px"><img class="logo" src="${d.seller.logo}"/></td>` : ''}
     <td>${sellerBlock(d, 'color:#fff;font-size:19px')}</td>
-    <td class="r" style="width:180px"><div class="title">${d.title}</div><div class="pill">ORIGINAL FOR RECIPIENT</div></td>
+    <td class="r" style="width:180px"><div class="title">${d.title}</div><div class="pill">${d.copyLabel}</div></td>
   </tr></table></div>
   <table class="cards" style="margin-top:12px;border-collapse:separate;border-spacing:8px 0;margin-left:-8px;width:calc(100% + 16px)"><tr>
     <td class="card" style="width:50%">${buyerBlock(d)}${shipBlock(d) ? `<div style="margin-top:6px">${shipBlock(d)}</div>` : ''}</td>
@@ -300,7 +313,7 @@ function luxury(d: Doc): string {
   <table><tr>
     ${d.seller.logo ? `<td style="width:120px"><img class="logo" src="${d.seller.logo}"/></td>` : ''}
     <td>${sellerBlock(d, `font-family:'Noto Serif',Georgia,serif;font-size:21px;letter-spacing:1px;color:${d.color};text-transform:uppercase`)}</td>
-    <td class="r" style="width:170px"><div class="title serif">${d.title}</div><div class="tag">ORIGINAL FOR RECIPIENT</div></td>
+    <td class="r" style="width:170px"><div class="title serif">${d.title}</div><div class="tag">${d.copyLabel}</div></td>
   </tr></table>
   <div class="rule"></div>
   <table><tr>${metaItems(d)
@@ -352,7 +365,7 @@ function gridHeader(d: Doc) {
   return `
   <table class="noborder" style="margin-bottom:6px"><tr>
     <td><span class="b" style="font-size:13px">${d.title}</span>
-      <span style="border:1px solid #9ca3af;color:#6b7280;font-size:9px;padding:1px 6px;margin-left:8px">ORIGINAL FOR RECIPIENT</span></td>
+      <span style="border:1px solid #9ca3af;color:#6b7280;font-size:9px;padding:1px 6px;margin-left:8px">${d.copyLabel}</span></td>
     ${d.seller.tagline ? `<td class="r b" style="color:${d.color}">${d.seller.tagline}</td>` : ''}
   </tr></table>
   <table class="grid"><tr>

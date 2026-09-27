@@ -5,11 +5,22 @@ import * as Sharing from 'expo-sharing';
 import { Linking, Platform } from 'react-native';
 import { Business } from '../db/businesses';
 import { Invoice, InvoiceLine } from '../db/invoices';
-import { buildDoc } from './data';
+import { CopyKind, buildDoc } from './data';
 import { renderInvoiceHtml } from './templates';
 
-export function invoiceHtml(business: Business, invoice: Invoice, lines: InvoiceLine[]): string {
-  const doc = buildDoc(business, invoice, lines, { color: business.theme_color, showFooter: true });
+export type InvoiceHtmlOpts = {
+  isPro?: boolean; // white-label footer (no "Made with GST Billing" branding)
+  copy?: CopyKind; // ORIGINAL / DUPLICATE / TRIPLICATE header label
+  footerLinkText?: string; // small linked footer text for Pro users without a logo
+};
+
+export function invoiceHtml(
+  business: Business,
+  invoice: Invoice,
+  lines: InvoiceLine[],
+  opts: InvoiceHtmlOpts = {},
+): string {
+  const doc = buildDoc(business, invoice, lines, { color: business.theme_color, showFooter: true, ...opts });
   return renderInvoiceHtml(doc, business.template);
 }
 
