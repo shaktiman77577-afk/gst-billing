@@ -12,6 +12,7 @@ import { useBusiness } from '../../src/hooks/useBusiness';
 import { formatPaise } from '../../src/lib/money';
 import { receivablesTotal } from '../../src/lib/reports';
 import { exportGstr1Csv } from '../../src/lib/gstr1';
+import { exportGstr1Json, fpForDate, fpLabel, shiftFp } from '../../src/lib/gstr1json';
 import { colors, radius, text } from '../../src/theme';
 
 export default function ReportsScreen() {
@@ -20,6 +21,8 @@ export default function ReportsScreen() {
   const business = useBusiness();
   const [due, setDue] = useState<number | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [fp, setFp] = useState(() => fpForDate(new Date()));
+  const [exportingJson, setExportingJson] = useState(false);
 
   const onExportGstr1 = useCallback(async () => {
     if (!business || exporting) return;
@@ -37,6 +40,31 @@ export default function ReportsScreen() {
       setExporting(false);
     }
   }, [business, db, exporting, t]);
+
+  const onExportGstr1Json = useCallback(async () => {
+    if (!business || exportingJson) return;
+    if (!business.gstin || !business.gstin.trim()) {
+      Alert.alert(t('gj_noGstinTitle'), t('gj_noGstin'));
+      return;
+    }
+    setExportingJson(true);
+    try {
+      const uri = await exportGstr1Json(
+        db,
+        { id: business.id, gstin: business.gstin, name: business.name, state_code: business.state_code },
+        fp,
+      );
+      if (!uri) {
+        Alert.alert(t('gj_noDataTitle'), t('gj_noData'));
+      } else {
+        Alert.alert(t('gj_doneTitle'), t('gj_done'));
+      }
+    } catch {
+      Alert.alert(t('gj_failedTitle'), t('gj_failed'));
+    } finally {
+      setExportingJson(false);
+    }
+  }, [business, db, exportingJson, fp, t]);
 
   const menu = [
     { route: '/reports/sales' as const, icon: 'trending-up' as const, title: t('r_salesReport'), hint: t('r_salesReportHint') },
@@ -85,6 +113,31 @@ export default function ReportsScreen() {
             <Text style={styles.meta}>{t('g1_exportHint')}</Text>
             <View style={styles.g1Btn}>
               <Button label={t('g1_export')} icon="document-text" onPress={onExportGstr1} loading={exporting} />
+            </View>
+          </Card>
+
+          <Card>
+            <Text style={styles.rowText}>{t('gj_exportTitle')}</Text>
+            <Text style={styles.meta}>{t('gj_exportHint')}</Text>
+            <View style={styles.monthRow}>
+              <Pressable
+                style={styles.monthBtn}
+                onPress={() => setFp((p) => shiftFp(p, -1))}
+                hitSlop={8}
+              >
+                <Ionicons name="chevron-back" size={20} color={colors.primary} />
+              </Pressable>
+              <Text style={styles.monthLabel}>{fpLabel(fp)}</Text>
+              <Pressable
+                style={styles.monthBtn}
+                onPress={() => setFp((p) => shiftFp(p, 1))}
+                hitSlop={8}
+              >
+                <Ionicons name="chevron-forward" size={20} color={colors.primary} />
+              </Pressable>
+            </View>
+            <View style={styles.g1Btn}>
+              <Button label={t('gj_export')} icon="cloud-upload" onPress={onExportGstr1Json} loading={exportingJson} />
             </View>
           </Card>
 
@@ -139,5 +192,15 @@ const styles = StyleSheet.create({
   rowText: { fontSize: 15, fontWeight: '600', color: colors.text },
   meta: { fontSize: 13, color: colors.muted, marginTop: 2 },
   g1Btn: { marginTop: 12 },
+  monthRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16, marginTop: 12 },
+  monthBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.md,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  monthLabel: { fontSize: 16, fontWeight: '700', color: colors.text, minWidth: 96, textAlign: 'center' },
   sep: { height: 1, backgroundColor: colors.border },
 });
