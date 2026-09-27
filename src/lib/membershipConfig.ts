@@ -26,7 +26,9 @@ export const MEM_CACHE_KEY = 'membership_cache_v1';
 /** How long the cached membership is treated as fresh. */
 export const CACHE_TTL_MS = 6 * 3600_000;
 
-// TODO: the real Razorpay key id comes from the create-order edge function
-// response (order.key_id). This placeholder is only a fallback so the
-// checkout options object always has a key; never put a real key here.
-export const RAZORPAY_KEY_ID_PLACEHOLDER = 'rzp_test_XXXXXXXXXXXX';
+// The Razorpay key id is PUBLIC by design (Razorpay puts it in client-side
+// checkout code). The app prefers the key_id returned by the create-order
+// edge function; this constant is the fallback so checkout always has a key.
+// NOTE: this is the TEST key. When going live, replace with the rzp_live_…
+// key id from the Razorpay dashboard.
+export const RAZORPAY_KEY_ID_PLACEHOLDER = 'rzp_test_TgsnTOSw8vXClD';
