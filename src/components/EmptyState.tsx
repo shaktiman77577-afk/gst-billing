@@ -42,7 +42,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: spacing.sm,
   },
-  title: { fontSize: text.lg, fontWeight: '700', color: colors.text, textAlign: 'center' },
+  title: { fontSize: text.md, fontWeight: '700', color: colors.text, textAlign: 'center' },
   hint: { fontSize: text.sm, color: colors.muted, textAlign: 'center' },
   badge: {
     flexDirection: 'row',

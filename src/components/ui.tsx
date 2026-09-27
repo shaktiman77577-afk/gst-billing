@@ -48,8 +48,8 @@ export function Screen({ children, scroll = true, footer, edges = ['top', 'botto
   );
 }
 
-export function Card({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
-  return <View style={[styles.card, style]}>{children}</View>;
+export function Card({ children, style, list }: { children: ReactNode; style?: StyleProp<ViewStyle>; list?: boolean }) {
+  return <View style={[styles.card, list && styles.list, style]}>{children}</View>;
 }
 
 export function SectionHeader({ icon, title, subtitle }: { icon: IconName; title: string; subtitle?: string }) {
@@ -218,6 +218,91 @@ export function MadeInIndia({ light = false }: { light?: boolean }) {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Elegant design language (myBillBook-style, extracted from the membership
+// screen). Use these for every list/menu row in the app so all screens share
+// one visual language: small tinted icon chip + compact 15px text + hairline
+// separators inside a slim card.
+// ---------------------------------------------------------------------------
+
+// Small tinted icon chip: 34x34, radius 10, 19px glyph.
+export function IconChip({
+  icon,
+  bg = colors.primarySoft,
+  fg = colors.primary,
+  size = 34,
+}: {
+  icon: IconName;
+  bg?: string;
+  fg?: string;
+  size?: number;
+}) {
+  return (
+    <View
+      style={[
+        styles.iconChip,
+        { width: size, height: size, borderRadius: Math.min(10, size / 2), backgroundColor: bg },
+      ]}
+    >
+      <Ionicons name={icon} size={Math.round(size * 0.56)} color={fg} />
+    </View>
+  );
+}
+
+// Elegant tappable row: icon chip + title (+ optional subtitle) + optional
+// right-side node + chevron. Touch target >= 44px (52px tall by default).
+// Wrap rows in <Card list> and put <Hairline /> between them.
+export function MenuRow({
+  icon,
+  title,
+  subtitle,
+  onPress,
+  right,
+  iconBg,
+  iconFg,
+  chevron = true,
+}: {
+  icon: IconName;
+  title: string;
+  subtitle?: string;
+  onPress?: () => void;
+  right?: ReactNode;
+  iconBg?: string;
+  iconFg?: string;
+  chevron?: boolean;
+}) {
+  const inner = (
+    <>
+      <IconChip icon={icon} bg={iconBg} fg={iconFg} />
+      <View style={styles.menuTextWrap}>
+        <Text style={styles.menuTitle} numberOfLines={1}>
+          {title}
+        </Text>
+        {subtitle ? (
+          <Text style={styles.menuSubtitle} numberOfLines={2}>
+            {subtitle}
+          </Text>
+        ) : null}
+      </View>
+      {right}
+      {chevron && !right ? <Ionicons name="chevron-forward" size={18} color={colors.faint} /> : null}
+    </>
+  );
+  if (onPress) {
+    return (
+      <Pressable onPress={onPress} style={({ pressed }) => [styles.menuRow, pressed && { opacity: 0.7 }]}>
+        {inner}
+      </Pressable>
+    );
+  }
+  return <View style={styles.menuRow}>{inner}</View>;
+}
+
+// Hairline separator for use between MenuRows.
+export function Hairline() {
+  return <View style={styles.hairline} />;
+}
+
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
@@ -308,4 +393,13 @@ const styles = StyleSheet.create({
   madeWrap: { alignItems: 'center', gap: spacing.xs, paddingVertical: spacing.sm },
   made: { fontSize: text.sm, color: colors.muted, fontWeight: '600' },
   madeHindi: { fontSize: text.xs, color: colors.faint },
+  // Elegant row language
+  iconChip: { alignItems: 'center', justifyContent: 'center' },
+  menuRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: 9, minHeight: 52 },
+  menuTextWrap: { flex: 1 },
+  menuTitle: { fontSize: text.md, fontWeight: '600', color: colors.text, lineHeight: 21 },
+  menuSubtitle: { fontSize: text.sm, color: colors.muted, marginTop: 1, lineHeight: 18 },
+  hairline: { height: 1, backgroundColor: colors.border, marginVertical: 2 },
+  // Slim card variant for lists: wrap MenuRows + Hairlines in <Card list>.
+  list: { paddingVertical: 6, gap: 0 },
 });

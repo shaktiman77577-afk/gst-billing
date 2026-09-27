@@ -2,12 +2,12 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useState } from 'react';
+import { Fragment, useCallback, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { EmptyState } from '../../src/components/EmptyState';
 import { Fab } from '../../src/components/Fab';
 import { FormHeader } from '../../src/components/FormHeader';
-import { Card, IconName } from '../../src/components/ui';
+import { Card, Hairline, IconChip, IconName, MenuRow } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import {
   deleteExpense,
@@ -104,9 +104,7 @@ export default function ExpensesScreen() {
         </View>
 
         <Card style={styles.totalCard}>
-          <View style={styles.totalIcon}>
-            <Ionicons name="wallet" size={22} color={colors.primary} />
-          </View>
+          <IconChip icon="wallet" />
           <View style={styles.flexOnly}>
             <Text style={styles.statLabel}>{t('e_totalThisMonth')}</Text>
             <Text style={styles.totalValue}>{formatPaise(total)}</Text>
@@ -114,61 +112,45 @@ export default function ExpensesScreen() {
         </Card>
 
         {cats.length > 0 ? (
-          <Card>
+          <Card list>
             <Text style={styles.cardLabel}>{t('e_byCategory')}</Text>
-            {cats.map((c, i) => (
-              <View key={c.category} style={[styles.catRow, i > 0 && styles.rowSep]}>
-                <View style={styles.catIcon}>
-                  <Ionicons
-                    name={
-                      isBuiltinCategory(c.category)
-                        ? CATEGORY_ICONS[c.category]
-                        : 'ellipsis-horizontal-outline'
-                    }
-                    size={18}
-                    color={colors.primary}
-                  />
-                </View>
-                <Text style={styles.catName}>{expenseCategoryLabel(c.category, t)}</Text>
-                <Text style={styles.catAmt}>{formatPaise(c.total)}</Text>
-              </View>
+            {cats.map((c) => (
+              <Fragment key={c.category}>
+                <Hairline />
+                <MenuRow
+                  icon={isBuiltinCategory(c.category) ? CATEGORY_ICONS[c.category] : 'ellipsis-horizontal-outline'}
+                  title={expenseCategoryLabel(c.category, t)}
+                  chevron={false}
+                  right={<Text style={styles.catAmt}>{formatPaise(c.total)}</Text>}
+                />
+              </Fragment>
             ))}
           </Card>
         ) : null}
 
-        <Card style={rows.length ? { gap: 0, paddingVertical: 6 } : undefined}>
+        <Card list={rows.length > 0}>
           {rows.length === 0 ? (
             <EmptyState icon="wallet-outline" title={t('e_noExpenses')} hint={t('e_noExpensesHint')} />
           ) : (
             rows.map((e, i) => (
-              <Pressable
-                key={e.id}
-                onPress={() => router.push({ pathname: '/expenses/new', params: { id: e.id } })}
-                style={[styles.row, i < rows.length - 1 && styles.rowSep]}
-              >
-                <View style={styles.catIcon}>
-                  <Ionicons
-                    name={
-                      isBuiltinCategory(e.category)
-                        ? CATEGORY_ICONS[e.category]
-                        : 'ellipsis-horizontal-outline'
-                    }
-                    size={18}
-                    color={colors.primary}
-                  />
-                </View>
-                <View style={styles.flexOnly}>
-                  <Text style={styles.rowTitle}>{expenseCategoryLabel(e.category, t)}</Text>
-                  <Text style={styles.rowMeta} numberOfLines={1}>
-                    {formatDate(e.date)}
-                    {e.note ? ` · ${e.note}` : ''}
-                  </Text>
-                </View>
-                <Text style={styles.rowAmt}>{formatPaise(e.amount_paise)}</Text>
-                <Pressable onPress={() => confirmDelete(e)} hitSlop={12} style={styles.delBtn}>
-                  <Ionicons name="trash-outline" size={18} color={colors.danger} />
-                </Pressable>
-              </Pressable>
+              <Fragment key={e.id}>
+                {i > 0 ? <Hairline /> : null}
+                <MenuRow
+                  icon={isBuiltinCategory(e.category) ? CATEGORY_ICONS[e.category] : 'ellipsis-horizontal-outline'}
+                  title={expenseCategoryLabel(e.category, t)}
+                  subtitle={`${formatDate(e.date)}${e.note ? ` · ${e.note}` : ''}`}
+                  onPress={() => router.push({ pathname: '/expenses/new', params: { id: e.id } })}
+                  chevron={false}
+                  right={
+                    <View style={styles.rightWrap}>
+                      <Text style={styles.rowAmt}>{formatPaise(e.amount_paise)}</Text>
+                      <Pressable onPress={() => confirmDelete(e)} hitSlop={12} style={styles.delBtn}>
+                        <Ionicons name="trash-outline" size={18} color={colors.danger} />
+                      </Pressable>
+                    </View>
+                  }
+                />
+              </Fragment>
             ))
           )}
         </Card>
@@ -194,19 +176,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   navBtnDisabled: { opacity: 0.5 },
-  monthLabel: { fontSize: 17, fontWeight: '800', color: colors.text, minWidth: 110, textAlign: 'center' },
+  monthLabel: { fontSize: 15, fontWeight: '800', color: colors.text, minWidth: 110, textAlign: 'center' },
   manageLink: { fontSize: 14, fontWeight: '700', color: colors.primary },
   totalCard: { flexDirection: 'row', alignItems: 'center' },
-  totalIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.md,
-    backgroundColor: colors.primaryTint,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   statLabel: { fontSize: 12, color: colors.muted, fontWeight: '600' },
-  totalValue: { fontSize: 22, fontWeight: '800', color: colors.text, marginTop: 2 },
+  totalValue: { fontSize: 20, fontWeight: '800', color: colors.text, marginTop: 2 },
   cardLabel: {
     fontSize: 12,
     fontWeight: '700',
@@ -215,21 +189,8 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
     marginBottom: 4,
   },
-  catRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 },
-  catIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.sm,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  catName: { flex: 1, fontSize: 15, fontWeight: '600', color: colors.text },
   catAmt: { fontSize: 15, fontWeight: '700', color: colors.text },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 },
-  rowSep: { borderBottomWidth: 1, borderBottomColor: colors.border },
-  rowTitle: { fontSize: 15, fontWeight: '700', color: colors.text },
-  rowMeta: { fontSize: 12, color: colors.muted, marginTop: 2 },
   rowAmt: { fontSize: 15, fontWeight: '800', color: colors.danger },
+  rightWrap: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   delBtn: { padding: 6 },
 });

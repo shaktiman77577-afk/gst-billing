@@ -10,7 +10,7 @@ import { DateRangePicker } from '../../src/components/DateRangePicker';
 import { EmptyState } from '../../src/components/EmptyState';
 import { GstDeadlinesCard } from '../../src/components/GstDeadlinesCard';
 import { Header } from '../../src/components/Header';
-import { Card, IconName } from '../../src/components/ui';
+import { Card, Hairline, IconChip, IconName, MenuRow } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import { InvoiceListRow, listInvoices, salesSummary } from '../../src/db/invoices';
 import { totalExpenses } from '../../src/db/expenses';
@@ -117,18 +117,14 @@ export default function HomeScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.stats}>
           <View style={styles.stat}>
-            <View style={[styles.statIcon, { backgroundColor: colors.successSoft }]}>
-              <Ionicons name="arrow-down-circle" size={20} color={colors.success} />
-            </View>
+            <IconChip icon="arrow-down-circle" bg={colors.successSoft} fg={colors.success} />
             <View style={styles.flexOnly}>
               <Text style={styles.statLabel}>{t('toCollect')}</Text>
               <Text style={[styles.statValue, { color: colors.success }]}>{formatPaise(totals.toCollect)}</Text>
             </View>
           </View>
           <View style={styles.stat}>
-            <View style={[styles.statIcon, { backgroundColor: colors.dangerSoft }]}>
-              <Ionicons name="arrow-up-circle" size={20} color={colors.danger} />
-            </View>
+            <IconChip icon="arrow-up-circle" bg={colors.dangerSoft} fg={colors.danger} />
             <View style={styles.flexOnly}>
               <Text style={styles.statLabel}>{t('toPay')}</Text>
               <Text style={[styles.statValue, { color: colors.danger }]}>{formatPaise(totals.toPay)}</Text>
@@ -156,45 +152,36 @@ export default function HomeScreen() {
         {(alerts.lowStock > 0 || alerts.overdueCount > 0) ? (
           <View>
             <Text style={styles.sectionTitle}>{t('a_needsAttention')}</Text>
-            <View style={styles.alerts}>
+            <Card list>
               {alerts.lowStock > 0 ? (
-                <Pressable style={styles.alertCard} onPress={() => router.push({ pathname: '/items', params: { filter: 'low' } })}>
-                  <View style={[styles.alertIcon, { backgroundColor: colors.warningSoft }]}>
-                    <Ionicons name="cube-outline" size={20} color={colors.warning} />
-                  </View>
-                  <View style={styles.flexOnly}>
-                    <Text style={styles.alertLabel}>{t('a_lowStock')}</Text>
-                    <Text style={styles.alertSub}>
-                      {t('a_lowStockSub').replace('{n}', String(alerts.lowStock))}
-                    </Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={18} color={colors.faint} />
-                </Pressable>
+                <MenuRow
+                  icon="cube-outline"
+                  iconBg={colors.warningSoft}
+                  iconFg={colors.warning}
+                  title={t('a_lowStock')}
+                  subtitle={t('a_lowStockSub').replace('{n}', String(alerts.lowStock))}
+                  onPress={() => router.push({ pathname: '/items', params: { filter: 'low' } })}
+                />
               ) : null}
+              {alerts.lowStock > 0 && alerts.overdueCount > 0 ? <Hairline /> : null}
               {alerts.overdueCount > 0 ? (
-                <Pressable style={styles.alertCard} onPress={() => router.push('/alerts/overdue')}>
-                  <View style={[styles.alertIcon, { backgroundColor: colors.dangerSoft }]}>
-                    <Ionicons name="alarm-outline" size={20} color={colors.danger} />
-                  </View>
-                  <View style={styles.flexOnly}>
-                    <Text style={styles.alertLabel}>{t('a_paymentDue')}</Text>
-                    <Text style={styles.alertSub}>
-                      {t('a_paymentDueSub')
-                        .replace('{total}', formatPaise(alerts.overdueTotal))
-                        .replace('{n}', String(alerts.overdueCount))}
-                    </Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={18} color={colors.faint} />
-                </Pressable>
+                <MenuRow
+                  icon="alarm-outline"
+                  iconBg={colors.dangerSoft}
+                  iconFg={colors.danger}
+                  title={t('a_paymentDue')}
+                  subtitle={t('a_paymentDueSub')
+                    .replace('{total}', formatPaise(alerts.overdueTotal))
+                    .replace('{n}', String(alerts.overdueCount))}
+                  onPress={() => router.push('/alerts/overdue')}
+                />
               ) : null}
-            </View>
+            </Card>
           </View>
         ) : null}
 
         <Pressable style={styles.monthCard} onPress={() => router.navigate('/bills')}>
-          <View style={styles.monthIcon}>
-            <Ionicons name="trending-up" size={22} color={colors.primary} />
-          </View>
+          <IconChip icon="trending-up" />
           <View style={styles.flexOnly}>
             <Text style={styles.statLabel}>{t('thisMonthSales')}</Text>
             <Text style={styles.monthValue}>{formatPaise(month.total)}</Text>
@@ -206,9 +193,7 @@ export default function HomeScreen() {
         </Pressable>
 
         <View style={styles.monthCard}>
-          <View style={styles.monthIcon}>
-            <Ionicons name="wallet-outline" size={22} color={colors.primary} />
-          </View>
+          <IconChip icon="wallet-outline" />
           <View style={styles.flexOnly}>
             <Text style={styles.statLabel}>{t('e_profitMonth')}</Text>
             <Text style={[styles.monthValue, { color: profit >= 0 ? colors.success : colors.danger }]}>
@@ -235,9 +220,7 @@ export default function HomeScreen() {
               onPress={a.onPress}
               style={({ pressed }) => [styles.action, pressed && { opacity: 0.85 }]}
             >
-              <View style={[styles.actionIcon, { backgroundColor: a.bg }]}>
-                <Ionicons name={a.icon} size={24} color={a.color} />
-              </View>
+              <IconChip icon={a.icon} bg={a.bg} fg={a.color} />
               <Text style={styles.actionLabel} numberOfLines={1}>
                 {a.label}
               </Text>
@@ -308,13 +291,6 @@ const styles = StyleSheet.create({
     padding: 14,
     ...shadowSm,
   },
-  statIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   statLabel: { fontSize: text.xs, color: colors.muted, fontWeight: '600' },
   statValue: { fontSize: text.xl, fontWeight: '800', marginTop: 2 },
   payActions: { flexDirection: 'row', gap: 12 },
@@ -332,27 +308,6 @@ const styles = StyleSheet.create({
     ...shadowSm,
   },
   payLabel: { fontSize: text.md, fontWeight: '700' },
-  alerts: { gap: 10 },
-  alertCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.lg,
-    padding: 14,
-    ...shadowSm,
-  },
-  alertIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  alertLabel: { fontSize: 14, fontWeight: '700', color: colors.text },
-  alertSub: { fontSize: text.sm, color: colors.muted, fontWeight: '600', marginTop: 2 },
   monthCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -363,14 +318,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: 14,
     ...shadowSm,
-  },
-  monthIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.md,
-    backgroundColor: colors.primaryTint,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   monthValue: { fontSize: text.xl, fontWeight: '800', color: colors.text, marginTop: 2 },
   monthCount: { fontSize: text.xs, color: colors.muted, fontWeight: '600' },
@@ -390,13 +337,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     ...shadowSm,
-  },
-  actionIcon: {
-    width: 46,
-    height: 46,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   actionLabel: { fontSize: text.sm, fontWeight: '600', color: colors.text },
   rowSep: { borderBottomWidth: 1, borderBottomColor: colors.border },

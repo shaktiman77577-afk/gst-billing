@@ -10,7 +10,7 @@ import { FormHeader } from '../../src/components/FormHeader';
 import { ItemPicker } from '../../src/components/ItemPicker';
 import { PartyPicker } from '../../src/components/PartyPicker';
 import { PaywallSheet } from '../../src/components/PaywallSheet';
-import { Button, Card, Chips, ErrorText, Field, Screen, SectionHeader } from '../../src/components/ui';
+import { Button, Card, Chips, ErrorText, Field, IconChip, MenuRow, Screen, SectionHeader } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import { stateName } from '../../src/data/states';
 import {
@@ -371,29 +371,16 @@ export default function BillFormScreen() {
         {/* Party */}
         <Card>
           <SectionHeader icon="person" title={t('party')} />
-          <Pressable style={styles.partyBox} onPress={() => setPartyOpen(true)}>
-            {party === undefined ? (
-              <>
-                <Ionicons name="person-add-outline" size={20} color={colors.primary} />
-                <Text style={[styles.partyName, { color: colors.primary }]}>{t('selectParty')}</Text>
-              </>
-            ) : (
-              <>
-                <View style={styles.partyAvatar}>
-                  <Ionicons name={party ? 'person' : 'cash-outline'} size={18} color={colors.primary} />
-                </View>
-                <View style={styles.flex}>
-                  <Text style={styles.partyName}>{party ? party.name : t('cashSale')}</Text>
-                  {party ? (
-                    <Text style={styles.partySub}>
-                      {[party.phone, party.gstin].filter(Boolean).join(' · ') || stateName(party.state_code)}
-                    </Text>
-                  ) : null}
-                </View>
-              </>
-            )}
-            <Ionicons name="chevron-down" size={18} color={colors.faint} />
-          </Pressable>
+          <MenuRow
+            icon={party === undefined ? 'person-add-outline' : party ? 'person' : 'cash-outline'}
+            title={party === undefined ? t('selectParty') : party ? party.name : t('cashSale')}
+            subtitle={
+              party
+                ? [party.phone, party.gstin].filter(Boolean).join(' · ') || stateName(party.state_code)
+                : undefined
+            }
+            onPress={() => setPartyOpen(true)}
+          />
           {applyGst && placeOfSupply ? (
             <View style={styles.posRow}>
               <Text style={styles.posText}>
@@ -525,7 +512,7 @@ export default function BillFormScreen() {
         {/* More details */}
         <Card>
           <Pressable style={styles.moreHeader} onPress={() => setShowMore((s) => !s)}>
-            <Ionicons name="document-attach-outline" size={18} color={colors.primary} />
+            <IconChip icon="document-attach-outline" />
             <Text style={styles.moreText}>{t('moreDetails')}</Text>
             <Ionicons name={showMore ? 'chevron-up' : 'chevron-down'} size={18} color={colors.faint} />
           </Pressable>
@@ -607,33 +594,13 @@ const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: 'transparent' },
   row: { flexDirection: 'row', gap: 12 },
   note: { fontSize: text.xs, color: colors.warning, backgroundColor: colors.accentSoft, padding: 8, borderRadius: radius.sm },
-  partyBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    padding: 12,
-    backgroundColor: colors.surfaceAlt,
-  },
-  partyAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  partyName: { fontSize: text.md, fontWeight: '700', color: colors.text, flexShrink: 1 },
-  partySub: { fontSize: text.xs, color: colors.muted, marginTop: 1 },
   posRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   posText: { flex: 1, fontSize: text.xs, color: colors.muted },
   taxChip: { backgroundColor: colors.primarySoft, paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill },
   taxChipText: { fontSize: text.xs, fontWeight: '800', color: colors.primary },
   sumRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  sumLabel: { fontSize: 14, color: colors.muted },
-  sumValue: { fontSize: 14, color: colors.text, fontWeight: '600' },
+  sumLabel: { fontSize: text.md, color: colors.muted },
+  sumValue: { fontSize: text.md, color: colors.text, fontWeight: '600' },
   bold: { fontWeight: '800', color: colors.text, fontSize: text.md },
   chargesRow: { flexDirection: 'row', gap: 8 },
   smallInput: {
@@ -643,11 +610,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceAlt,
     paddingHorizontal: 10,
     paddingVertical: 9,
-    fontSize: 14,
+    fontSize: text.md,
     color: colors.text,
   },
   switchRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  flexText: { flex: 1, fontSize: 14, color: colors.text, fontWeight: '600' },
+  flexText: { flex: 1, fontSize: text.md, color: colors.text, fontWeight: '600' },
   muted: { fontSize: text.sm, color: colors.muted },
   totalBox: {
     flexDirection: 'row',
@@ -661,8 +628,8 @@ const styles = StyleSheet.create({
   totalValue: { fontSize: text.xl, fontWeight: '800', color: colors.primary },
   words: { fontSize: text.xs, color: colors.muted, fontStyle: 'italic' },
   label: { fontSize: text.sm, fontWeight: '600', color: colors.text },
-  moreHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  moreText: { flex: 1, fontSize: 14, fontWeight: '700', color: colors.primary },
+  moreHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44 },
+  moreText: { flex: 1, fontSize: text.md, fontWeight: '700', color: colors.primary },
   footerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   footerLabel: { fontSize: text.xs, color: colors.muted },
   footerTotal: { fontSize: text.xl, fontWeight: '800', color: colors.primary },

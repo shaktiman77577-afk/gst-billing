@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: radius.md,
     paddingHorizontal: 14,
-    paddingVertical: 14,
+    paddingVertical: 12,
     ...shadowSm,
   },
   party: { fontSize: text.md, fontWeight: '700', color: colors.text },

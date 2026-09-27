@@ -5,7 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { FormHeader } from '../../src/components/FormHeader';
-import { Button, Card, Field, Screen, SectionHeader } from '../../src/components/ui';
+import { Button, Card, Field, MenuRow, Screen, SectionHeader } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import { updateBillDesign } from '../../src/db/businesses';
 import { getInvoiceNextSeq, setInvoiceNextSeq } from '../../src/db/invoices';
@@ -132,21 +132,16 @@ export default function BillSettingsScreen() {
         footer={<Button label={t('save')} icon="checkmark-circle" onPress={onSave} loading={saving} />}
       >
         {/* Design */}
-        <Pressable onPress={() => router.push('/settings/template')}>
-          <Card style={styles.designCard}>
-            <View style={[styles.swatch, { backgroundColor: business?.theme_color ?? colors.primary }]}>
-              <Ionicons name="color-palette" size={22} color={colors.white} />
-            </View>
-            <View style={styles.flexOnly}>
-              <Text style={styles.designTitle}>{t('billDesign')}</Text>
-              <Text style={styles.muted}>
-                {tpl.name}
-                {tpl.premium ? ' 👑' : ''} · {t('billDesignHint')}
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.faint} />
-          </Card>
-        </Pressable>
+        <Card list>
+          <MenuRow
+            icon="color-palette"
+            iconBg={business?.theme_color ?? colors.primary}
+            iconFg={colors.white}
+            title={t('billDesign')}
+            subtitle={`${tpl.name}${tpl.premium ? ' 👑' : ''} · ${t('billDesignHint')}`}
+            onPress={() => router.push('/settings/template')}
+          />
+        </Card>
 
         {/* Number */}
         <Card>
@@ -294,9 +289,6 @@ const styles = StyleSheet.create({
   flexOnly: { flex: 1 },
   row: { flexDirection: 'row', gap: 12 },
   muted: { fontSize: 12, color: colors.muted },
-  designCard: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  swatch: { width: 44, height: 44, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
-  designTitle: { fontSize: 16, fontWeight: '700', color: colors.text },
   preview: { backgroundColor: colors.primarySoft, borderRadius: radius.md, padding: 12, gap: 2 },
   previewValue: { fontSize: 20, fontWeight: '800', color: colors.primary, letterSpacing: 0.5 },
   imgRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },

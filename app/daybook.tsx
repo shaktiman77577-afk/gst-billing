@@ -7,7 +7,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { FormHeader } from '../src/components/FormHeader';
 import { DateRangeButton } from '../src/components/DateRangeButton';
 import { DateRangePicker } from '../src/components/DateRangePicker';
-import { Card, IconName, SectionHeader } from '../src/components/ui';
+import { Card, Hairline, IconChip, IconName, SectionHeader } from '../src/components/ui';
 import { useApp } from '../src/context/AppContext';
 import { Daybook, getDaybook, getDaybookRange } from '../src/db/daybook';
 import { expenseCategoryLabel } from '../src/db/expenses';
@@ -155,14 +155,14 @@ export default function DaybookScreen() {
               {formatPaise(data?.totalIn ?? 0)}
             </Text>
           </View>
-          <View style={styles.sep} />
+          <Hairline />
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>{t('dbk_moneyOut')}</Text>
             <Text style={[styles.totalValue, { color: colors.danger }]}>
               {formatPaise(data?.totalOut ?? 0)}
             </Text>
           </View>
-          <View style={styles.sep} />
+          <Hairline />
           <View style={styles.totalRow}>
             <Text style={[styles.totalLabel, styles.netLabel]}>{t('dbk_net')}</Text>
             <Text
@@ -232,9 +232,8 @@ export default function DaybookScreen() {
             <Pressable
               onPress={() => router.push({ pathname: '/expenses/new', params: { date: day } })}
               hitSlop={10}
-              style={styles.addBtn}
             >
-              <Ionicons name="add" size={22} color={colors.primary} />
+              <IconChip icon="add" />
             </Pressable>
           ) : undefined,
         )}
@@ -270,14 +269,6 @@ const styles = StyleSheet.create({
   content: { padding: 16, gap: 14, paddingBottom: 32 },
   sectionHead: { flexDirection: 'row', alignItems: 'center' },
   sectionGrow: { flex: 1 },
-  addBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   dateNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   navBtn: {
     width: 40,
@@ -289,7 +280,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  dateLabel: { fontSize: 17, fontWeight: '700', color: colors.text, minWidth: 150, textAlign: 'center' },
+  dateLabel: { fontSize: 15, fontWeight: '700', color: colors.text, minWidth: 150, textAlign: 'center' },
   todayBtn: {
     backgroundColor: colors.primarySoft,
     paddingHorizontal: 12,
@@ -301,13 +292,12 @@ const styles = StyleSheet.create({
   totalLabel: { fontSize: 14, fontWeight: '600', color: colors.muted },
   totalValue: { fontSize: 16, fontWeight: '700' },
   netLabel: { fontSize: 15, fontWeight: '800', color: colors.text },
-  netValue: { fontSize: 18, fontWeight: '800' },
-  sep: { height: 1, backgroundColor: colors.border, marginVertical: 6 },
+  netValue: { fontSize: 15, fontWeight: '800' },
   list: { gap: 10, marginTop: 4 },
   entry: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   entryText: { flex: 1 },
-  entryTitle: { fontSize: 14, fontWeight: '600', color: colors.text },
-  entryMeta: { fontSize: 12, color: colors.muted, marginTop: 2 },
-  entryAmount: { fontSize: 14, fontWeight: '700', color: colors.text },
-  emptyText: { fontSize: 13, color: colors.faint, textAlign: 'center', paddingVertical: 8 },
+  entryTitle: { fontSize: 15, fontWeight: '600', color: colors.text },
+  entryMeta: { fontSize: 13, color: colors.muted, marginTop: 2 },
+  entryAmount: { fontSize: 15, fontWeight: '700', color: colors.text },
+  emptyText: { fontSize: 13, color: colors.muted, textAlign: 'center', paddingVertical: 8 },
 });

@@ -5,7 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { FormHeader } from '../../src/components/FormHeader';
-import { Button, Card, Chips, Field, Label, Screen, SectionHeader } from '../../src/components/ui';
+import { Button, Card, Chips, Field, Hairline, Label, Screen, SectionHeader } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import {
   createItem,
@@ -225,7 +225,7 @@ export default function ItemFormScreen() {
             <View style={styles.breakdown}>
               <Row label={t('withoutTax')} value={formatPaise(breakdown.base)} />
               <Row label={`GST ${gstRate}%`} value={formatPaise(breakdown.tax)} />
-              <View style={styles.breakLine} />
+              <Hairline />
               <Row label={t('withTax')} value={formatPaise(breakdown.total)} bold />
             </View>
           ) : null}
@@ -306,6 +306,5 @@ const styles = StyleSheet.create({
   breakRow: { flexDirection: 'row', justifyContent: 'space-between' },
   breakLabel: { fontSize: text.sm, color: colors.muted },
   breakValue: { fontSize: text.sm, color: colors.text },
-  breakLine: { height: 1, backgroundColor: colors.border },
   bold: { fontWeight: '800', color: colors.primary },
 });

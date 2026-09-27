@@ -6,15 +6,15 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { BillLineCard } from '../../src/components/BillLineCard';
 import { DateField } from '../../src/components/DateField';
 import { EmptyState } from '../../src/components/EmptyState';
 import { FormHeader } from '../../src/components/FormHeader';
 import { ItemPicker } from '../../src/components/ItemPicker';
 import { PartyPicker } from '../../src/components/PartyPicker';
-import { Button, Card, ErrorText, Field, Hint, Screen, SectionHeader } from '../../src/components/ui';
+import { Button, Card, ErrorText, Field, Hairline, Hint, IconChip, MenuRow, Screen, SectionHeader } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import type { LineDraft } from '../../src/db/invoices';
 import { Item, listItems, roundQty } from '../../src/db/items';
@@ -237,23 +237,19 @@ export default function PurchaseReturnScreen() {
             {picks.length === 0 ? (
               <EmptyState icon="bag-handle-outline" title={t('noPurchasesToLink')} hint="" />
             ) : (
-              <FlatList
-                data={picks}
-                keyExtractor={(p) => p.id}
-                scrollEnabled={false}
-                renderItem={({ item: p }) => (
-                  <Pressable onPress={() => loadPurchase(p.id)} style={styles.pickRow}>
-                    <View style={styles.flexOnly}>
-                      <Text style={styles.pickNo}>{p.party_name}</Text>
-                      <Text style={styles.muted}>
-                        {formatDate(p.purchase_date)}
-                        {p.supplier_bill_no ? ` · ${p.supplier_bill_no}` : ''} · {formatPaise(p.total_paise)}
-                      </Text>
-                    </View>
-                    <Ionicons name="chevron-forward" size={18} color={colors.muted} />
-                  </Pressable>
-                )}
-              />
+              <View>
+                {picks.map((p, i) => (
+                  <Fragment key={p.id}>
+                    {i > 0 ? <Hairline /> : null}
+                    <MenuRow
+                      icon="bag-handle-outline"
+                      title={p.party_name}
+                      subtitle={`${formatDate(p.purchase_date)}${p.supplier_bill_no ? ` · ${p.supplier_bill_no}` : ''} · ${formatPaise(p.total_paise)}`}
+                      onPress={() => loadPurchase(p.id)}
+                    />
+                  </Fragment>
+                ))}
+              </View>
             )}
             <Button variant="outline" label={t('cancel')} onPress={() => setPicking(false)} />
           </Card>
@@ -301,9 +297,7 @@ export default function PurchaseReturnScreen() {
                   </>
                 ) : (
                   <>
-                    <View style={styles.partyAvatar}>
-                      <Ionicons name={supplier ? 'person' : 'cash-outline'} size={18} color={colors.primary} />
-                    </View>
+                    <IconChip icon={supplier ? 'person' : 'cash-outline'} />
                     <View style={styles.flexOnly}>
                       <Text style={styles.partyName}>{supplier ? supplier.name : t('pur_cashPurchase')}</Text>
                       {supplier?.phone ? <Text style={styles.partySub}>{supplier.phone}</Text> : null}
@@ -378,8 +372,8 @@ export default function PurchaseReturnScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.background },
   flexOnly: { flex: 1 },
-  muted: { fontSize: text.xs, color: colors.muted },
-  party: { fontSize: text.lg, fontWeight: '700', color: colors.text, marginTop: -6 },
+  muted: { fontSize: text.sm, color: colors.muted },
+  party: { fontSize: text.md, fontWeight: '700', color: colors.text, marginTop: -6 },
   link: { fontSize: text.sm, fontWeight: '700', color: colors.primary },
   partyBox: {
     flexDirection: 'row',
@@ -391,19 +385,9 @@ const styles = StyleSheet.create({
     padding: 12,
     backgroundColor: colors.background,
   },
-  partyAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  partyName: { fontSize: 16, fontWeight: '700', color: colors.text, flexShrink: 1 },
-  partySub: { fontSize: 12, color: colors.muted, marginTop: 1 },
+  partyName: { fontSize: 15, fontWeight: '700', color: colors.text, flexShrink: 1 },
+  partySub: { fontSize: 13, color: colors.muted, marginTop: 1 },
   footerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   footerLabel: { fontSize: text.xs, color: colors.muted },
   footerTotal: { fontSize: text.xl, fontWeight: '800', color: colors.primary },
-  pickRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 10 },
-  pickNo: { fontSize: text.md, fontWeight: '700', color: colors.text },
 });

@@ -7,12 +7,12 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { DateField } from '../../src/components/DateField';
 import { EmptyState } from '../../src/components/EmptyState';
 import { FormHeader } from '../../src/components/FormHeader';
-import { Button, Card, ErrorText, Field, Hint, Screen, SectionHeader } from '../../src/components/ui';
+import { Button, Card, ErrorText, Field, Hairline, Hint, MenuRow, Screen, SectionHeader } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import { formatQty } from '../../src/db/items';
 import {
@@ -187,22 +187,19 @@ export default function SalesReturnScreen() {
             {bills.length === 0 ? (
               <EmptyState icon="receipt-outline" title={t('noBillsToLink')} hint="" />
             ) : (
-              <FlatList
-                data={bills}
-                keyExtractor={(b) => b.id}
-                scrollEnabled={false}
-                renderItem={({ item: b }) => (
-                  <Pressable onPress={() => loadBill(b.id)} style={styles.pickRow}>
-                    <View style={styles.flexOnly}>
-                      <Text style={styles.pickNo}>{b.invoice_no}</Text>
-                      <Text style={styles.muted}>
-                        {b.party_name} · {formatDate(b.invoice_date)}
-                      </Text>
-                    </View>
-                    <Ionicons name="chevron-forward" size={18} color={colors.muted} />
-                  </Pressable>
-                )}
-              />
+              <View>
+                {bills.map((b, i) => (
+                  <Fragment key={b.id}>
+                    {i > 0 ? <Hairline /> : null}
+                    <MenuRow
+                      icon="document-text-outline"
+                      title={b.invoice_no}
+                      subtitle={`${b.party_name} · ${formatDate(b.invoice_date)}`}
+                      onPress={() => loadBill(b.id)}
+                    />
+                  </Fragment>
+                ))}
+              </View>
             )}
             <Button variant="outline" label={t('cancel')} onPress={() => setPicking(false)} />
           </Card>
@@ -303,8 +300,8 @@ function Row({ label, value, bold }: { label: string; value: string; bold?: bool
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.background },
   flexOnly: { flex: 1 },
-  muted: { fontSize: text.xs, color: colors.muted },
-  party: { fontSize: text.lg, fontWeight: '700', color: colors.text, marginTop: -6 },
+  muted: { fontSize: text.sm, color: colors.muted },
+  party: { fontSize: text.md, fontWeight: '700', color: colors.text, marginTop: -6 },
   link: { fontSize: text.sm, fontWeight: '700', color: colors.primary, marginTop: 6 },
   line: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6 },
   lineName: { fontSize: text.md, fontWeight: '700', color: colors.text },
@@ -333,6 +330,4 @@ const styles = StyleSheet.create({
   footerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   footerLabel: { fontSize: text.xs, color: colors.muted },
   footerTotal: { fontSize: text.xl, fontWeight: '800', color: colors.primary },
-  pickRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 10 },
-  pickNo: { fontSize: text.md, fontWeight: '700', color: colors.text },
 });

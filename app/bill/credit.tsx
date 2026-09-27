@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { DateField } from '../../src/components/DateField';
 import { FormHeader } from '../../src/components/FormHeader';
-import { Button, Card, Chips, ErrorText, Field, Hint, Screen, SectionHeader } from '../../src/components/ui';
+import { Button, Card, Chips, ErrorText, Field, Hairline, Hint, Screen, SectionHeader } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import { formatQty } from '../../src/db/items';
 import {
@@ -177,21 +177,23 @@ export default function CreditNoteScreen() {
 
         <Card>
           <SectionHeader icon="return-down-back" title={t('itemsLabel')} />
-          {lines.map((l) => {
+          {lines.map((l, i) => {
             const m = max[l.id] ?? 0;
             const cur = Number(qty[l.id] ?? 0) || 0;
             return (
-              <View key={l.id} style={[styles.line, m === 0 && { opacity: 0.45 }]}>
-                <View style={styles.flexOnly}>
-                  <Text style={styles.lineName}>{l.name}</Text>
-                  <Text style={styles.muted}>
-                    {formatPaise(l.rate_paise)} · {t('returnQty')}: {formatQty(m)} {l.unit}
-                  </Text>
-                </View>
-                <View style={styles.stepper}>
-                  <Pressable onPress={() => setQ(l.id, cur - 1)} hitSlop={10} style={styles.stepBtn} disabled={m === 0}>
-                    <Ionicons name="remove" size={18} color={colors.primary} />
-                  </Pressable>
+              <View key={l.id} style={[m === 0 && { opacity: 0.45 }]}>
+                {i > 0 ? <Hairline /> : null}
+                <View style={styles.line}>
+                  <View style={styles.flexOnly}>
+                    <Text style={styles.lineName}>{l.name}</Text>
+                    <Text style={styles.lineSub}>
+                      {formatPaise(l.rate_paise)} · {t('returnQty')}: {formatQty(m)} {l.unit}
+                    </Text>
+                  </View>
+                  <View style={styles.stepper}>
+                    <Pressable onPress={() => setQ(l.id, cur - 1)} hitSlop={10} style={styles.stepBtn} disabled={m === 0}>
+                      <Ionicons name="remove" size={18} color={colors.primary} />
+                    </Pressable>
                   <TextInput
                     value={qty[l.id] ?? '0'}
                     onChangeText={(v) => /^\d*\.?\d{0,3}$/.test(v) && setQty((s) => ({ ...s, [l.id]: v }))}
@@ -204,6 +206,7 @@ export default function CreditNoteScreen() {
                   <Pressable onPress={() => setQ(l.id, cur + 1)} hitSlop={10} style={styles.stepBtn} disabled={m === 0}>
                     <Ionicons name="add" size={18} color={colors.primary} />
                   </Pressable>
+                </View>
                 </View>
               </View>
             );
@@ -255,9 +258,10 @@ const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.background },
   flexOnly: { flex: 1 },
   muted: { fontSize: text.xs, color: colors.muted },
-  party: { fontSize: text.lg, fontWeight: '700', color: colors.text, marginTop: -6 },
-  line: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6 },
+  party: { fontSize: text.md, fontWeight: '700', color: colors.text, marginTop: -6 },
+  line: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 9, minHeight: 52 },
   lineName: { fontSize: text.md, fontWeight: '700', color: colors.text },
+  lineSub: { fontSize: text.sm, color: colors.muted, marginTop: 2 },
   stepper: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -274,14 +278,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  qty: { minWidth: 40, textAlign: 'center', fontWeight: '800', color: colors.primary, paddingVertical: 2 },
+  qty: { minWidth: 40, textAlign: 'center', fontSize: text.md, fontWeight: '800', color: colors.primary, paddingVertical: 2 },
   row: { flexDirection: 'row', justifyContent: 'space-between' },
-  rowLabel: { fontSize: 14, color: colors.muted },
-  rowValue: { fontSize: 14, color: colors.text, fontWeight: '600' },
+  rowLabel: { fontSize: text.md, color: colors.muted },
+  rowValue: { fontSize: text.md, color: colors.text, fontWeight: '600' },
   bold: { fontWeight: '800', color: colors.text, fontSize: text.md },
   words: { fontSize: text.xs, color: colors.muted, fontStyle: 'italic' },
   switchRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  switchText: { fontSize: 14, fontWeight: '600', color: colors.text },
+  switchText: { fontSize: text.md, fontWeight: '600', color: colors.text },
   footerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   footerLabel: { fontSize: text.xs, color: colors.muted },
   footerTotal: { fontSize: text.xl, fontWeight: '800', color: colors.primary },

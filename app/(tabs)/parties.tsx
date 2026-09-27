@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
   total: { flex: 1, alignItems: 'center', gap: 2 },
   divider: { width: 1, backgroundColor: colors.border },
   totalLabel: { fontSize: text.xs, color: colors.muted, fontWeight: '600' },
-  totalValue: { fontSize: text.lg, fontWeight: '800' },
+  totalValue: { fontSize: text.md, fontWeight: '800' },
   quickPay: { flexDirection: 'row', gap: 10 },
   quickBtn: {
     flex: 1,
@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.md,
-    paddingVertical: 10,
+    paddingVertical: 12,
   },
   quickLabel: { fontSize: text.sm, fontWeight: '700' },
   row: {
@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
   avatarText: { fontSize: 17, fontWeight: '800', color: colors.primary },
   name: { fontSize: text.md, fontWeight: '700', color: colors.text },
   subRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
-  sub: { fontSize: text.xs, color: colors.muted, flex: 1 },
+  sub: { fontSize: text.sm, color: colors.muted, flex: 1 },
   balance: { alignItems: 'flex-end' },
   amount: { fontSize: text.md, fontWeight: '800' },
   balLabel: { fontSize: text.xs, color: colors.muted, marginTop: 1 },

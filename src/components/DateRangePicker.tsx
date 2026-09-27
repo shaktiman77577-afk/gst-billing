@@ -23,7 +23,7 @@ type Props = {
 
 export function DateRangePicker({ visible, onClose, value, onApply, allowClear = true }: Props) {
   const { t, language } = useApp();
-    const [showCustom, setShowCustom] = useState(value?.preset === 'custom');
+  const [showCustom, setShowCustom] = useState(value?.preset === 'custom');
   const [from, setFrom] = useState(value?.from ?? todayIso());
   const [to, setTo] = useState(value?.to ?? todayIso());
   const [error, setError] = useState<string | null>(null);

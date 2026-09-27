@@ -8,7 +8,7 @@ import { EmptyState } from '../../src/components/EmptyState';
 import { DateRangeButton } from '../../src/components/DateRangeButton';
 import { DateRangePicker } from '../../src/components/DateRangePicker';
 import { FormHeader } from '../../src/components/FormHeader';
-import { Card, SectionHeader } from '../../src/components/ui';
+import { Card, Hairline, SectionHeader } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import { useBusiness } from '../../src/hooks/useBusiness';
 import { formatPaise } from '../../src/lib/money';
@@ -109,7 +109,7 @@ export default function TopReportScreen() {
                 <Card style={styles.listCard}>
                   {items!.map((it, i) => (
                     <View key={`${it.name}-${i}`}>
-                      {i > 0 ? <View style={styles.sep} /> : null}
+                      {i > 0 ? <Hairline /> : null}
                       <RankRow
                         rank={i + 1}
                         name={it.name}
@@ -130,7 +130,7 @@ export default function TopReportScreen() {
                 <Card style={styles.listCard}>
                   {parties!.map((p, i) => (
                     <View key={`${p.name}-${i}`}>
-                      {i > 0 ? <View style={styles.sep} /> : null}
+                      {i > 0 ? <Hairline /> : null}
                       <RankRow rank={i + 1} name={p.name} amount={formatPaise(p.amountPaise)} />
                     </View>
                   ))}
@@ -154,7 +154,6 @@ const styles = StyleSheet.create({
   content: { padding: 16, gap: 14, paddingBottom: 32 },
   loader: { marginTop: 40 },
   listCard: { paddingVertical: 6, paddingHorizontal: 14 },
-  sep: { height: 1, backgroundColor: colors.border },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 },
   rank: {
     width: 28,

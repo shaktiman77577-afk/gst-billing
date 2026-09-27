@@ -8,7 +8,7 @@ import { EmptyState } from '../../src/components/EmptyState';
 import { Fab } from '../../src/components/Fab';
 import { Header } from '../../src/components/Header';
 import { SearchBar } from '../../src/components/SearchBar';
-import { Chips } from '../../src/components/ui';
+import { Chips, IconChip } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import { formatQty, isLowStock, Item, listItems } from '../../src/db/items';
 import { useBusiness } from '../../src/hooks/useBusiness';
@@ -150,13 +150,11 @@ function ItemRow({ item }: { item: Item }) {
       onPress={() => router.push(`/item/${item.id}`)}
       style={({ pressed }) => [styles.row, pressed && { opacity: 0.85 }]}
     >
-      <View style={[styles.icon, isService && { backgroundColor: colors.accentSoft }]}>
-        <Ionicons
-          name={isService ? 'construct-outline' : 'cube-outline'}
-          size={20}
-          color={isService ? colors.warning : colors.primary}
-        />
-      </View>
+      <IconChip
+        icon={isService ? 'construct-outline' : 'cube-outline'}
+        bg={isService ? colors.accentSoft : undefined}
+        fg={isService ? colors.warning : undefined}
+      />
       <View style={styles.flexOnly}>
         <Text style={styles.name} numberOfLines={1}>
           {item.name}
@@ -204,16 +202,8 @@ const styles = StyleSheet.create({
     padding: 12,
     ...shadowSm,
   },
-  icon: {
-    width: 42,
-    height: 42,
-    borderRadius: radius.sm,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   name: { fontSize: text.md, fontWeight: '700', color: colors.text },
-  sub: { fontSize: text.xs, color: colors.muted, marginTop: 2 },
+  sub: { fontSize: text.sm, color: colors.muted, marginTop: 2 },
   stockBox: { alignItems: 'flex-end' },
   stock: { fontSize: 14, fontWeight: '800', color: colors.text },
   stockLabel: { fontSize: text.xs, color: colors.muted, marginTop: 1 },

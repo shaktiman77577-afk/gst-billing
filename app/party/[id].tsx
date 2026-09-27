@@ -12,7 +12,7 @@ import { createParty, deleteParty, getParty, PartyType, updateParty } from '../.
 import { useBusiness } from '../../src/hooks/useBusiness';
 import { isValidGstin, normalizeGstin, stateCodeFromGstin } from '../../src/lib/gstin';
 import { paiseToInput, toPaise } from '../../src/lib/money';
-import { colors } from '../../src/theme';
+import { colors, text } from '../../src/theme';
 
 type Errors = Partial<Record<'name' | 'phone' | 'gstin' | 'amount', string>>;
 
@@ -250,5 +250,5 @@ const styles = StyleSheet.create({
   trash: { padding: 4 },
   multi: { minHeight: 60, textAlignVertical: 'top' },
   switchRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  switchText: { flex: 1, fontSize: 14, color: colors.text },
+  switchText: { flex: 1, fontSize: text.md, color: colors.text },
 });

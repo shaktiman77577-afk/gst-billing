@@ -62,6 +62,6 @@ const styles = StyleSheet.create({
   },
   texts: { maxWidth: 220 },
   label: { fontSize: text.sm, fontWeight: '700', color: colors.text },
-  sub: { fontSize: 11, color: colors.muted, marginTop: 1 },
+  sub: { fontSize: text.xs, color: colors.muted, marginTop: 1 },
   clear: { padding: 4 },
 });

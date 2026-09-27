@@ -7,6 +7,7 @@ import { PartyWithBalance } from '../db/parties';
 import { formatPaise } from '../lib/money';
 import { colors, radius, text } from '../theme';
 import { SearchBar } from './SearchBar';
+import { IconChip } from './ui';
 
 type Props = {
   visible: boolean;
@@ -46,25 +47,21 @@ export function PartyPicker({ visible, parties, onClose, onPick, onAddNew, nullL
           ListHeaderComponent={
             <View style={styles.topActions}>
               <Pressable style={styles.special} onPress={() => onPick(null)}>
-                <View style={[styles.icon, { backgroundColor: colors.successSoft }]}>
-                  <Ionicons name="cash-outline" size={20} color={colors.success} />
-                </View>
+                <IconChip icon="cash-outline" bg={colors.successSoft} fg={colors.success} />
                 <View style={styles.flex}>
                   <Text style={styles.name}>{nullLabel ?? t('cashSale')}</Text>
                   <Text style={styles.sub}>{nullHint ?? t('cashSaleHint')}</Text>
                 </View>
               </Pressable>
               <Pressable style={styles.special} onPress={onAddNew}>
-                <View style={styles.icon}>
-                  <Ionicons name="person-add-outline" size={20} color={colors.primary} />
-                </View>
+                <IconChip icon="person-add-outline" />
                 <Text style={[styles.name, { color: colors.primary }]}>{t('newPartyShort')}</Text>
               </Pressable>
             </View>
           }
           renderItem={({ item }) => (
             <Pressable style={styles.row} onPress={() => onPick(item)}>
-              <View style={styles.icon}>
+              <View style={styles.avatar}>
                 <Text style={styles.initial}>{item.name.trim().charAt(0).toUpperCase()}</Text>
               </View>
               <View style={styles.flex}>
@@ -102,7 +99,9 @@ const styles = StyleSheet.create({
     gap: 12,
     backgroundColor: colors.card,
     borderRadius: radius.md,
-    padding: 12,
+    paddingVertical: 9,
+    paddingHorizontal: 12,
+    minHeight: 52,
     borderWidth: 1,
     borderColor: colors.border,
     borderStyle: 'dashed',
@@ -113,18 +112,20 @@ const styles = StyleSheet.create({
     gap: 12,
     backgroundColor: colors.card,
     borderRadius: radius.md,
-    padding: 12,
+    paddingVertical: 9,
+    paddingHorizontal: 12,
+    minHeight: 52,
   },
-  icon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  avatar: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     backgroundColor: colors.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
   initial: { fontSize: text.md, fontWeight: '800', color: colors.primary },
-  name: { fontSize: text.md, fontWeight: '700', color: colors.text },
-  sub: { fontSize: text.xs, color: colors.muted, marginTop: 1 },
+  name: { fontSize: text.md, fontWeight: '600', color: colors.text },
+  sub: { fontSize: text.sm, color: colors.muted, marginTop: 1 },
   bal: { fontSize: text.sm, fontWeight: '700' },
 });

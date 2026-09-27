@@ -171,9 +171,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
   },
   flex: { flex: 1 },
-  top: { flexDirection: 'row', gap: 10 },
+  top: { flexDirection: 'row', gap: 12 },
   name: { fontSize: text.md, fontWeight: '700', color: colors.text },
-  sub: { fontSize: text.xs, color: colors.muted, marginTop: 2 },
+  sub: { fontSize: text.sm, color: colors.muted, marginTop: 2 },
   amount: { fontSize: text.md, fontWeight: '800', color: colors.text },
   controls: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   stepper: {

@@ -9,7 +9,7 @@ import { DateField } from '../../src/components/DateField';
 import { FormHeader } from '../../src/components/FormHeader';
 import { ItemPicker } from '../../src/components/ItemPicker';
 import { PartyPicker } from '../../src/components/PartyPicker';
-import { Button, Card, ErrorText, Field, Screen, SectionHeader } from '../../src/components/ui';
+import { Button, Card, ErrorText, Field, IconChip, Screen, SectionHeader } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import type { LineDraft } from '../../src/db/invoices';
 import { Item, listItems, roundQty } from '../../src/db/items';
@@ -249,9 +249,7 @@ export default function PurchaseFormScreen() {
               </>
             ) : (
               <>
-                <View style={styles.partyAvatar}>
-                  <Ionicons name={supplier ? 'person' : 'cash-outline'} size={18} color={colors.primary} />
-                </View>
+                <IconChip icon={supplier ? 'person' : 'cash-outline'} />
                 <View style={styles.flex}>
                   <Text style={styles.partyName}>{supplier ? supplier.name : t('pur_cashPurchase')}</Text>
                   {supplier?.phone ? <Text style={styles.partySub}>{supplier.phone}</Text> : null}
@@ -340,16 +338,8 @@ const styles = StyleSheet.create({
     padding: 12,
     backgroundColor: colors.background,
   },
-  partyAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  partyName: { fontSize: 16, fontWeight: '700', color: colors.text, flexShrink: 1 },
-  partySub: { fontSize: 12, color: colors.muted, marginTop: 1 },
+  partyName: { fontSize: 15, fontWeight: '700', color: colors.text, flexShrink: 1 },
+  partySub: { fontSize: 13, color: colors.muted, marginTop: 1 },
   totalBox: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -360,7 +350,7 @@ const styles = StyleSheet.create({
   },
   totalLabel: { fontSize: 15, fontWeight: '700', color: colors.primary },
   totalValue: { fontSize: 20, fontWeight: '800', color: colors.primary },
-  note: { fontSize: 12, color: colors.muted },
+  note: { fontSize: 12, color: colors.faint },
   footerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   footerLabel: { fontSize: 12, color: colors.muted },
   footerTotal: { fontSize: 20, fontWeight: '800', color: colors.text },

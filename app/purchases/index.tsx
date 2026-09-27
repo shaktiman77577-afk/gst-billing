@@ -7,7 +7,7 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { EmptyState } from '../../src/components/EmptyState';
 import { Fab } from '../../src/components/Fab';
 import { FormHeader } from '../../src/components/FormHeader';
-import { Button, Card } from '../../src/components/ui';
+import { Button, Card, IconChip } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import { formatDate } from '../../src/lib/dates';
 import { formatPaise } from '../../src/lib/money';
@@ -73,9 +73,7 @@ export default function PurchasesScreen() {
         </View>
 
         <Card style={styles.totalCard}>
-          <View style={styles.totalIcon}>
-            <Ionicons name="bag-handle-outline" size={22} color={colors.primary} />
-          </View>
+          <IconChip icon="bag-handle-outline" />
           <View style={styles.flexOnly}>
             <Text style={styles.statLabel}>{t('pur_totalThisMonth')}</Text>
             <Text style={styles.totalValue}>{formatPaise(total)}</Text>
@@ -89,7 +87,7 @@ export default function PurchasesScreen() {
           onPress={() => router.push('/purchases/return')}
         />
 
-        <Card style={rows.length ? { gap: 0, paddingVertical: 6 } : undefined}>
+        <Card list={rows.length > 0}>
           {rows.length === 0 ? (
             <EmptyState icon="bag-handle-outline" title={t('pur_noPurchases')} hint={t('pur_noPurchasesHint')} />
           ) : (
@@ -104,13 +102,7 @@ export default function PurchasesScreen() {
                 }}
                 style={[styles.row, i < rows.length - 1 && styles.rowSep]}
               >
-                <View style={styles.pIcon}>
-                  <Ionicons
-                    name={isReturn ? 'arrow-undo-outline' : 'bag-handle-outline'}
-                    size={18}
-                    color={colors.primary}
-                  />
-                </View>
+                <IconChip icon={isReturn ? 'arrow-undo-outline' : 'bag-handle-outline'} />
                 <View style={styles.flexOnly}>
                   <Text style={styles.rowTitle} numberOfLines={1}>
                     {p.party_name}
@@ -163,30 +155,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   navBtnDisabled: { opacity: 0.5 },
-  monthLabel: { fontSize: 17, fontWeight: '800', color: colors.text, minWidth: 110, textAlign: 'center' },
+  monthLabel: { fontSize: 15, fontWeight: '800', color: colors.text, minWidth: 110, textAlign: 'center' },
   totalCard: { flexDirection: 'row', alignItems: 'center' },
-  totalIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.md,
-    backgroundColor: colors.primaryTint,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   statLabel: { fontSize: 12, color: colors.muted, fontWeight: '600' },
-  totalValue: { fontSize: 22, fontWeight: '800', color: colors.text, marginTop: 2 },
+  totalValue: { fontSize: 20, fontWeight: '800', color: colors.text, marginTop: 2 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 },
   rowSep: { borderBottomWidth: 1, borderBottomColor: colors.border },
-  pIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.sm,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   rowTitle: { fontSize: 15, fontWeight: '700', color: colors.text },
-  rowMeta: { fontSize: 12, color: colors.muted, marginTop: 2 },
+  rowMeta: { fontSize: 13, color: colors.muted, marginTop: 2 },
   rowAmt: { fontSize: 15, fontWeight: '800', color: colors.danger },
   returnAmt: { color: colors.primary },
   returnBadge: { fontWeight: '800', color: colors.primary, textTransform: 'uppercase' },

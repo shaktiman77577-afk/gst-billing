@@ -5,7 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Header } from '../../src/components/Header';
 import { LanguageToggle } from '../../src/components/LanguageToggle';
-import { Button, Card, MadeInIndia } from '../../src/components/ui';
+import { Button, Card, Hairline, MadeInIndia, MenuRow } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import { stateName } from '../../src/data/states';
 import { useBusiness } from '../../src/hooks/useBusiness';
@@ -58,158 +58,102 @@ export default function MoreScreen() {
           </Pressable>
         </Card>
 
-        <Card>
-          <Pressable style={styles.row} onPress={() => router.push('/settings/bill')}>
-            <View style={styles.rowIcon}>
-              <Ionicons name="document-text" size={18} color={colors.primary} />
-            </View>
-            <View style={styles.flexOnly}>
-              <Text style={styles.rowText}>{t('billSettings')}</Text>
-              <Text style={styles.meta}>{t('billDesignHint')}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.faint} />
-          </Pressable>
-          <View style={styles.sep} />
-          <Pressable style={styles.row} onPress={() => router.push('/settings/membership')}>
-            <View style={styles.rowIcon}>
-              <Ionicons name="star-outline" size={18} color={colors.primary} />
-            </View>
-            <View style={styles.flexOnly}>
-              <Text style={styles.rowText}>{t('mem_title')}</Text>
-              <Text style={styles.meta}>{t('mem_rowHint')}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.faint} />
-          </Pressable>
-          <View style={styles.sep} />
-          <Pressable style={styles.row} onPress={() => router.push('/settings/recycle')}>
-            <View style={styles.rowIcon}>
-              <Ionicons name="trash-bin-outline" size={18} color={colors.primary} />
-            </View>
-            <View style={styles.flexOnly}>
-              <Text style={styles.rowText}>{t('rc_menuTitle')}</Text>
-              <Text style={styles.meta}>{t('rc_menuHint')}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.faint} />
-          </Pressable>
-          <View style={styles.sep} />
-          <Pressable style={styles.row} onPress={() => router.push('/settings/gst-rates')}>
-            <View style={styles.rowIcon}>
-              <Ionicons name="search" size={18} color={colors.primary} />
-            </View>
-            <View style={styles.flexOnly}>
-              <Text style={styles.rowText}>{t('gr_title')}</Text>
-              <Text style={styles.meta}>{t('gr_searchPlaceholder')}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.faint} />
-          </Pressable>
-          <View style={styles.sep} />
-          <Pressable style={styles.row} onPress={() => router.push('/reports')}>
-            <View style={styles.rowIcon}>
-              <Ionicons name="bar-chart" size={18} color={colors.primary} />
-            </View>
-            <View style={styles.flexOnly}>
-              <Text style={styles.rowText}>{t('r_reports')}</Text>
-              <Text style={styles.meta}>{t('r_reportsHint')}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.faint} />
-          </Pressable>
-          <View style={styles.sep} />
-          <Pressable style={styles.row} onPress={() => router.push('/expenses')}>
-            <View style={styles.rowIcon}>
-              <Ionicons name="wallet" size={18} color={colors.primary} />
-            </View>
-            <View style={styles.flexOnly}>
-              <Text style={styles.rowText}>{t('e_expenses')}</Text>
-              <Text style={styles.meta}>{t('e_expensesHint')}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.faint} />
-          </Pressable>
-          <View style={styles.sep} />
-          <Pressable style={styles.row} onPress={() => router.push('/purchases')}>
-            <View style={styles.rowIcon}>
-              <Ionicons name="bag-handle-outline" size={18} color={colors.primary} />
-            </View>
-            <View style={styles.flexOnly}>
-              <Text style={styles.rowText}>{t('pur_purchases')}</Text>
-              <Text style={styles.meta}>{t('pur_purchasesHint')}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.faint} />
-          </Pressable>
-          <View style={styles.sep} />
-          <Pressable style={styles.row} onPress={() => router.push('/returns/sales')}>
-            <View style={styles.rowIcon}>
-              <Ionicons name="arrow-undo-outline" size={18} color={colors.primary} />
-            </View>
-            <View style={styles.flexOnly}>
-              <Text style={styles.rowText}>{t('newSalesReturn')}</Text>
-              <Text style={styles.meta}>{t('salesReturnHint')}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.faint} />
-          </Pressable>
-          <View style={styles.sep} />
-          <Pressable style={styles.row} onPress={() => router.push('/purchases/return')}>
-            <View style={styles.rowIcon}>
-              <Ionicons name="arrow-redo-outline" size={18} color={colors.primary} />
-            </View>
-            <View style={styles.flexOnly}>
-              <Text style={styles.rowText}>{t('newPurchaseReturn')}</Text>
-              <Text style={styles.meta}>{t('purchaseReturnHint')}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.faint} />
-          </Pressable>
-          <View style={styles.sep} />
-          <Pressable style={styles.row} onPress={() => router.push('/challans')}>
-            <View style={styles.rowIcon}>
-              <Ionicons name="car-outline" size={18} color={colors.primary} />
-            </View>
-            <View style={styles.flexOnly}>
-              <Text style={styles.rowText}>{t('ch_menuTitle')}</Text>
-              <Text style={styles.meta}>{t('ch_menuHint')}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.faint} />
-          </Pressable>
-          <View style={styles.sep} />
-          <Pressable style={styles.row} onPress={() => router.push('/proforma')}>
-            <View style={styles.rowIcon}>
-              <Ionicons name="clipboard-outline" size={18} color={colors.primary} />
-            </View>
-            <View style={styles.flexOnly}>
-              <Text style={styles.rowText}>{t('pf_menuTitle')}</Text>
-              <Text style={styles.meta}>{t('pf_menuHint')}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.faint} />
-          </Pressable>
-          <Pressable style={styles.row} onPress={() => router.push('/daybook')}>
-            <View style={styles.rowIcon}>
-              <Ionicons name="book-outline" size={18} color={colors.primary} />
-            </View>
-            <View style={styles.flexOnly}>
-              <Text style={styles.rowText}>{t('dbk_daybook')}</Text>
-              <Text style={styles.meta}>{t('dbk_daybookHint')}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.faint} />
-          </Pressable>
-          <View style={styles.sep} />
-          <View style={styles.row}>
-            <View style={styles.rowIcon}>
-              <Ionicons name="language" size={18} color={colors.primary} />
-            </View>
-            <Text style={styles.rowText}>{t('language')}</Text>
-            <LanguageToggle />
-          </View>
+        <Card list>
+          <MenuRow
+            icon="document-text"
+            title={t('billSettings')}
+            subtitle={t('billDesignHint')}
+            onPress={() => router.push('/settings/bill')}
+          />
+          <Hairline />
+          <MenuRow
+            icon="star-outline"
+            title={t('mem_title')}
+            subtitle={t('mem_rowHint')}
+            onPress={() => router.push('/settings/membership')}
+          />
+          <Hairline />
+          <MenuRow
+            icon="trash-bin-outline"
+            title={t('rc_menuTitle')}
+            subtitle={t('rc_menuHint')}
+            onPress={() => router.push('/settings/recycle')}
+          />
+          <Hairline />
+          <MenuRow
+            icon="search"
+            title={t('gr_title')}
+            subtitle={t('gr_searchPlaceholder')}
+            onPress={() => router.push('/settings/gst-rates')}
+          />
+          <Hairline />
+          <MenuRow
+            icon="bar-chart"
+            title={t('r_reports')}
+            subtitle={t('r_reportsHint')}
+            onPress={() => router.push('/reports')}
+          />
+          <Hairline />
+          <MenuRow
+            icon="wallet"
+            title={t('e_expenses')}
+            subtitle={t('e_expensesHint')}
+            onPress={() => router.push('/expenses')}
+          />
+          <Hairline />
+          <MenuRow
+            icon="bag-handle-outline"
+            title={t('pur_purchases')}
+            subtitle={t('pur_purchasesHint')}
+            onPress={() => router.push('/purchases')}
+          />
+          <Hairline />
+          <MenuRow
+            icon="arrow-undo-outline"
+            title={t('newSalesReturn')}
+            subtitle={t('salesReturnHint')}
+            onPress={() => router.push('/returns/sales')}
+          />
+          <Hairline />
+          <MenuRow
+            icon="arrow-redo-outline"
+            title={t('newPurchaseReturn')}
+            subtitle={t('purchaseReturnHint')}
+            onPress={() => router.push('/purchases/return')}
+          />
+          <Hairline />
+          <MenuRow
+            icon="car-outline"
+            title={t('ch_menuTitle')}
+            subtitle={t('ch_menuHint')}
+            onPress={() => router.push('/challans')}
+          />
+          <Hairline />
+          <MenuRow
+            icon="clipboard-outline"
+            title={t('pf_menuTitle')}
+            subtitle={t('pf_menuHint')}
+            onPress={() => router.push('/proforma')}
+          />
+          <Hairline />
+          <MenuRow
+            icon="book-outline"
+            title={t('dbk_daybook')}
+            subtitle={t('dbk_daybookHint')}
+            onPress={() => router.push('/daybook')}
+          />
+          <Hairline />
+          <MenuRow icon="language" title={t('language')} right={<LanguageToggle />} />
         </Card>
 
         <Card>
           <Text style={styles.cardLabel}>{t('account')}</Text>
-          <View style={styles.row}>
-            <View style={styles.rowIcon}>
-              <Ionicons name="logo-google" size={18} color={colors.primary} />
-            </View>
-            <View style={styles.flexOnly}>
-              <Text style={styles.meta}>{t('loggedInAs')}</Text>
-              <Text style={styles.rowText}>{email}</Text>
-            </View>
-          </View>
+          <MenuRow
+            icon="logo-google"
+            title={email ?? ''}
+            subtitle={t('loggedInAs')}
+            chevron={false}
+          />
           <Button variant="danger" icon="log-out-outline" label={t('logout')} onPress={onLogout} />
         </Card>
 
@@ -239,20 +183,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   avatarText: { color: colors.white, fontSize: text.xxl, fontWeight: '800' },
-  name: { fontSize: text.lg, fontWeight: '700', color: colors.text },
+  name: { fontSize: text.md, fontWeight: '700', color: colors.text },
   meta: { fontSize: text.sm, color: colors.muted, marginTop: 2 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 },
-  rowIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.sm,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  rowText: { flex: 1, fontSize: text.md, fontWeight: '600', color: colors.text },
   footer: { alignItems: 'center', gap: 4, marginTop: 8 },
-  sep: { height: 1, backgroundColor: colors.border },
   editPill: {
     flexDirection: 'row',
     alignItems: 'center',

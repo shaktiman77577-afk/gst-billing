@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
   },
   detailLabel: { fontSize: text.xs, color: colors.muted, marginBottom: 2 },
-  detailHsn: { fontSize: text.xxl, fontWeight: '800', color: colors.text, letterSpacing: 1 },
+  detailHsn: { fontSize: 20, fontWeight: '800', color: colors.text, letterSpacing: 1 },
   copyHint: { fontSize: text.xs, color: colors.faint, marginTop: spacing.xs },
   footer: { marginTop: spacing.md },
 });

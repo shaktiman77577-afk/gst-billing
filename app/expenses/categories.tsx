@@ -2,11 +2,11 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useState } from 'react';
+import { Fragment, useCallback, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { EmptyState } from '../../src/components/EmptyState';
 import { FormHeader } from '../../src/components/FormHeader';
-import { Button, Card, ErrorText, Field, IconName, Screen } from '../../src/components/ui';
+import { Button, Card, ErrorText, Field, Hairline, IconName, MenuRow, Screen } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import {
   addCustomCategory,
@@ -16,7 +16,7 @@ import {
   getCustomCategories,
   removeCustomCategory,
 } from '../../src/db/expenses';
-import { colors, radius } from '../../src/theme';
+import { colors } from '../../src/theme';
 
 const CATEGORY_ICONS: Record<ExpenseCategory, IconName> = {
   rent: 'home-outline',
@@ -86,15 +86,13 @@ export default function ExpenseCategoriesScreen() {
       <StatusBar style="dark" />
       <FormHeader title={t('pe_manageCategories')} />
       <Screen edges={['bottom']}>
-        <Card>
+        <Card list>
           <Text style={styles.cardLabel}>{t('pe_default')}</Text>
-          {EXPENSE_CATEGORIES.map((c, i) => (
-            <View key={c} style={[styles.row, i > 0 && styles.rowSep]}>
-              <View style={styles.catIcon}>
-                <Ionicons name={CATEGORY_ICONS[c]} size={18} color={colors.primary} />
-              </View>
-              <Text style={styles.catName}>{expenseCategoryLabel(c, t)}</Text>
-            </View>
+          {EXPENSE_CATEGORIES.map((c) => (
+            <Fragment key={c}>
+              <Hairline />
+              <MenuRow icon={CATEGORY_ICONS[c]} title={expenseCategoryLabel(c, t)} chevron={false} />
+            </Fragment>
           ))}
         </Card>
 
@@ -110,21 +108,29 @@ export default function ExpenseCategoriesScreen() {
           <Button label={t('pe_addCategory')} icon="add-circle" onPress={onAdd} loading={saving} />
           {customs.length === 0 ? (
             <EmptyState icon="pricetag-outline" title={t('pe_noCustom')} hint={t('pe_noCustomHint')} />
-          ) : (
-            customs.map((c) => (
-              <View key={c} style={[styles.row, styles.rowSep]}>
-                <View style={styles.catIcon}>
-                  <Ionicons name="pricetag-outline" size={18} color={colors.primary} />
-                </View>
-                <Text style={styles.catName}>{c}</Text>
-                <Pressable onPress={() => confirmDelete(c)} hitSlop={12} style={styles.delBtn}>
-                  <Ionicons name="trash-outline" size={18} color={colors.danger} />
-                </Pressable>
-              </View>
-            ))
-          )}
+          ) : null}
           <ErrorText>{error}</ErrorText>
         </Card>
+
+        {customs.length > 0 ? (
+          <Card list>
+            {customs.map((c, i) => (
+              <Fragment key={c}>
+                {i > 0 ? <Hairline /> : null}
+                <MenuRow
+                  icon="pricetag-outline"
+                  title={c}
+                  chevron={false}
+                  right={
+                    <Pressable onPress={() => confirmDelete(c)} hitSlop={12} style={styles.delBtn}>
+                      <Ionicons name="trash-outline" size={18} color={colors.danger} />
+                    </Pressable>
+                  }
+                />
+              </Fragment>
+            ))}
+          </Card>
+        ) : null}
 
         <Text style={styles.note}>{t('pe_defaultsNote')}</Text>
       </Screen>
@@ -142,17 +148,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
     marginBottom: 4,
   },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 },
-  rowSep: { borderTopWidth: 1, borderTopColor: colors.border },
-  catIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.sm,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  catName: { flex: 1, fontSize: 15, fontWeight: '600', color: colors.text },
   delBtn: { padding: 6 },
-  note: { fontSize: 12, color: colors.muted, textAlign: 'center', paddingHorizontal: 8 },
+  note: { fontSize: 12, color: colors.faint, textAlign: 'center', paddingHorizontal: 8 },
 });

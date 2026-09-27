@@ -9,7 +9,7 @@ import { DateRangeButton } from '../../src/components/DateRangeButton';
 import { DateRangePicker } from '../../src/components/DateRangePicker';
 import { EmptyState } from '../../src/components/EmptyState';
 import { FormHeader } from '../../src/components/FormHeader';
-import { Card, SectionHeader } from '../../src/components/ui';
+import { Card, Hairline, SectionHeader } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import { InvoiceListRow } from '../../src/db/invoices';
 import { useBusiness } from '../../src/hooks/useBusiness';
@@ -94,7 +94,7 @@ export default function SalesReportScreen() {
                 <Card style={styles.listCard}>
                   {bills.map((b, i) => (
                     <View key={b.id}>
-                      {i > 0 ? <View style={styles.sep} /> : null}
+                      {i > 0 ? <Hairline /> : null}
                       <BillRow bill={b} flat />
                     </View>
                   ))}
@@ -122,5 +122,4 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: 12, fontWeight: '600', color: colors.muted, textAlign: 'center' },
   statValue: { fontSize: text.lg, fontWeight: '800', color: colors.text, textAlign: 'center' },
   listCard: { paddingVertical: 6, paddingHorizontal: 14 },
-  sep: { height: 1, backgroundColor: colors.border },
 });

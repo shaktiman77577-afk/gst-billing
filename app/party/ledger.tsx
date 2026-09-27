@@ -6,7 +6,7 @@ import { useCallback, useState } from 'react';
 import { FlatList, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EmptyState } from '../../src/components/EmptyState';
-import { IconName } from '../../src/components/ui';
+import { IconChip, IconName } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import { LedgerEntry, partyLedger, PaymentMode } from '../../src/db/invoices';
 import { getParty, getPartyBalance, Party } from '../../src/db/parties';
@@ -111,9 +111,7 @@ export default function PartyLedgerScreen() {
           .filter((a) => a.show)
           .map((a) => (
             <Pressable key={a.label} onPress={a.onPress} style={styles.action}>
-              <View style={styles.actionIcon}>
-                <Ionicons name={a.icon} size={20} color={colors.primary} />
-              </View>
+              <IconChip icon={a.icon} />
               <Text style={styles.actionLabel} numberOfLines={1}>
                 {a.label}
               </Text>
@@ -136,21 +134,19 @@ export default function PartyLedgerScreen() {
               onPress={() => e.invoice_id && router.push(`/bill/${e.invoice_id}`)}
               style={styles.entry}
             >
-              <View style={[styles.dot, { backgroundColor: isBill ? colors.primarySoft : colors.successSoft }]}>
-                <Ionicons
-                  name={
-                    e.type === 'invoice'
-                      ? 'document-text-outline'
-                      : e.type === 'credit_note' || e.type === 'sales_return'
-                        ? 'return-down-back-outline'
-                        : e.type === 'opening'
-                          ? 'flag-outline'
-                          : 'cash-outline'
-                  }
-                  size={16}
-                  color={isBill ? colors.primary : colors.success}
-                />
-              </View>
+              <IconChip
+                icon={
+                  e.type === 'invoice'
+                    ? 'document-text-outline'
+                    : e.type === 'credit_note' || e.type === 'sales_return'
+                      ? 'return-down-back-outline'
+                      : e.type === 'opening'
+                        ? 'flag-outline'
+                        : 'cash-outline'
+                }
+                bg={isBill ? colors.primarySoft : colors.successSoft}
+                fg={isBill ? colors.primary : colors.success}
+              />
               <View style={styles.flexOnly}>
                 <Text style={[styles.entryTitle, e.cancelled && styles.strike]}>{labelFor(e)}</Text>
                 <Text style={styles.meta}>
@@ -185,7 +181,7 @@ const styles = StyleSheet.create({
   headRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 },
   name: { flex: 1, color: colors.white, fontSize: text.xl, fontWeight: '800' },
   balLabel: { color: colors.whiteSoft, fontSize: text.sm },
-  bal: { color: colors.white, fontSize: text.display, fontWeight: '800', marginTop: 2 },
+  bal: { color: colors.white, fontSize: text.xl, fontWeight: '800', marginTop: 2 },
   phone: { color: colors.whiteSoft, fontSize: text.sm, marginTop: 4 },
   actions: {
     flexDirection: 'row',
@@ -199,14 +195,6 @@ const styles = StyleSheet.create({
     ...shadow,
   },
   action: { flex: 1, alignItems: 'center', gap: 6 },
-  actionIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   actionLabel: { fontSize: text.xs, fontWeight: '600', color: colors.text, textAlign: 'center' },
   list: { padding: 16, gap: 8, paddingBottom: 40 },
   section: { fontSize: text.md, fontWeight: '700', color: colors.text, marginBottom: 4 },
@@ -219,11 +207,11 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: radius.md,
     padding: 12,
+    minHeight: 52,
   },
-  dot: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
-  entryTitle: { fontSize: 14, fontWeight: '700', color: colors.text },
+  entryTitle: { fontSize: text.md, fontWeight: '700', color: colors.text },
   strike: { textDecorationLine: 'line-through', color: colors.faint },
   meta: { fontSize: text.xs, color: colors.muted, marginTop: 1 },
   right: { alignItems: 'flex-end' },
-  amt: { fontSize: 14, fontWeight: '800' },
+  amt: { fontSize: text.md, fontWeight: '800' },
 });

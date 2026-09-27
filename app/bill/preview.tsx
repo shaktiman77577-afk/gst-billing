@@ -15,7 +15,7 @@ import { useMembership } from '../../src/hooks/useMembership';
 import { formatDate } from '../../src/lib/dates';
 import { formatPaise } from '../../src/lib/money';
 import { billWhatsappText, forPreview, invoiceHtml, printBill, sharePdf, sharePdfOnWhatsApp } from '../../src/pdf/share';
-import { colors, radius } from '../../src/theme';
+import { colors, radius, text } from '../../src/theme';
 
 export default function BillPreviewScreen() {
   const db = useSQLiteContext();
@@ -147,5 +147,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
   },
-  waText: { color: colors.white, fontSize: 16, fontWeight: '700' },
+  waText: { color: colors.white, fontSize: text.md, fontWeight: '700' },
 });

@@ -8,7 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BillRow } from '../../src/components/BillRow';
 import { FormHeader } from '../../src/components/FormHeader';
 import { StatusBadge } from '../../src/components/StatusBadge';
-import { Button, Card } from '../../src/components/ui';
+import { Button, Card, Hairline, MenuRow } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import { stateName } from '../../src/data/states';
 import { formatQty } from '../../src/db/items';
@@ -368,19 +368,21 @@ export default function BillDetailScreen() {
             <Card>
               <Text style={styles.cardLabel}>{t('payments')}</Text>
               {payments.length === 0 ? <Text style={styles.meta}>{t('noPayments')}</Text> : null}
-              {payments.map((p) => (
-                <View key={p.id} style={styles.payRow}>
-                  <Ionicons name="checkmark-circle" size={18} color={colors.success} />
-                  <View style={styles.flexOnly}>
-                    <Text style={styles.payAmt}>{formatPaise(p.amount_paise)}</Text>
-                    <Text style={styles.meta}>
-                      {formatDate(p.paid_on)} · {t(p.mode)}
-                      {p.notes ? ` · ${p.notes}` : ''}
-                    </Text>
-                  </View>
-                  <Pressable onPress={() => onDeletePayment(p)} hitSlop={8} style={styles.payDel}>
-                    <Ionicons name="trash-outline" size={18} color={colors.faint} />
-                  </Pressable>
+              {payments.map((p, i) => (
+                <View key={p.id}>
+                  {i > 0 ? <Hairline /> : null}
+                  <MenuRow
+                    icon="checkmark-circle"
+                    iconBg={colors.successSoft}
+                    iconFg={colors.success}
+                    title={formatPaise(p.amount_paise)}
+                    subtitle={`${formatDate(p.paid_on)} · ${t(p.mode)}${p.notes ? ` · ${p.notes}` : ''}`}
+                    right={
+                      <Pressable onPress={() => onDeletePayment(p)} hitSlop={8} style={styles.payDel}>
+                        <Ionicons name="trash-outline" size={18} color={colors.faint} />
+                      </Pressable>
+                    }
+                  />
                 </View>
               ))}
               {!cancelled && balance > 0 ? (
@@ -484,7 +486,7 @@ const styles = StyleSheet.create({
   content: { padding: 16, gap: 14, paddingBottom: 32 },
   topZone: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 12, gap: 10 },
   summaryCard: { paddingVertical: 10, gap: 2 },
-  totalCompact: { fontSize: text.xxl, fontWeight: '800', color: colors.primary },
+  totalCompact: { fontSize: text.xl, fontWeight: '800', color: colors.primary },
   partyLine: { fontSize: text.sm, color: colors.muted },
   copyRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   copyLabel: {
@@ -515,14 +517,14 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: radius.md,
   },
-  cancelText: { fontSize: 14, fontWeight: '700', color: colors.muted },
+  cancelText: { fontSize: text.md, fontWeight: '700', color: colors.muted },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
   docType: { fontSize: text.sm, fontWeight: '700', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.5 },
   strike: { textDecorationLine: 'line-through', color: colors.faint },
   refLink: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 4 },
-  refText: { fontSize: 14, fontWeight: '700', color: colors.primary },
+  refText: { fontSize: text.md, fontWeight: '700', color: colors.primary },
   cardLabel: { fontSize: text.xs, fontWeight: '700', color: colors.faint, textTransform: 'uppercase', letterSpacing: 0.6 },
-  partyName: { fontSize: text.lg, fontWeight: '700', color: colors.text, marginTop: -6 },
+  partyName: { fontSize: text.md, fontWeight: '700', color: colors.text, marginTop: -6 },
   meta: { fontSize: text.sm, color: colors.muted },
   line: {
     flexDirection: 'row',
@@ -533,13 +535,11 @@ const styles = StyleSheet.create({
   },
   lineName: { fontSize: text.md, fontWeight: '600', color: colors.text },
   lineAmt: { fontSize: text.md, fontWeight: '700', color: colors.text },
-  rowLabel: { fontSize: 14, color: colors.muted, flexShrink: 1 },
-  rowValue: { fontSize: 14, color: colors.text, fontWeight: '600' },
+  rowLabel: { fontSize: text.md, color: colors.muted, flexShrink: 1 },
+  rowValue: { fontSize: text.md, color: colors.text, fontWeight: '600' },
   bold: { fontWeight: '800', color: colors.text, fontSize: text.md },
   divider: { height: 1, backgroundColor: colors.border },
-  payRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   payDel: { padding: 8 },
-  payAmt: { fontSize: text.md, fontWeight: '700', color: colors.text },
   actions: { flexDirection: 'row', gap: 12 },
   wa: {
     minHeight: 52,
@@ -550,10 +550,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
   },
-  waText: { color: colors.white, fontSize: 16, fontWeight: '700' },
+  waText: { color: colors.white, fontSize: text.md, fontWeight: '700' },
   qrWrap: { alignItems: 'center', paddingVertical: 8 },
   qrTitle: { fontSize: text.md, fontWeight: '700', color: colors.text, marginBottom: 12 },
   qr: { width: 200, height: 200, borderRadius: radius.sm },
-  qrAmount: { marginTop: 12, fontSize: text.xxl, fontWeight: '800', color: colors.text },
+  qrAmount: { marginTop: 12, fontSize: text.xl, fontWeight: '800', color: colors.text },
   qrUpi: { marginTop: 4, fontSize: text.sm, color: colors.muted },
 });

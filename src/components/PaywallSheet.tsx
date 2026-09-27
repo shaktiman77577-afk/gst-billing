@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   title: { fontSize: 20, fontWeight: '800', color: colors.text, textAlign: 'center' },
-  body: { fontSize: 14, color: colors.muted, textAlign: 'center', lineHeight: 20 },
+  body: { fontSize: 13, color: colors.muted, textAlign: 'center', lineHeight: 18 },
   priceRow: { flexDirection: 'row', gap: 12 },
   priceTile: {
     flex: 1,

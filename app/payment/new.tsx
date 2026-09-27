@@ -1,19 +1,18 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { DateField } from '../../src/components/DateField';
 import { FormHeader } from '../../src/components/FormHeader';
 import { PartyPicker } from '../../src/components/PartyPicker';
-import { Button, Card, Chips, ErrorText, Field, Hint, Label, Screen } from '../../src/components/ui';
+import { Button, Card, Chips, ErrorText, Field, Hint, Label, MenuRow, Screen } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import { getInvoice, PaymentDirection, PaymentMode, recordPayment } from '../../src/db/invoices';
 import { getParty, getPartyBalance, listParties, PartyWithBalance } from '../../src/db/parties';
 import { todayIso } from '../../src/lib/dates';
 import { formatPaise, paiseToInput, toPaise } from '../../src/lib/money';
-import { colors, radius } from '../../src/theme';
+import { colors, text } from '../../src/theme';
 
 const MODES: PaymentMode[] = ['cash', 'upi', 'card', 'bank', 'cheque'];
 
@@ -106,22 +105,15 @@ export default function PaymentScreen() {
         footer={<Button label={t('save')} icon="checkmark-circle" onPress={onSave} loading={saving} />}
       >
         <Card>
-          <Pressable onPress={() => needsParty && setPartyOpen(true)} disabled={!needsParty}>
-            <View style={styles.who}>
-              <View style={[styles.icon, { backgroundColor: isIn ? colors.successSoft : colors.dangerSoft }]}>
-                <Ionicons
-                  name={isIn ? 'arrow-down-circle' : 'arrow-up-circle'}
-                  size={24}
-                  color={isIn ? colors.success : colors.danger}
-                />
-              </View>
-              <View style={styles.flexOnly}>
-                <Text style={[styles.name, !who && styles.choose]}>{who || t('chooseParty')}</Text>
-                {sub ? <Text style={styles.sub}>{sub}</Text> : null}
-              </View>
-              {needsParty ? <Ionicons name="chevron-forward" size={20} color={colors.faint} /> : null}
-            </View>
-          </Pressable>
+          <MenuRow
+            icon={isIn ? 'arrow-down-circle' : 'arrow-up-circle'}
+            iconBg={isIn ? colors.successSoft : colors.dangerSoft}
+            iconFg={isIn ? colors.success : colors.danger}
+            title={who || t('chooseParty')}
+            subtitle={sub || undefined}
+            onPress={needsParty ? () => setPartyOpen(true) : undefined}
+            chevron={needsParty}
+          />
         </Card>
         <Card>
           <Field
@@ -160,11 +152,5 @@ export default function PaymentScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.background },
-  flexOnly: { flex: 1 },
-  who: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  icon: { width: 44, height: 44, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
-  name: { fontSize: 17, fontWeight: '700', color: colors.text },
-  choose: { color: colors.muted, fontWeight: '600' },
-  sub: { fontSize: 13, color: colors.muted, marginTop: 2 },
-  amountInput: { fontSize: 22, fontWeight: '800' },
+  amountInput: { fontSize: text.xl, fontWeight: '800' },
 });

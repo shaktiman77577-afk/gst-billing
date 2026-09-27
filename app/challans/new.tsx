@@ -9,7 +9,7 @@ import { DateField } from '../../src/components/DateField';
 import { FormHeader } from '../../src/components/FormHeader';
 import { ItemPicker } from '../../src/components/ItemPicker';
 import { PartyPicker } from '../../src/components/PartyPicker';
-import { Button, Card, ErrorText, Field, Screen, SectionHeader } from '../../src/components/ui';
+import { Button, Card, ErrorText, Field, IconChip, Screen, SectionHeader } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import { stateName } from '../../src/data/states';
 import { DUPLICATE_INVOICE_NO, getInvoice, LineDraft } from '../../src/db/invoices';
@@ -277,9 +277,7 @@ export default function ChallanFormScreen() {
               </>
             ) : (
               <>
-                <View style={styles.partyAvatar}>
-                  <Ionicons name={party ? 'person' : 'cash-outline'} size={18} color={colors.primary} />
-                </View>
+                <IconChip icon={party ? 'person' : 'cash-outline'} />
                 <View style={styles.flex}>
                   <Text style={styles.partyName}>{party ? party.name : t('cashSale')}</Text>
                   {party ? (
@@ -459,16 +457,8 @@ const styles = StyleSheet.create({
     padding: 12,
     backgroundColor: colors.surfaceAlt,
   },
-  partyAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   partyName: { fontSize: text.md, fontWeight: '700', color: colors.text, flexShrink: 1 },
-  partySub: { fontSize: text.xs, color: colors.muted, marginTop: 1 },
+  partySub: { fontSize: text.sm, color: colors.muted, marginTop: 1 },
   sumRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   sumLabel: { fontSize: 14, color: colors.muted },
   sumValue: { fontSize: 14, color: colors.text, fontWeight: '600' },
@@ -497,7 +487,7 @@ const styles = StyleSheet.create({
   },
   totalLabel: { fontSize: text.md, fontWeight: '700', color: colors.primary },
   totalValue: { fontSize: text.xl, fontWeight: '800', color: colors.primary },
-  words: { fontSize: text.xs, color: colors.muted, fontStyle: 'italic' },
+  words: { fontSize: text.xs, color: colors.faint, fontStyle: 'italic' },
   moreHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   moreText: { flex: 1, fontSize: 14, fontWeight: '700', color: colors.primary },
   footerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },

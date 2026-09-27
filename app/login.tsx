@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LanguageToggle } from '../src/components/LanguageToggle';
-import { ErrorText, IconName, MadeInIndia } from '../src/components/ui';
+import { ErrorText, IconChip, IconName, MadeInIndia } from '../src/components/ui';
 import { useApp } from '../src/context/AppContext';
 import { StringKey } from '../src/i18n/strings';
 import { loginWithGoogle } from '../src/lib/auth';
@@ -72,9 +72,7 @@ export default function LoginScreen() {
           <View style={styles.benefits}>
             {BENEFITS.map((b) => (
               <View key={b.key} style={styles.benefit}>
-                <View style={styles.benefitIcon}>
-                  <Ionicons name={b.icon} size={18} color={colors.primary} />
-                </View>
+                <IconChip icon={b.icon} />
                 <Text style={styles.benefitText}>{t(b.key)}</Text>
               </View>
             ))}
@@ -122,7 +120,7 @@ const styles = StyleSheet.create({
   },
   toggleRow: { alignSelf: 'stretch', alignItems: 'flex-end', marginBottom: 16 },
   logo: { width: 84, height: 84, borderRadius: 22, borderWidth: 2, borderColor: 'rgba(255,255,255,0.25)' },
-  appName: { fontSize: 30, fontWeight: '800', color: colors.white, marginTop: 14, letterSpacing: 0.3 },
+  appName: { fontSize: 20, fontWeight: '800', color: colors.white, marginTop: 14, letterSpacing: 0.3 },
   tagline: { fontSize: 15, color: 'rgba(255,255,255,0.75)', marginTop: 2 },
   hindi: { fontSize: 16, color: colors.accent, marginTop: 10, fontWeight: '600' },
   card: {
@@ -134,18 +132,10 @@ const styles = StyleSheet.create({
     gap: 14,
     ...shadow,
   },
-  title: { fontSize: 22, fontWeight: '800', color: colors.text },
+  title: { fontSize: 20, fontWeight: '800', color: colors.text },
   hint: { fontSize: 14, color: colors.muted, marginTop: -8 },
   benefits: { gap: 10, marginVertical: 4 },
   benefit: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  benefitIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: radius.sm,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   benefitText: { fontSize: 15, color: colors.text, flex: 1 },
   google: {
     minHeight: 54,
@@ -159,7 +149,7 @@ const styles = StyleSheet.create({
     gap: 12,
     marginTop: 4,
   },
-  googleLabel: { fontSize: 17, fontWeight: '700', color: colors.text },
+  googleLabel: { fontSize: 15, fontWeight: '700', color: colors.text },
   checkingRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   checkingText: { fontSize: 14, color: colors.muted, fontWeight: '600' },
   bottom: { flex: 1, justifyContent: 'flex-end', paddingVertical: 20 },
