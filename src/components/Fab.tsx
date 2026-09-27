@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, StyleSheet, Text } from 'react-native';
-import { colors, radius } from '../theme';
+import { colors, radius, shadowLg, spacing, text } from '../theme';
 
 // Floating "+ Add" button at the bottom-right of list screens.
 export function Fab({ label, onPress }: { label: string; onPress: () => void }) {
@@ -15,20 +15,16 @@ export function Fab({ label, onPress }: { label: string; onPress: () => void }) 
 const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
-    right: 16,
-    bottom: 16,
+    right: spacing.lg,
+    bottom: spacing.lg,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: spacing.sm,
     backgroundColor: colors.primary,
-    paddingHorizontal: 18,
-    paddingVertical: 13,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     borderRadius: radius.pill,
-    shadowColor: '#0F172A',
-    shadowOpacity: 0.14,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 5,
+    ...shadowLg,
   },
-  label: { color: colors.white, fontSize: 16, fontWeight: '700' },
+  label: { color: colors.white, fontSize: text.md, fontWeight: '700' },
 });

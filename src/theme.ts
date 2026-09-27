@@ -5,6 +5,7 @@ export const colors = {
   primary: '#1E3A8A', // brand navy
   primaryDark: '#172554',
   primarySoft: '#E8EEFB',
+  primaryLight: '#DCE6FA', // selected rows / light primary fills
   primaryTint: '#F2F5FC',
   accent: '#F59E0B', // saffron — highlights only
   accentSoft: '#FEF3C7',
@@ -14,6 +15,7 @@ export const colors = {
   border: '#E4E9F1',
   background: '#F7F9FC',
   card: '#FFFFFF',
+  surfaceAlt: '#EEF2F7', // muted surface — search bars, filled inputs
   danger: '#DC2626',
   dangerSoft: '#FCEAEA',
   success: '#16A34A',
@@ -21,6 +23,8 @@ export const colors = {
   warning: '#B45309',
   warningSoft: '#FEF3C7',
   white: '#FFFFFF',
+  whiteSoft: 'rgba(255,255,255,0.85)', // text on dark surfaces
+  whiteFaint: 'rgba(255,255,255,0.65)',
 };
 
 export const radius = { sm: 8, md: 12, lg: 16, xl: 20, pill: 999 };
@@ -41,6 +45,15 @@ export const shadowSm = {
   shadowRadius: 6,
   shadowOffset: { width: 0, height: 2 },
   elevation: 1,
+};
+
+// Stronger shadow for floating actions (FAB, sheets).
+export const shadowLg = {
+  shadowColor: '#0F172A',
+  shadowOpacity: 0.14,
+  shadowRadius: 10,
+  shadowOffset: { width: 0, height: 4 },
+  elevation: 5,
 };
 
 export const text = { xs: 12, sm: 13, md: 15, lg: 17, xl: 20, xxl: 24, display: 30 };

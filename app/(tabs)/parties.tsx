@@ -12,7 +12,7 @@ import { Chips } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import { listParties, PartyWithBalance } from '../../src/db/parties';
 import { formatPaise } from '../../src/lib/money';
-import { colors, radius, shadow } from '../../src/theme';
+import { colors, radius, shadow, shadowSm, text } from '../../src/theme';
 
 type Filter = 'all' | 'customer' | 'supplier';
 
@@ -116,7 +116,7 @@ function PartyRow({ party }: { party: PartyWithBalance }) {
       style={({ pressed }) => [styles.row, pressed && { opacity: 0.85 }]}
     >
       <View style={[styles.avatar, party.party_type === 'supplier' && { backgroundColor: colors.accentSoft }]}>
-        <Text style={[styles.avatarText, party.party_type === 'supplier' && { color: '#B45309' }]}>{initial}</Text>
+        <Text style={[styles.avatarText, party.party_type === 'supplier' && { color: colors.warning }]}>{initial}</Text>
       </View>
       <View style={styles.flexOnly}>
         <Text style={styles.name} numberOfLines={1}>
@@ -158,22 +158,26 @@ const styles = StyleSheet.create({
   totals: {
     flexDirection: 'row',
     backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
     borderRadius: radius.lg,
     paddingVertical: 14,
     ...shadow,
   },
   total: { flex: 1, alignItems: 'center', gap: 2 },
   divider: { width: 1, backgroundColor: colors.border },
-  totalLabel: { fontSize: 12, color: colors.muted, fontWeight: '600' },
-  totalValue: { fontSize: 18, fontWeight: '800' },
+  totalLabel: { fontSize: text.xs, color: colors.muted, fontWeight: '600' },
+  totalValue: { fontSize: text.lg, fontWeight: '800' },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
     borderRadius: radius.md,
     padding: 12,
-    ...shadow,
+    ...shadowSm,
   },
   avatar: {
     width: 42,
@@ -184,11 +188,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   avatarText: { fontSize: 17, fontWeight: '800', color: colors.primary },
-  name: { fontSize: 16, fontWeight: '700', color: colors.text },
+  name: { fontSize: text.md, fontWeight: '700', color: colors.text },
   subRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
-  sub: { fontSize: 12, color: colors.muted, flex: 1 },
+  sub: { fontSize: text.xs, color: colors.muted, flex: 1 },
   balance: { alignItems: 'flex-end' },
-  amount: { fontSize: 15, fontWeight: '800' },
-  balLabel: { fontSize: 11, color: colors.faint, marginTop: 1 },
-  settled: { fontSize: 12, color: colors.faint, fontWeight: '600' },
+  amount: { fontSize: text.md, fontWeight: '800' },
+  balLabel: { fontSize: text.xs, color: colors.muted, marginTop: 1 },
+  settled: { fontSize: text.xs, color: colors.muted, fontWeight: '600' },
 });

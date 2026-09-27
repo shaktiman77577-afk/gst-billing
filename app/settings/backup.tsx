@@ -224,7 +224,7 @@ export default function BackupScreen() {
             <Ionicons
               name={old ? 'cloud-offline-outline' : 'cloud-done-outline'}
               size={28}
-              color={old ? '#B45309' : colors.success}
+              color={old ? colors.warning : colors.success}
             />
           </View>
           <View style={styles.flexOnly}>

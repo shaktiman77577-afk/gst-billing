@@ -10,7 +10,7 @@ import { Button, Card, MadeInIndia } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import { stateName } from '../../src/data/states';
 import { useBusiness } from '../../src/hooks/useBusiness';
-import { colors, radius } from '../../src/theme';
+import { colors, radius, text } from '../../src/theme';
 
 export default function MoreScreen() {
   const { t, email, logout } = useApp();
@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.background },
   flexOnly: { flex: 1 },
   content: { padding: 16, gap: 14, paddingBottom: 32 },
-  cardLabel: { fontSize: 12, fontWeight: '700', color: colors.faint, textTransform: 'uppercase', letterSpacing: 0.6 },
+  cardLabel: { fontSize: text.xs, fontWeight: '700', color: colors.faint, textTransform: 'uppercase', letterSpacing: 0.6 },
   profile: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   avatar: {
     width: 56,
@@ -189,10 +189,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: { color: colors.white, fontSize: 24, fontWeight: '800' },
-  name: { fontSize: 18, fontWeight: '700', color: colors.text },
-  meta: { fontSize: 13, color: colors.muted, marginTop: 2 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  avatarText: { color: colors.white, fontSize: text.xxl, fontWeight: '800' },
+  name: { fontSize: text.lg, fontWeight: '700', color: colors.text },
+  meta: { fontSize: text.sm, color: colors.muted, marginTop: 2 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 },
   rowIcon: {
     width: 36,
     height: 36,
@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  rowText: { flex: 1, fontSize: 15, fontWeight: '600', color: colors.text },
+  rowText: { flex: 1, fontSize: text.md, fontWeight: '600', color: colors.text },
   footer: { alignItems: 'center', gap: 4, marginTop: 8 },
   sep: { height: 1, backgroundColor: colors.border },
   editPill: {
@@ -213,6 +213,6 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: radius.pill,
   },
-  editText: { fontSize: 12, fontWeight: '700', color: colors.primary },
-  version: { fontSize: 12, color: colors.faint },
+  editText: { fontSize: text.xs, fontWeight: '700', color: colors.primary },
+  version: { fontSize: text.xs, color: colors.faint },
 });

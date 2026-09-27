@@ -30,7 +30,7 @@ import { amountInWords } from '../../src/lib/gst';
 import { formatPaise } from '../../src/lib/money';
 import { billWhatsappText, invoiceHtml, printBill, sharePdf, sharePdfOnWhatsApp } from '../../src/pdf/share';
 import { qrDataUrl, upiLink } from '../../src/pdf/qr';
-import { colors, radius } from '../../src/theme';
+import { colors, radius, text } from '../../src/theme';
 
 type Data = { invoice: Invoice; lines: InvoiceLine[]; payments: Payment[]; creditNotes: InvoiceListRow[] };
 
@@ -188,7 +188,7 @@ export default function BillDetailScreen() {
               {inv.due_date ? <Meta icon="alarm-outline" text={`${t('dueDate')}: ${formatDate(inv.due_date)}`} /> : null}
             </View>
             {isCn && inv.ref_invoice_id ? (
-              <Pressable onPress={() => router.push(`/bill/${inv.ref_invoice_id}`)} style={styles.refLink}>
+              <Pressable onPress={() => router.push(`/bill/${inv.ref_invoice_id}`)} hitSlop={10} style={styles.refLink}>
                 <Ionicons name="link-outline" size={16} color={colors.primary} />
                 <Text style={styles.refText}>
                   {t('againstBill')} {inv.ref_invoice_no}
@@ -196,7 +196,7 @@ export default function BillDetailScreen() {
               </Pressable>
             ) : null}
             {isQuotation && inv.ref_invoice_id ? (
-              <Pressable onPress={() => router.push(`/bill/${inv.ref_invoice_id}`)} style={styles.refLink}>
+              <Pressable onPress={() => router.push(`/bill/${inv.ref_invoice_id}`)} hitSlop={10} style={styles.refLink}>
                 <Ionicons name="checkmark-circle" size={16} color={colors.success} />
                 <Text style={styles.refText}>
                   {t('q_convertedTo')} {inv.ref_invoice_no}
@@ -222,6 +222,7 @@ export default function BillDetailScreen() {
             <Text style={styles.cardLabel}>{t('party')}</Text>
             <Pressable
               disabled={!inv.party_id}
+              hitSlop={10}
               onPress={() => inv.party_id && router.push({ pathname: '/party/ledger', params: { id: inv.party_id } })}
             >
               <Text style={styles.partyName}>
@@ -244,8 +245,8 @@ export default function BillDetailScreen() {
             <Text style={styles.cardLabel}>
               {t('itemsLabel')} ({lines.length})
             </Text>
-            {lines.map((l) => (
-              <View key={l.id} style={styles.line}>
+            {lines.map((l, idx) => (
+              <View key={l.id} style={[styles.line, idx === lines.length - 1 && { borderBottomWidth: 0 }]}>
                 <View style={styles.flexOnly}>
                   <Text style={styles.lineName}>{l.name}</Text>
                   <Text style={styles.meta}>
@@ -313,7 +314,7 @@ export default function BillDetailScreen() {
                       {p.notes ? ` · ${p.notes}` : ''}
                     </Text>
                   </View>
-                  <Pressable onPress={() => onDeletePayment(p)} hitSlop={8}>
+                  <Pressable onPress={() => onDeletePayment(p)} hitSlop={8} style={styles.payDel}>
                     <Ionicons name="trash-outline" size={18} color={colors.faint} />
                   </Pressable>
                 </View>
@@ -463,17 +464,17 @@ const styles = StyleSheet.create({
   },
   cancelText: { fontSize: 14, fontWeight: '700', color: colors.muted },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
-  docType: { fontSize: 13, fontWeight: '700', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.5 },
-  total: { fontSize: 30, fontWeight: '800', color: colors.primary },
+  docType: { fontSize: text.sm, fontWeight: '700', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.5 },
+  total: { fontSize: text.display, fontWeight: '800', color: colors.primary },
   strike: { textDecorationLine: 'line-through', color: colors.faint },
-  words: { fontSize: 12, color: colors.muted, fontStyle: 'italic', marginTop: -6 },
+  words: { fontSize: text.xs, color: colors.muted, fontStyle: 'italic', marginTop: -6 },
   metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 14 },
   metaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  refLink: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  refLink: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 4 },
   refText: { fontSize: 14, fontWeight: '700', color: colors.primary },
-  cardLabel: { fontSize: 12, fontWeight: '700', color: colors.faint, textTransform: 'uppercase', letterSpacing: 0.6 },
-  partyName: { fontSize: 17, fontWeight: '700', color: colors.text, marginTop: -6 },
-  meta: { fontSize: 13, color: colors.muted },
+  cardLabel: { fontSize: text.xs, fontWeight: '700', color: colors.faint, textTransform: 'uppercase', letterSpacing: 0.6 },
+  partyName: { fontSize: text.lg, fontWeight: '700', color: colors.text, marginTop: -6 },
+  meta: { fontSize: text.sm, color: colors.muted },
   line: {
     flexDirection: 'row',
     gap: 10,
@@ -481,18 +482,19 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  lineName: { fontSize: 15, fontWeight: '600', color: colors.text },
-  lineAmt: { fontSize: 15, fontWeight: '700', color: colors.text },
+  lineName: { fontSize: text.md, fontWeight: '600', color: colors.text },
+  lineAmt: { fontSize: text.md, fontWeight: '700', color: colors.text },
   rowLabel: { fontSize: 14, color: colors.muted, flexShrink: 1 },
   rowValue: { fontSize: 14, color: colors.text, fontWeight: '600' },
-  bold: { fontWeight: '800', color: colors.text, fontSize: 15 },
+  bold: { fontWeight: '800', color: colors.text, fontSize: text.md },
   divider: { height: 1, backgroundColor: colors.border },
   payRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  payAmt: { fontSize: 15, fontWeight: '700', color: colors.text },
+  payDel: { padding: 8 },
+  payAmt: { fontSize: text.md, fontWeight: '700', color: colors.text },
   actions: { flexDirection: 'row', gap: 12 },
   wa: {
     minHeight: 52,
-    borderRadius: radius.md,
+    borderRadius: 14,
     backgroundColor: '#25D366',
     flexDirection: 'row',
     alignItems: 'center',
@@ -501,8 +503,8 @@ const styles = StyleSheet.create({
   },
   waText: { color: colors.white, fontSize: 16, fontWeight: '700' },
   qrWrap: { alignItems: 'center', paddingVertical: 8 },
-  qrTitle: { fontSize: 15, fontWeight: '700', color: colors.text, marginBottom: 12 },
+  qrTitle: { fontSize: text.md, fontWeight: '700', color: colors.text, marginBottom: 12 },
   qr: { width: 200, height: 200, borderRadius: radius.sm },
-  qrAmount: { marginTop: 12, fontSize: 22, fontWeight: '800', color: colors.text },
-  qrUpi: { marginTop: 4, fontSize: 13, color: colors.muted },
+  qrAmount: { marginTop: 12, fontSize: text.xxl, fontWeight: '800', color: colors.text },
+  qrUpi: { marginTop: 4, fontSize: text.sm, color: colors.muted },
 });

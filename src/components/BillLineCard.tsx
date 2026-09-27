@@ -6,7 +6,7 @@ import { formatQty, GST_RATES } from '../db/items';
 import { LineDraft } from '../db/invoices';
 import { LineResult } from '../lib/gst';
 import { formatPaise, paiseToInput, toPaise } from '../lib/money';
-import { colors, radius } from '../theme';
+import { colors, radius, text } from '../theme';
 import { Chips } from './ui';
 
 type Props = {
@@ -68,7 +68,7 @@ export function BillLineCard({ line, result, applyGst, onChange, onRemove }: Pro
 
       <View style={styles.controls}>
         <View style={styles.stepper}>
-          <Pressable onPress={() => setQty(line.qty - 1)} hitSlop={6} style={styles.stepBtn}>
+          <Pressable onPress={() => setQty(line.qty - 1)} hitSlop={10} style={styles.stepBtn}>
             <Ionicons name="remove" size={18} color={colors.primary} />
           </Pressable>
           <TextInput
@@ -82,16 +82,16 @@ export function BillLineCard({ line, result, applyGst, onChange, onRemove }: Pro
             style={styles.qtyInput}
             selectTextOnFocus
           />
-          <Pressable onPress={() => setQty(line.qty + 1)} hitSlop={6} style={styles.stepBtn}>
+          <Pressable onPress={() => setQty(line.qty + 1)} hitSlop={10} style={styles.stepBtn}>
             <Ionicons name="add" size={18} color={colors.primary} />
           </Pressable>
         </View>
         <View style={styles.flex} />
-        <Pressable onPress={() => setOpen((o) => !o)} hitSlop={6} style={styles.linkBtn}>
+        <Pressable onPress={() => setOpen((o) => !o)} hitSlop={10} style={styles.linkBtn}>
           <Ionicons name={open ? 'chevron-up' : 'create-outline'} size={16} color={colors.primary} />
           <Text style={styles.link}>{t('edit')}</Text>
         </Pressable>
-        <Pressable onPress={onRemove} hitSlop={6} style={styles.linkBtn}>
+        <Pressable onPress={onRemove} hitSlop={10} style={styles.linkBtn}>
           <Ionicons name="trash-outline" size={18} color={colors.danger} />
         </Pressable>
       </View>
@@ -171,9 +171,9 @@ const styles = StyleSheet.create({
   },
   flex: { flex: 1 },
   top: { flexDirection: 'row', gap: 10 },
-  name: { fontSize: 15, fontWeight: '700', color: colors.text },
-  sub: { fontSize: 12, color: colors.muted, marginTop: 2 },
-  amount: { fontSize: 15, fontWeight: '800', color: colors.text },
+  name: { fontSize: text.md, fontWeight: '700', color: colors.text },
+  sub: { fontSize: text.xs, color: colors.muted, marginTop: 2 },
+  amount: { fontSize: text.md, fontWeight: '800', color: colors.text },
   controls: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   stepper: {
     flexDirection: 'row',
@@ -195,20 +195,20 @@ const styles = StyleSheet.create({
     minWidth: 44,
     textAlign: 'center',
     fontWeight: '800',
-    fontSize: 15,
+    fontSize: text.md,
     color: colors.primary,
     paddingVertical: 2,
   },
   linkBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, padding: 4 },
-  link: { color: colors.primary, fontWeight: '700', fontSize: 13 },
+  link: { color: colors.primary, fontWeight: '700', fontSize: text.sm },
   editor: { gap: 10, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 10 },
   row: { flexDirection: 'row', gap: 10 },
-  label: { fontSize: 12, fontWeight: '600', color: colors.muted, marginBottom: 4 },
+  label: { fontSize: text.xs, fontWeight: '600', color: colors.muted, marginBottom: 4 },
   input: {
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.sm,
-    backgroundColor: colors.background,
+    backgroundColor: colors.surfaceAlt,
     paddingHorizontal: 10,
     paddingVertical: 9,
     fontSize: 15,
@@ -222,5 +222,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  unitText: { fontWeight: '800', color: colors.primary, fontSize: 15 },
+  unitText: { fontWeight: '800', color: colors.primary, fontSize: text.md },
 });

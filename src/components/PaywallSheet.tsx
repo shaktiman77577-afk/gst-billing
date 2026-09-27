@@ -91,8 +91,8 @@ const styles = StyleSheet.create({
   backdropPress: { flex: 1 },
   sheet: {
     backgroundColor: colors.card,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
     padding: 20,
     paddingBottom: 28,
     gap: 12,

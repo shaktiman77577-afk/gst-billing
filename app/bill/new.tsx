@@ -30,7 +30,7 @@ import { useMembership } from '../../src/hooks/useMembership';
 import { todayIso } from '../../src/lib/dates';
 import { amountInWords, calcBill } from '../../src/lib/gst';
 import { formatPaise, paiseToInput, toPaise } from '../../src/lib/money';
-import { colors, radius } from '../../src/theme';
+import { colors, radius, text } from '../../src/theme';
 
 type Line = LineDraft & { key: string };
 type PartyChoice = PartyWithBalance | null | undefined; // null = Cash Sale, undefined = not chosen
@@ -367,7 +367,7 @@ export default function BillFormScreen() {
                 {t('placeOfSupply')}: {stateName(placeOfSupply)}
               </Text>
               <View style={[styles.taxChip, isIgst && { backgroundColor: colors.accentSoft }]}>
-                <Text style={[styles.taxChipText, isIgst && { color: '#B45309' }]}>
+                <Text style={[styles.taxChipText, isIgst && { color: colors.warning }]}>
                   {isIgst ? 'IGST' : 'CGST + SGST'}
                 </Text>
               </View>
@@ -572,8 +572,8 @@ function SumRow({
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: 'transparent' },
   row: { flexDirection: 'row', gap: 12 },
-  headerNo: { fontSize: 13, fontWeight: '700', color: colors.muted },
-  note: { fontSize: 12, color: '#B45309', backgroundColor: colors.accentSoft, padding: 8, borderRadius: radius.sm },
+  headerNo: { fontSize: text.sm, fontWeight: '700', color: colors.muted },
+  note: { fontSize: text.xs, color: colors.warning, backgroundColor: colors.accentSoft, padding: 8, borderRadius: radius.sm },
   partyBox: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -582,7 +582,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: radius.md,
     padding: 12,
-    backgroundColor: colors.background,
+    backgroundColor: colors.surfaceAlt,
   },
   partyAvatar: {
     width: 36,
@@ -592,22 +592,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  partyName: { fontSize: 16, fontWeight: '700', color: colors.text, flexShrink: 1 },
-  partySub: { fontSize: 12, color: colors.muted, marginTop: 1 },
+  partyName: { fontSize: text.md, fontWeight: '700', color: colors.text, flexShrink: 1 },
+  partySub: { fontSize: text.xs, color: colors.muted, marginTop: 1 },
   posRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  posText: { flex: 1, fontSize: 12, color: colors.muted },
+  posText: { flex: 1, fontSize: text.xs, color: colors.muted },
   taxChip: { backgroundColor: colors.primarySoft, paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill },
-  taxChipText: { fontSize: 11, fontWeight: '800', color: colors.primary },
+  taxChipText: { fontSize: text.xs, fontWeight: '800', color: colors.primary },
   sumRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   sumLabel: { fontSize: 14, color: colors.muted },
   sumValue: { fontSize: 14, color: colors.text, fontWeight: '600' },
-  bold: { fontWeight: '800', color: colors.text, fontSize: 15 },
+  bold: { fontWeight: '800', color: colors.text, fontSize: text.md },
   chargesRow: { flexDirection: 'row', gap: 8 },
   smallInput: {
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.sm,
-    backgroundColor: colors.background,
+    backgroundColor: colors.surfaceAlt,
     paddingHorizontal: 10,
     paddingVertical: 9,
     fontSize: 14,
@@ -615,7 +615,7 @@ const styles = StyleSheet.create({
   },
   switchRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   flexText: { flex: 1, fontSize: 14, color: colors.text, fontWeight: '600' },
-  muted: { fontSize: 13, color: colors.muted },
+  muted: { fontSize: text.sm, color: colors.muted },
   totalBox: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -624,14 +624,14 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: radius.md,
   },
-  totalLabel: { fontSize: 15, fontWeight: '700', color: colors.primary },
-  totalValue: { fontSize: 20, fontWeight: '800', color: colors.primary },
-  words: { fontSize: 12, color: colors.muted, fontStyle: 'italic' },
-  label: { fontSize: 13, fontWeight: '600', color: colors.text },
+  totalLabel: { fontSize: text.md, fontWeight: '700', color: colors.primary },
+  totalValue: { fontSize: text.xl, fontWeight: '800', color: colors.primary },
+  words: { fontSize: text.xs, color: colors.muted, fontStyle: 'italic' },
+  label: { fontSize: text.sm, fontWeight: '600', color: colors.text },
   moreHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   moreText: { flex: 1, fontSize: 14, fontWeight: '700', color: colors.primary },
   footerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  footerLabel: { fontSize: 12, color: colors.muted },
-  footerTotal: { fontSize: 20, fontWeight: '800', color: colors.text },
+  footerLabel: { fontSize: text.xs, color: colors.muted },
+  footerTotal: { fontSize: text.xl, fontWeight: '800', color: colors.primary },
   footerBtn: { flex: 1.4 },
 });

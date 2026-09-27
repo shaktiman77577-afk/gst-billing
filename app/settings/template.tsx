@@ -71,7 +71,12 @@ export default function TemplateScreen() {
           {TEMPLATES.map((tp) => {
             const active = tp.id === template;
             return (
-              <Pressable key={tp.id} onPress={() => setTemplate(tp.id)} style={[styles.chip, active && styles.chipActive]}>
+              <Pressable
+                key={tp.id}
+                onPress={() => setTemplate(tp.id)}
+                hitSlop={8}
+                style={[styles.chip, active && styles.chipActive]}
+              >
                 <Text style={[styles.chipText, active && styles.chipTextActive]}>
                   {tp.name}
                   {tp.premium ? ' 👑' : ''}
@@ -86,7 +91,12 @@ export default function TemplateScreen() {
         <Text style={styles.label}>{t('colour')}</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.colors}>
           {THEME_COLORS.map((c) => (
-            <Pressable key={c} onPress={() => setColor(c)} style={[styles.dot, { backgroundColor: c }]}>
+            <Pressable
+              key={c}
+              onPress={() => setColor(c)}
+              hitSlop={8}
+              style={[styles.dot, { backgroundColor: c }]}
+            >
               {c === color ? <Ionicons name="checkmark" size={22} color={colors.white} /> : null}
             </Pressable>
           ))}
@@ -122,7 +132,7 @@ const styles = StyleSheet.create({
   chipActive: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
   chipText: { fontSize: 14, color: colors.text },
   chipTextActive: { color: colors.primary, fontWeight: '700' },
-  premium: { fontSize: 12, color: '#B45309', fontWeight: '600', marginTop: -4 },
+  premium: { fontSize: 12, color: colors.warning, fontWeight: '600', marginTop: -4 },
   colors: { gap: 12, paddingVertical: 2 },
   dot: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
 });

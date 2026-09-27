@@ -17,7 +17,7 @@ import {
   updateItem,
 } from '../../src/db/items';
 import { formatPaise, paiseToInput, toPaise } from '../../src/lib/money';
-import { colors, radius } from '../../src/theme';
+import { colors, radius, text } from '../../src/theme';
 
 type Errors = Partial<Record<'name' | 'price' | 'purchase' | 'rate' | 'stock' | 'low', string>>;
 
@@ -295,8 +295,8 @@ function Row({ label, value, bold }: { label: string; value: string; bold?: bool
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.background },
   trash: { padding: 4 },
-  hint: { fontSize: 12, color: colors.muted, marginTop: -6 },
-  error: { color: colors.danger, fontSize: 13 },
+  hint: { fontSize: text.xs, color: colors.muted, marginTop: -6 },
+  error: { color: colors.danger, fontSize: text.sm },
   breakdown: {
     backgroundColor: colors.primarySoft,
     borderRadius: radius.md,
@@ -304,8 +304,8 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   breakRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  breakLabel: { fontSize: 13, color: colors.muted },
-  breakValue: { fontSize: 13, color: colors.text },
+  breakLabel: { fontSize: text.sm, color: colors.muted },
+  breakValue: { fontSize: text.sm, color: colors.text },
   breakLine: { height: 1, backgroundColor: colors.border },
   bold: { fontWeight: '800', color: colors.primary },
 });

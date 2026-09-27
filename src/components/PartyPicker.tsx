@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { PartyWithBalance } from '../db/parties';
 import { formatPaise } from '../lib/money';
-import { colors, radius } from '../theme';
+import { colors, radius, text } from '../theme';
 import { SearchBar } from './SearchBar';
 
 type Props = {
@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, backgroundColor: colors.card },
-  title: { fontSize: 19, fontWeight: '700', color: colors.text },
+  title: { fontSize: text.xl, fontWeight: '700', color: colors.text },
   searchWrap: { padding: 12, backgroundColor: colors.primarySoft },
   list: { padding: 12, gap: 8, paddingBottom: 40 },
   topActions: { gap: 8, marginBottom: 6 },
@@ -123,8 +123,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  initial: { fontSize: 16, fontWeight: '800', color: colors.primary },
-  name: { fontSize: 15, fontWeight: '700', color: colors.text },
-  sub: { fontSize: 12, color: colors.muted, marginTop: 1 },
-  bal: { fontSize: 13, fontWeight: '700' },
+  initial: { fontSize: text.md, fontWeight: '800', color: colors.primary },
+  name: { fontSize: text.md, fontWeight: '700', color: colors.text },
+  sub: { fontSize: text.xs, color: colors.muted, marginTop: 1 },
+  bal: { fontSize: text.sm, fontWeight: '700' },
 });

@@ -4,7 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useCallback, useState } from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
 import { FormHeader } from '../../src/components/FormHeader';
-import { Button, Card, IconName, Screen } from '../../src/components/ui';
+import { Button, Card, IconName, Screen, SectionHeader } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import { useMembership } from '../../src/hooks/useMembership';
 import { StringKey } from '../../src/i18n/strings';
@@ -174,7 +174,7 @@ export default function MembershipScreen() {
             ) : null}
 
             {/* ---------- Plans ---------- */}
-            <Text style={styles.section}>{t('mem_viewPlans')}</Text>
+            <SectionHeader icon="star-outline" title={t('mem_viewPlans')} />
             {plans.map((plan) => {
               const yearly = plan.duration_days >= 300;
               const current = mem.planId === plan.id;
@@ -267,7 +267,6 @@ const styles = StyleSheet.create({
   big: { fontSize: 22, fontWeight: '800', color: colors.text },
   text: { fontSize: 14, color: colors.text, lineHeight: 20 },
   offline: { fontSize: 12, color: colors.faint, textAlign: 'center' },
-  section: { fontSize: 15, fontWeight: '700', color: colors.text, marginTop: 2 },
   kv: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   kvVal: { fontSize: 14, fontWeight: '600', color: colors.text },
   barTrack: { height: 8, borderRadius: 4, backgroundColor: colors.border, overflow: 'hidden' },

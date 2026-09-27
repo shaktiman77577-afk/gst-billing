@@ -15,7 +15,7 @@ import {
   ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, radius, shadow, shadowSm } from '../theme';
+import { colors, radius, shadow, shadowSm, spacing, text } from '../theme';
 
 export type IconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -145,7 +145,7 @@ export function Field({ label, optionalLabel, error, helper, icon, style, onFocu
           error ? { borderColor: colors.danger } : focused ? { borderColor: colors.primary } : null,
         ]}
       >
-        {icon ? <Ionicons name={icon} size={18} color={colors.faint} style={{ marginRight: 8 }} /> : null}
+        {icon ? <Ionicons name={icon} size={18} color={colors.faint} style={{ marginRight: spacing.sm }} /> : null}
         <TextInput
           placeholderTextColor={colors.faint}
           style={[styles.input, style]}
@@ -210,8 +210,8 @@ export function Chips<T extends string>({
 export function MadeInIndia({ light = false }: { light?: boolean }) {
   return (
     <View style={styles.madeWrap}>
-      <Text style={[styles.made, light && { color: 'rgba(255,255,255,0.85)' }]}>Made with 🤎 in India</Text>
-      <Text style={[styles.madeHindi, light && { color: 'rgba(255,255,255,0.7)' }]}>
+      <Text style={[styles.made, light && { color: colors.whiteSoft }]}>Made with 🤎 in India</Text>
+      <Text style={[styles.madeHindi, light && { color: colors.whiteFaint }]}>
         भारत के व्यापारियों के लिए
       </Text>
     </View>
@@ -221,10 +221,10 @@ export function MadeInIndia({ light = false }: { light?: boolean }) {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
-  content: { padding: 16, paddingBottom: 32, gap: 14 },
+  content: { padding: spacing.lg, paddingBottom: spacing.xxl, gap: spacing.md },
   footer: {
-    padding: 16,
-    paddingTop: 12,
+    padding: spacing.lg,
+    paddingTop: spacing.md,
     backgroundColor: colors.card,
     borderTopWidth: 1,
     borderTopColor: colors.border,
@@ -234,50 +234,50 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.lg,
-    padding: 16,
-    gap: 12,
+    padding: spacing.lg,
+    gap: spacing.md,
     ...shadow,
   },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 2 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: 2 },
   sectionIcon: {
-    width: 34,
-    height: 34,
+    width: 36,
+    height: 36,
     borderRadius: radius.md,
     backgroundColor: colors.primaryTint,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: colors.text },
-  sectionSubtitle: { fontSize: 12, color: colors.muted, marginTop: 1 },
-  title: { fontSize: 22, fontWeight: '700', color: colors.text },
-  hint: { fontSize: 14, color: colors.muted },
+  sectionTitle: { fontSize: text.md, fontWeight: '700', color: colors.text },
+  sectionSubtitle: { fontSize: text.xs, color: colors.muted, marginTop: 1 },
+  title: { fontSize: text.xxl, fontWeight: '700', color: colors.text },
+  hint: { fontSize: text.sm, color: colors.muted },
   errorBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: spacing.sm,
     backgroundColor: colors.dangerSoft,
-    padding: 12,
+    padding: spacing.md,
     borderRadius: radius.md,
   },
-  errorBoxText: { color: colors.danger, fontSize: 14, flex: 1 },
-  error: { color: colors.danger, fontSize: 13, marginTop: 4 },
-  helperRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
-  helper: { color: colors.success, fontSize: 13 },
+  errorBoxText: { color: colors.danger, fontSize: text.sm, flex: 1 },
+  error: { color: colors.danger, fontSize: text.sm, marginTop: spacing.xs },
+  helperRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: spacing.xs },
+  helper: { color: colors.success, fontSize: text.sm },
   button: {
     minHeight: 52,
-    borderRadius: 14,
+    borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing.lg,
   },
-  buttonRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  buttonRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   buttonPrimary: { backgroundColor: colors.primary, ...shadowSm },
   buttonOutline: { borderWidth: 1.5, borderColor: colors.primary, backgroundColor: colors.card },
-  buttonDanger: { borderWidth: 1.5, borderColor: colors.dangerSoft, backgroundColor: colors.dangerSoft },
-  buttonTextOnly: { minHeight: 40 },
-  buttonLabel: { fontSize: 16, fontWeight: '600' },
-  field: { gap: 6 },
-  label: { fontSize: 13, fontWeight: '600', color: colors.text },
+  buttonDanger: { backgroundColor: colors.dangerSoft },
+  buttonTextOnly: { minHeight: 44 },
+  buttonLabel: { fontSize: text.md, fontWeight: '600' },
+  field: { gap: spacing.sm },
+  label: { fontSize: text.sm, fontWeight: '600', color: colors.text },
   optional: { fontWeight: '400', color: colors.faint },
   inputWrap: {
     flexDirection: 'row',
@@ -286,26 +286,26 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.md,
-    backgroundColor: colors.card,
-    paddingHorizontal: 12,
+    backgroundColor: colors.surfaceAlt,
+    paddingHorizontal: spacing.md,
   },
-  input: { flex: 1, paddingVertical: 12, fontSize: 16, color: colors.text },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  input: { flex: 1, paddingVertical: spacing.md, fontSize: text.md, color: colors.text },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: spacing.sm,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.pill,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     backgroundColor: colors.card,
   },
   chipSelected: { borderColor: colors.primary, backgroundColor: colors.primary },
-  chipLabel: { fontSize: 14, fontWeight: '600', color: colors.text },
+  chipLabel: { fontSize: text.sm, fontWeight: '600', color: colors.text },
   chipLabelSelected: { color: colors.white, fontWeight: '700' },
-  madeWrap: { alignItems: 'center', gap: 2, paddingVertical: 8 },
-  made: { fontSize: 13, color: colors.muted, fontWeight: '600' },
-  madeHindi: { fontSize: 12, color: colors.faint },
+  madeWrap: { alignItems: 'center', gap: spacing.xs, paddingVertical: spacing.sm },
+  made: { fontSize: text.sm, color: colors.muted, fontWeight: '600' },
+  madeHindi: { fontSize: text.xs, color: colors.faint },
 });

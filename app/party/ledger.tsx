@@ -14,7 +14,7 @@ import { useBusiness } from '../../src/hooks/useBusiness';
 import { formatDate } from '../../src/lib/dates';
 import { formatPaise } from '../../src/lib/money';
 import { whatsappMessage } from '../../src/pdf/share';
-import { colors, radius, shadow } from '../../src/theme';
+import { colors, radius, shadow, text } from '../../src/theme';
 
 export default function PartyLedgerScreen() {
   const db = useSQLiteContext();
@@ -181,15 +181,17 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: radius.xl,
   },
   headRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 },
-  name: { flex: 1, color: colors.white, fontSize: 20, fontWeight: '800' },
-  balLabel: { color: 'rgba(255,255,255,0.75)', fontSize: 13 },
-  bal: { color: colors.white, fontSize: 30, fontWeight: '800', marginTop: 2 },
-  phone: { color: 'rgba(255,255,255,0.75)', fontSize: 13, marginTop: 4 },
+  name: { flex: 1, color: colors.white, fontSize: text.xl, fontWeight: '800' },
+  balLabel: { color: colors.whiteSoft, fontSize: text.sm },
+  bal: { color: colors.white, fontSize: text.display, fontWeight: '800', marginTop: 2 },
+  phone: { color: colors.whiteSoft, fontSize: text.sm, marginTop: 4 },
   actions: {
     flexDirection: 'row',
     marginHorizontal: 16,
     marginTop: -28,
     backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
     borderRadius: radius.lg,
     paddingVertical: 12,
     ...shadow,
@@ -203,21 +205,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  actionLabel: { fontSize: 11, fontWeight: '600', color: colors.text, textAlign: 'center' },
+  actionLabel: { fontSize: text.xs, fontWeight: '600', color: colors.text, textAlign: 'center' },
   list: { padding: 16, gap: 8, paddingBottom: 40 },
-  section: { fontSize: 16, fontWeight: '700', color: colors.text, marginBottom: 4 },
+  section: { fontSize: text.md, fontWeight: '700', color: colors.text, marginBottom: 4 },
   entry: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
     borderRadius: radius.md,
     padding: 12,
   },
   dot: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
   entryTitle: { fontSize: 14, fontWeight: '700', color: colors.text },
   strike: { textDecorationLine: 'line-through', color: colors.faint },
-  meta: { fontSize: 12, color: colors.muted, marginTop: 1 },
+  meta: { fontSize: text.xs, color: colors.muted, marginTop: 1 },
   right: { alignItems: 'flex-end' },
   amt: { fontSize: 14, fontWeight: '800' },
 });

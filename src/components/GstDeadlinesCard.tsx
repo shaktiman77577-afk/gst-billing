@@ -82,8 +82,8 @@ const styles = StyleSheet.create({
   },
   body: { flex: 1 },
   label: { fontSize: 14, fontWeight: '700', color: colors.text },
-  sub: { fontSize: 12.5, color: colors.muted, fontWeight: '600', marginTop: 2 },
+  sub: { fontSize: 12, color: colors.muted, fontWeight: '600', marginTop: 2 },
   pill: { borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 6 },
   pillText: { fontSize: 12, fontWeight: '700' },
-  hint: { fontSize: 11.5, color: colors.faint, fontWeight: '600' },
+  hint: { fontSize: 12, color: colors.faint, fontWeight: '600' },
 });

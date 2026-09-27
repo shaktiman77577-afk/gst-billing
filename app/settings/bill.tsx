@@ -242,11 +242,11 @@ function ImageRow({
       <View style={styles.flexOnly}>
         <Text style={styles.imgLabel}>{label}</Text>
         <View style={styles.imgActions}>
-          <Pressable onPress={onPick} hitSlop={6}>
+          <Pressable onPress={onPick} hitSlop={10}>
             <Text style={styles.link}>{t('choosePhoto')}</Text>
           </Pressable>
           {uri ? (
-            <Pressable onPress={onRemove} hitSlop={6}>
+            <Pressable onPress={onRemove} hitSlop={10}>
               <Text style={[styles.link, { color: colors.danger }]}>{t('remove')}</Text>
             </Pressable>
           ) : null}

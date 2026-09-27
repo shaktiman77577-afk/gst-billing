@@ -20,7 +20,7 @@ import {
 } from '../../src/db/expenses';
 import { formatDate } from '../../src/lib/dates';
 import { formatPaise } from '../../src/lib/money';
-import { colors, radius, shadowSm } from '../../src/theme';
+import { colors, radius } from '../../src/theme';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -89,12 +89,12 @@ export default function ExpensesScreen() {
           <Text style={styles.monthLabel}>
             {MONTHS[ym.m]} {ym.y}
           </Text>
-          <Pressable onPress={() => shift(1)} hitSlop={10} style={styles.navBtn} disabled={isCurrent}>
+          <Pressable onPress={() => shift(1)} hitSlop={10} style={[styles.navBtn, isCurrent && styles.navBtnDisabled]} disabled={isCurrent}>
             <Ionicons name="chevron-forward" size={22} color={isCurrent ? colors.faint : colors.primary} />
           </Pressable>
         </View>
 
-        <View style={styles.totalCard}>
+        <Card style={styles.totalCard}>
           <View style={styles.totalIcon}>
             <Ionicons name="wallet" size={22} color={colors.primary} />
           </View>
@@ -102,7 +102,7 @@ export default function ExpensesScreen() {
             <Text style={styles.statLabel}>{t('e_totalThisMonth')}</Text>
             <Text style={styles.totalValue}>{formatPaise(total)}</Text>
           </View>
-        </View>
+        </Card>
 
         {cats.length > 0 ? (
           <Card>
@@ -148,7 +148,7 @@ export default function ExpensesScreen() {
                   </Text>
                 </View>
                 <Text style={styles.rowAmt}>{formatPaise(e.amount_paise)}</Text>
-                <Pressable onPress={() => confirmDelete(e)} hitSlop={10} style={styles.delBtn}>
+                <Pressable onPress={() => confirmDelete(e)} hitSlop={12} style={styles.delBtn}>
                   <Ionicons name="trash-outline" size={18} color={colors.danger} />
                 </Pressable>
               </Pressable>
@@ -166,19 +166,19 @@ const styles = StyleSheet.create({
   flexOnly: { flex: 1 },
   content: { padding: 16, gap: 14, paddingBottom: 96 },
   monthNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16 },
-  navBtn: { padding: 6 },
-  monthLabel: { fontSize: 17, fontWeight: '800', color: colors.text, minWidth: 110, textAlign: 'center' },
-  totalCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
+  navBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.md,
     backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: radius.lg,
-    padding: 14,
-    ...shadowSm,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
+  navBtnDisabled: { opacity: 0.5 },
+  monthLabel: { fontSize: 17, fontWeight: '800', color: colors.text, minWidth: 110, textAlign: 'center' },
+  totalCard: { flexDirection: 'row', alignItems: 'center' },
   totalIcon: {
     width: 44,
     height: 44,

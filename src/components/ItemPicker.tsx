@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { formatQty, isLowStock, Item } from '../db/items';
 import { formatPaise } from '../lib/money';
-import { colors, radius } from '../theme';
+import { colors, radius, text } from '../theme';
 import { SearchBar } from './SearchBar';
 import { Button } from './ui';
 
@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, backgroundColor: colors.card },
-  title: { fontSize: 19, fontWeight: '700', color: colors.text },
+  title: { fontSize: text.xl, fontWeight: '700', color: colors.text },
   searchWrap: { padding: 12, backgroundColor: colors.primarySoft },
   list: { padding: 12, gap: 8, paddingBottom: 24 },
   newRow: {
@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     marginBottom: 6,
   },
-  newText: { fontSize: 15, fontWeight: '700', color: colors.primary },
+  newText: { fontSize: text.md, fontWeight: '700', color: colors.primary },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -131,8 +131,8 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   rowActive: { borderColor: colors.primary },
-  name: { fontSize: 15, fontWeight: '700', color: colors.text },
-  sub: { fontSize: 12, color: colors.muted, marginTop: 2 },
+  name: { fontSize: text.md, fontWeight: '700', color: colors.text },
+  sub: { fontSize: text.xs, color: colors.muted, marginTop: 2 },
   stepper: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -149,6 +149,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  count: { minWidth: 24, textAlign: 'center', fontWeight: '800', color: colors.primary },
+  count: { minWidth: 24, textAlign: 'center', fontWeight: '800', fontSize: text.md, color: colors.primary },
   footer: { padding: 16, backgroundColor: colors.card, borderTopWidth: 1, borderTopColor: colors.border },
 });

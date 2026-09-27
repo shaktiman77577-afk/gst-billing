@@ -20,7 +20,7 @@ import { StringKey } from '../../src/i18n/strings';
 import { getAlertCounts } from '../../src/lib/alerts';
 import { monthStartIso, todayIso } from '../../src/lib/dates';
 import { formatPaise } from '../../src/lib/money';
-import { colors, radius, shadowSm } from '../../src/theme';
+import { colors, radius, shadowSm, text } from '../../src/theme';
 
 function greetingKey(): StringKey {
   const h = new Date().getHours();
@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: radius.pill,
   },
-  gstText: { color: colors.primary, fontSize: 12, fontWeight: '600', letterSpacing: 0.3 },
+  gstText: { color: colors.primary, fontSize: text.xs, fontWeight: '600', letterSpacing: 0.3 },
   stats: { flexDirection: 'row', gap: 12 },
   stat: {
     flex: 1,
@@ -274,17 +274,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  statLabel: { fontSize: 12, color: colors.muted, fontWeight: '600' },
-  statValue: { fontSize: 20, fontWeight: '800', marginTop: 2 },
+  statLabel: { fontSize: text.xs, color: colors.muted, fontWeight: '600' },
+  statValue: { fontSize: text.xl, fontWeight: '800', marginTop: 2 },
   reminder: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
     backgroundColor: colors.accentSoft,
-    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
     padding: 12,
   },
-  reminderText: { flex: 1, fontSize: 13, color: colors.warning, fontWeight: '600' },
+  reminderText: { flex: 1, fontSize: text.sm, color: colors.warning, fontWeight: '600' },
   alerts: { gap: 10 },
   alertCard: {
     flexDirection: 'row',
@@ -305,7 +307,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   alertLabel: { fontSize: 14, fontWeight: '700', color: colors.text },
-  alertSub: { fontSize: 12.5, color: colors.muted, fontWeight: '600', marginTop: 2 },
+  alertSub: { fontSize: text.sm, color: colors.muted, fontWeight: '600', marginTop: 2 },
   monthCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -325,11 +327,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  monthValue: { fontSize: 20, fontWeight: '800', color: colors.text, marginTop: 2 },
-  monthCount: { fontSize: 12, color: colors.muted, fontWeight: '600' },
+  monthValue: { fontSize: text.xl, fontWeight: '800', color: colors.text, marginTop: 2 },
+  monthCount: { fontSize: text.xs, color: colors.muted, fontWeight: '600' },
   profitBreak: { alignItems: 'flex-end' },
-  profitLine: { fontSize: 11, color: colors.muted, fontWeight: '600', marginTop: 2 },
-  sectionTitle: { fontSize: 15, fontWeight: '700', letterSpacing: 0.2, color: colors.muted, marginTop: 4 },
+  profitLine: { fontSize: text.xs, color: colors.muted, fontWeight: '600', marginTop: 2 },
+  sectionTitle: { fontSize: text.md, fontWeight: '700', letterSpacing: 0.2, color: colors.muted, marginTop: 4 },
   actions: { flexDirection: 'row', gap: 12 },
   action: {
     flex: 1,
@@ -349,6 +351,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  actionLabel: { fontSize: 12.5, fontWeight: '600', color: colors.text },
+  actionLabel: { fontSize: text.sm, fontWeight: '600', color: colors.text },
   rowSep: { borderBottomWidth: 1, borderBottomColor: colors.border },
 });

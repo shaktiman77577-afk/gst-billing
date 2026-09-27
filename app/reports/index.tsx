@@ -111,9 +111,7 @@ export default function ReportsScreen() {
           <Card>
             <Text style={styles.rowText}>{t('g1_exportTitle')}</Text>
             <Text style={styles.meta}>{t('g1_exportHint')}</Text>
-            <View style={styles.g1Btn}>
-              <Button label={t('g1_export')} icon="document-text" onPress={onExportGstr1} loading={exporting} />
-            </View>
+            <Button label={t('g1_export')} icon="document-text" onPress={onExportGstr1} loading={exporting} />
           </Card>
 
           <Card>
@@ -136,9 +134,7 @@ export default function ReportsScreen() {
                 <Ionicons name="chevron-forward" size={20} color={colors.primary} />
               </Pressable>
             </View>
-            <View style={styles.g1Btn}>
-              <Button label={t('gj_export')} icon="cloud-upload" onPress={onExportGstr1Json} loading={exportingJson} />
-            </View>
+            <Button label={t('gj_export')} icon="cloud-upload" onPress={onExportGstr1Json} loading={exportingJson} />
           </Card>
 
           <Card>
@@ -191,11 +187,10 @@ const styles = StyleSheet.create({
   },
   rowText: { fontSize: 15, fontWeight: '600', color: colors.text },
   meta: { fontSize: 13, color: colors.muted, marginTop: 2 },
-  g1Btn: { marginTop: 12 },
-  monthRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16, marginTop: 12 },
+  monthRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16 },
   monthBtn: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: radius.md,
     backgroundColor: colors.primarySoft,
     alignItems: 'center',

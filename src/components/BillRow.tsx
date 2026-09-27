@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { InvoiceListRow } from '../db/invoices';
 import { formatDate } from '../lib/dates';
 import { formatPaise } from '../lib/money';
-import { colors, radius, shadowSm } from '../theme';
+import { colors, radius, shadowSm, text } from '../theme';
 import { StatusBadge } from './StatusBadge';
 
 export function BillRow({ bill, flat = false }: { bill: InvoiceListRow; flat?: boolean }) {
@@ -50,15 +50,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 14,
+    borderRadius: radius.md,
     paddingHorizontal: 14,
     paddingVertical: 14,
     ...shadowSm,
   },
   flex: { flex: 1 },
-  party: { fontSize: 15, fontWeight: '700', color: colors.text },
-  sub: { fontSize: 12.5, color: colors.muted, marginTop: 2 },
+  party: { fontSize: text.md, fontWeight: '700', color: colors.text },
+  sub: { fontSize: text.sm, color: colors.muted, marginTop: 2 },
   right: { alignItems: 'flex-end', gap: 4 },
-  amount: { fontSize: 16, fontWeight: '800', color: colors.text },
-  due: { fontSize: 12, fontWeight: '700', color: colors.warning },
+  amount: { fontSize: text.md, fontWeight: '800', color: colors.text },
+  due: { fontSize: text.xs, fontWeight: '700', color: colors.warning },
 });

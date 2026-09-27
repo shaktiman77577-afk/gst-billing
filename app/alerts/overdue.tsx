@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.dangerSoft,
     borderRadius: radius.md,
   },
-  summaryText: { flex: 1, fontSize: 13.5, fontWeight: '700', color: colors.danger },
+  summaryText: { flex: 1, fontSize: 13, fontWeight: '700', color: colors.danger },
   list: { padding: 16, paddingBottom: 32, gap: 10 },
   row: {
     flexDirection: 'row',
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
   },
   rowMain: { flex: 1, gap: 4 },
   party: { fontSize: 15, fontWeight: '700', color: colors.text },
-  meta: { fontSize: 12.5, color: colors.muted, fontWeight: '500' },
+  meta: { fontSize: 12, color: colors.muted, fontWeight: '500' },
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: radius.pill,
   },
-  badgeText: { fontSize: 11.5, fontWeight: '700', color: colors.danger },
+  badgeText: { fontSize: 12, fontWeight: '700', color: colors.danger },
   rowSide: { alignItems: 'flex-end', gap: 8 },
   balance: { fontSize: 17, fontWeight: '800', color: colors.danger },
 });

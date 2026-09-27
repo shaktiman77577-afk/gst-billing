@@ -3,7 +3,7 @@ import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/d
 import { useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { formatDate, fromIsoDate, toIsoDate } from '../lib/dates';
-import { colors, radius } from '../theme';
+import { colors, radius, text } from '../theme';
 
 type Props = {
   label: string;
@@ -40,7 +40,7 @@ export function DateField({ label, value, onChange, placeholder, clearable }: Pr
           {value ? formatDate(value) : placeholder ?? '—'}
         </Text>
         {clearable && value ? (
-          <Pressable onPress={() => onChange(null)} hitSlop={8}>
+          <Pressable onPress={() => onChange(null)} hitSlop={12}>
             <Ionicons name="close-circle" size={18} color={colors.faint} />
           </Pressable>
         ) : null}
@@ -61,7 +61,7 @@ export function DateField({ label, value, onChange, placeholder, clearable }: Pr
 
 const styles = StyleSheet.create({
   wrap: { flex: 1, gap: 6 },
-  label: { fontSize: 13, fontWeight: '600', color: colors.text },
+  label: { fontSize: text.sm, fontWeight: '600', color: colors.text },
   box: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -69,9 +69,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.md,
-    backgroundColor: colors.background,
+    backgroundColor: colors.surfaceAlt,
     paddingHorizontal: 12,
     paddingVertical: 13,
   },
-  value: { flex: 1, fontSize: 15, color: colors.text },
+  value: { flex: 1, fontSize: text.md, color: colors.text },
 });

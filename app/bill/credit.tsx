@@ -22,7 +22,7 @@ import {
 import { todayIso } from '../../src/lib/dates';
 import { amountInWords, calcBill } from '../../src/lib/gst';
 import { formatPaise } from '../../src/lib/money';
-import { colors, radius } from '../../src/theme';
+import { colors, radius, text } from '../../src/theme';
 
 const MODES: PaymentMode[] = ['cash', 'upi', 'card', 'bank', 'cheque'];
 const lineKey = (l: InvoiceLine) => l.item_id ?? l.name;
@@ -189,7 +189,7 @@ export default function CreditNoteScreen() {
                   </Text>
                 </View>
                 <View style={styles.stepper}>
-                  <Pressable onPress={() => setQ(l.id, cur - 1)} style={styles.stepBtn} disabled={m === 0}>
+                  <Pressable onPress={() => setQ(l.id, cur - 1)} hitSlop={10} style={styles.stepBtn} disabled={m === 0}>
                     <Ionicons name="remove" size={18} color={colors.primary} />
                   </Pressable>
                   <TextInput
@@ -201,7 +201,7 @@ export default function CreditNoteScreen() {
                     editable={m > 0}
                     selectTextOnFocus
                   />
-                  <Pressable onPress={() => setQ(l.id, cur + 1)} style={styles.stepBtn} disabled={m === 0}>
+                  <Pressable onPress={() => setQ(l.id, cur + 1)} hitSlop={10} style={styles.stepBtn} disabled={m === 0}>
                     <Ionicons name="add" size={18} color={colors.primary} />
                   </Pressable>
                 </View>
@@ -254,10 +254,10 @@ function Row({ label, value, bold }: { label: string; value: string; bold?: bool
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.background },
   flexOnly: { flex: 1 },
-  muted: { fontSize: 12, color: colors.muted },
-  party: { fontSize: 18, fontWeight: '700', color: colors.text, marginTop: -6 },
+  muted: { fontSize: text.xs, color: colors.muted },
+  party: { fontSize: text.lg, fontWeight: '700', color: colors.text, marginTop: -6 },
   line: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6 },
-  lineName: { fontSize: 15, fontWeight: '700', color: colors.text },
+  lineName: { fontSize: text.md, fontWeight: '700', color: colors.text },
   stepper: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -278,11 +278,11 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', justifyContent: 'space-between' },
   rowLabel: { fontSize: 14, color: colors.muted },
   rowValue: { fontSize: 14, color: colors.text, fontWeight: '600' },
-  bold: { fontWeight: '800', color: colors.primary, fontSize: 16 },
-  words: { fontSize: 12, color: colors.muted, fontStyle: 'italic' },
+  bold: { fontWeight: '800', color: colors.text, fontSize: text.md },
+  words: { fontSize: text.xs, color: colors.muted, fontStyle: 'italic' },
   switchRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   switchText: { fontSize: 14, fontWeight: '600', color: colors.text },
   footerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  footerLabel: { fontSize: 12, color: colors.muted },
-  footerTotal: { fontSize: 20, fontWeight: '800', color: colors.primary },
+  footerLabel: { fontSize: text.xs, color: colors.muted },
+  footerTotal: { fontSize: text.xl, fontWeight: '800', color: colors.primary },
 });

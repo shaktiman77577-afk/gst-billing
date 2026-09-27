@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 import { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors } from '../theme';
+import { colors, spacing, text } from '../theme';
 
 // White top bar with a back arrow, used on add/edit screens.
 export function FormHeader({ title, right }: { title: string; right?: ReactNode }) {
@@ -25,13 +25,13 @@ const styles = StyleSheet.create({
   wrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 12,
-    paddingBottom: 12,
+    gap: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.md,
     backgroundColor: colors.card,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  back: { padding: 4 },
-  title: { flex: 1, fontSize: 19, fontWeight: '700', color: colors.text },
+  back: { padding: spacing.sm },
+  title: { flex: 1, fontSize: text.xl, fontWeight: '700', color: colors.text },
 });

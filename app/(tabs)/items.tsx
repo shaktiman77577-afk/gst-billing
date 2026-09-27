@@ -16,7 +16,7 @@ import { todayIso } from '../../src/lib/dates';
 import { formatPaise } from '../../src/lib/money';
 import { catalogHtml } from '../../src/pdf/catalog';
 import { sharePdfOnWhatsApp } from '../../src/pdf/share';
-import { colors, radius, shadow } from '../../src/theme';
+import { colors, radius, shadowSm, text } from '../../src/theme';
 
 type Filter = 'all' | 'low';
 
@@ -154,7 +154,7 @@ function ItemRow({ item }: { item: Item }) {
         <Ionicons
           name={isService ? 'construct-outline' : 'cube-outline'}
           size={20}
-          color={isService ? '#B45309' : colors.primary}
+          color={isService ? colors.warning : colors.primary}
         />
       </View>
       <View style={styles.flexOnly}>
@@ -186,8 +186,8 @@ const styles = StyleSheet.create({
   list: { padding: 16, paddingBottom: 100, gap: 10 },
   top: { marginBottom: 4 },
   shareBtn: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: radius.pill,
     backgroundColor: colors.successSoft,
     alignItems: 'center',
@@ -198,9 +198,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
     borderRadius: radius.md,
     padding: 12,
-    ...shadow,
+    ...shadowSm,
   },
   icon: {
     width: 42,
@@ -210,9 +212,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  name: { fontSize: 16, fontWeight: '700', color: colors.text },
-  sub: { fontSize: 12, color: colors.muted, marginTop: 2 },
+  name: { fontSize: text.md, fontWeight: '700', color: colors.text },
+  sub: { fontSize: text.xs, color: colors.muted, marginTop: 2 },
   stockBox: { alignItems: 'flex-end' },
   stock: { fontSize: 14, fontWeight: '800', color: colors.text },
-  stockLabel: { fontSize: 11, color: colors.faint, marginTop: 1 },
+  stockLabel: { fontSize: text.xs, color: colors.muted, marginTop: 1 },
 });

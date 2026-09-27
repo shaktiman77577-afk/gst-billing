@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { StyleSheet, Text, View } from 'react-native';
-import { colors, radius } from '../theme';
+import { colors, radius, spacing, text } from '../theme';
 import { IconName } from './ui';
 
 export function EmptyState({
@@ -32,7 +32,7 @@ export function EmptyState({
 }
 
 const styles = StyleSheet.create({
-  wrap: { alignItems: 'center', paddingVertical: 28, paddingHorizontal: 24, gap: 8 },
+  wrap: { alignItems: 'center', paddingVertical: spacing.xxl, paddingHorizontal: spacing.xl, gap: spacing.sm },
   circle: {
     width: 72,
     height: 72,
@@ -40,19 +40,19 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primaryTint,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 6,
+    marginBottom: spacing.sm,
   },
-  title: { fontSize: 17, fontWeight: '700', color: colors.text, textAlign: 'center' },
-  hint: { fontSize: 14, color: colors.muted, textAlign: 'center' },
+  title: { fontSize: text.lg, fontWeight: '700', color: colors.text, textAlign: 'center' },
+  hint: { fontSize: text.sm, color: colors.muted, textAlign: 'center' },
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: spacing.xs,
     backgroundColor: colors.accentSoft,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
     borderRadius: radius.pill,
-    marginTop: 6,
+    marginTop: spacing.sm,
   },
-  badgeText: { fontSize: 12, fontWeight: '600', color: colors.warning },
+  badgeText: { fontSize: text.xs, fontWeight: '600', color: colors.warning },
 });

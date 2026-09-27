@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { FlatList, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { STATES, stateName } from '../data/states';
-import { colors, radius } from '../theme';
+import { colors, radius, text } from '../theme';
 
 type Props = {
   label: string;
@@ -83,20 +83,20 @@ export function StatePicker({ label, placeholder, searchPlaceholder, value, onCh
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  label: { fontSize: 13, fontWeight: '600', color: colors.text, marginBottom: 6 },
+  label: { fontSize: text.sm, fontWeight: '600', color: colors.text, marginBottom: 6 },
   box: {
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.md,
-    backgroundColor: colors.background,
+    backgroundColor: colors.surfaceAlt,
     paddingHorizontal: 12,
     paddingVertical: 13,
     flexDirection: 'row',
     alignItems: 'center',
   },
-  value: { fontSize: 16, color: colors.text },
-  placeholder: { fontSize: 16, color: colors.muted },
-  error: { color: colors.danger, fontSize: 13, marginTop: 4 },
+  value: { fontSize: text.md, color: colors.text },
+  placeholder: { fontSize: text.md, color: colors.muted },
+  error: { color: colors.danger, fontSize: text.sm, marginTop: 4 },
   modal: { flex: 1, backgroundColor: colors.card },
   header: { flexDirection: 'row', alignItems: 'center', padding: 12, gap: 8 },
   search: {
@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.md,
-    backgroundColor: colors.background,
+    backgroundColor: colors.surfaceAlt,
     paddingHorizontal: 14,
     paddingVertical: 10,
     fontSize: 16,
@@ -121,6 +121,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   rowSelected: { backgroundColor: colors.primaryLight },
-  rowText: { fontSize: 16, color: colors.text },
+  rowText: { fontSize: text.md, color: colors.text },
   code: { fontSize: 14, color: colors.muted },
 });

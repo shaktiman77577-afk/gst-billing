@@ -134,37 +134,37 @@ export default function BusinessSetupScreen() {
 
   return (
     <View style={styles.flex}>
-    {isEdit ? <FormHeader title={t('editBusiness')} /> : null}
-    <Screen
-      edges={isEdit ? ['bottom'] : ['top', 'bottom']}
-      footer={
-        <Button
-          label={isEdit ? t('save') : t('saveBusiness')}
-          icon="checkmark-circle"
-          onPress={onSave}
-          loading={saving}
-        />
-      }
-    >
-      <StatusBar style="dark" />
-      {isEdit ? null : (
-        <View style={styles.header}>
-          <View style={styles.headerText}>
-            <Title>{t('setupTitle')}</Title>
-            <Hint>{t('setupHint')}</Hint>
+      {isEdit ? <FormHeader title={t('editBusiness')} /> : null}
+      <Screen
+        edges={isEdit ? ['bottom'] : ['top', 'bottom']}
+        footer={
+          <Button
+            label={isEdit ? t('save') : t('saveBusiness')}
+            icon="checkmark-circle"
+            onPress={onSave}
+            loading={saving}
+          />
+        }
+      >
+        <StatusBar style="dark" />
+        {isEdit ? null : (
+          <View style={styles.header}>
+            <View style={styles.headerText}>
+              <Title>{t('setupTitle')}</Title>
+              <Hint>{t('setupHint')}</Hint>
+            </View>
+            <LanguageToggle />
           </View>
-          <LanguageToggle />
-        </View>
-      )}
-      {isEdit ? null : (
-        <Button
-          variant="outline"
-          icon="cloud-download-outline"
-          label={t('haveBackup')}
-          onPress={startRestore}
-          loading={restoring}
-        />
-      )}
+        )}
+        {isEdit ? null : (
+          <Button
+            variant="outline"
+            icon="cloud-download-outline"
+            label={t('haveBackup')}
+            onPress={startRestore}
+            loading={restoring}
+          />
+        )}
 
       <Card>
         <SectionHeader icon="storefront" title={t('sectionBusiness')} />
@@ -290,8 +290,8 @@ export default function BusinessSetupScreen() {
         </View>
       </Card>
 
-      <MadeInIndia />
-    </Screen>
+        <MadeInIndia />
+      </Screen>
     </View>
   );
 }

@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, text } from '../theme';
+import { colors, spacing, text } from '../theme';
 
 // Light, professional page header used on the main tabs.
 // `children` (e.g. a SearchBar) renders below the title row.
@@ -36,13 +36,13 @@ export function Header({
 const styles = StyleSheet.create({
   wrap: {
     backgroundColor: colors.white,
-    paddingHorizontal: 16,
-    paddingBottom: 14,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
-    gap: 12,
+    gap: spacing.md,
   },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   flex: { flex: 1 },
   subtitle: { color: colors.muted, fontSize: text.sm, fontWeight: '600' },
   title: { color: colors.text, fontSize: text.xl, fontWeight: '800', marginTop: 1 },

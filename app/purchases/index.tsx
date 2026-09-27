@@ -13,7 +13,7 @@ import { formatDate } from '../../src/lib/dates';
 import { formatPaise } from '../../src/lib/money';
 import { deletePurchase, listPurchases, Purchase, totalPurchases } from '../../src/db/purchases';
 import { monthBounds } from '../../src/db/expenses';
-import { colors, radius, shadowSm } from '../../src/theme';
+import { colors, radius } from '../../src/theme';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -67,12 +67,12 @@ export default function PurchasesScreen() {
           <Text style={styles.monthLabel}>
             {MONTHS[ym.m]} {ym.y}
           </Text>
-          <Pressable onPress={() => shift(1)} hitSlop={10} style={styles.navBtn} disabled={isCurrent}>
+          <Pressable onPress={() => shift(1)} hitSlop={10} style={[styles.navBtn, isCurrent && styles.navBtnDisabled]} disabled={isCurrent}>
             <Ionicons name="chevron-forward" size={22} color={isCurrent ? colors.faint : colors.primary} />
           </Pressable>
         </View>
 
-        <View style={styles.totalCard}>
+        <Card style={styles.totalCard}>
           <View style={styles.totalIcon}>
             <Ionicons name="bag-handle-outline" size={22} color={colors.primary} />
           </View>
@@ -80,7 +80,7 @@ export default function PurchasesScreen() {
             <Text style={styles.statLabel}>{t('pur_totalThisMonth')}</Text>
             <Text style={styles.totalValue}>{formatPaise(total)}</Text>
           </View>
-        </View>
+        </Card>
 
         <Card style={rows.length ? { gap: 0, paddingVertical: 6 } : undefined}>
           {rows.length === 0 ? (
@@ -105,7 +105,7 @@ export default function PurchasesScreen() {
                   </Text>
                 </View>
                 <Text style={styles.rowAmt}>{formatPaise(p.total_paise)}</Text>
-                <Pressable onPress={() => confirmDelete(p)} hitSlop={10} style={styles.delBtn}>
+                <Pressable onPress={() => confirmDelete(p)} hitSlop={12} style={styles.delBtn}>
                   <Ionicons name="trash-outline" size={18} color={colors.danger} />
                 </Pressable>
               </Pressable>
@@ -123,19 +123,19 @@ const styles = StyleSheet.create({
   flexOnly: { flex: 1 },
   content: { padding: 16, gap: 14, paddingBottom: 96 },
   monthNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16 },
-  navBtn: { padding: 6 },
-  monthLabel: { fontSize: 17, fontWeight: '800', color: colors.text, minWidth: 110, textAlign: 'center' },
-  totalCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
+  navBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.md,
     backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: radius.lg,
-    padding: 14,
-    ...shadowSm,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
+  navBtnDisabled: { opacity: 0.5 },
+  monthLabel: { fontSize: 17, fontWeight: '800', color: colors.text, minWidth: 110, textAlign: 'center' },
+  totalCard: { flexDirection: 'row', alignItems: 'center' },
   totalIcon: {
     width: 44,
     height: 44,
@@ -158,6 +158,6 @@ const styles = StyleSheet.create({
   },
   rowTitle: { fontSize: 15, fontWeight: '700', color: colors.text },
   rowMeta: { fontSize: 12, color: colors.muted, marginTop: 2 },
-  rowAmt: { fontSize: 15, fontWeight: '800', color: colors.text },
+  rowAmt: { fontSize: 15, fontWeight: '800', color: colors.danger },
   delBtn: { padding: 6 },
 });
