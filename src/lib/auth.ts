@@ -1,15 +1,24 @@
-import {
-  GoogleAuthProvider,
-  getAuth,
-  signInWithCredential,
-  signOut,
-} from '@react-native-firebase/auth';
-import {
-  GoogleSignin,
-  isErrorWithCode,
-  statusCodes,
-} from '@react-native-google-signin/google-signin';
+// Google login via Supabase Auth.
+//
+// The Google ID token comes from @react-native-google-signin/google-signin
+// (unchanged), but instead of Firebase we hand it to Supabase:
+//   supabase.auth.signInWithIdToken({ provider: 'google', token: idToken })
+// The Supabase session is persisted with AsyncStorage (see src/lib/supabase.ts),
+// so the user stays logged in across restarts, and every Supabase request
+// (storage, RLS) is authenticated as this user.
+//
+// Dashboard prerequisite (done once by the owner):
+//   Supabase → Authentication → Providers → Google → ON, with the Client ID
+//   and Client Secret of the Google Cloud OAuth "Web client" (the same
+//   GOOGLE_WEB_CLIENT_ID below works — its audience matches the token).
+//
+// Firebase note: @react-native-firebase/* stays installed for now so the
+// (currently disabled) record-sync engine still compiles. It is no longer
+// used for login. It can be removed together with the Firebase→Supabase
+// server change when cloud sync is switched on (see NOTES.md).
+import { GoogleSignin, isErrorWithCode, statusCodes } from '@react-native-google-signin/google-signin';
 import { GOOGLE_WEB_CLIENT_ID } from '../config';
+import { supabase } from './supabase';
 
 GoogleSignin.configure({ webClientId: GOOGLE_WEB_CLIENT_ID });
 
@@ -27,10 +36,16 @@ export async function loginWithGoogle(): Promise<GoogleLoginResult> {
     const idToken: string | undefined = response?.data?.idToken ?? response?.idToken;
     if (!idToken) return { ok: false, reason: 'failed', detail: 'no idToken' };
 
-    const credential = GoogleAuthProvider.credential(idToken);
-    const result = await signInWithCredential(getAuth(), credential);
-    const email = result.user.email ?? response?.data?.user?.email ?? '';
-    return { ok: true, uid: result.user.uid, email };
+    const { data, error } = await supabase.auth.signInWithIdToken({
+      provider: 'google',
+      token: idToken,
+    });
+    if (error || !data.user) {
+      return { ok: false, reason: 'failed', detail: error?.message ?? 'supabase sign-in failed' };
+    }
+    const email =
+      data.user.email ?? response?.data?.user?.email ?? response?.user?.email ?? '';
+    return { ok: true, uid: data.user.id, email };
   } catch (error: any) {
     if (isErrorWithCode(error)) {
       if (error.code === statusCodes.SIGN_IN_CANCELLED) return { ok: false, reason: 'cancelled' };
@@ -44,7 +59,8 @@ export async function loginWithGoogle(): Promise<GoogleLoginResult> {
     if (code.includes('network') || message.toLowerCase().includes('network')) {
       return { ok: false, reason: 'noInternet' };
     }
-    // Shown on screen to help find setup problems (e.g. code 10 = SHA-1 mismatch).
+    // Shown on screen to help find setup problems (e.g. a Supabase dashboard
+    // provider misconfiguration surfaces here).
     return { ok: false, reason: 'failed', detail: code || message };
   }
 }
@@ -56,7 +72,7 @@ export async function logoutGoogle(): Promise<void> {
     // ignore
   }
   try {
-    await signOut(getAuth());
+    await supabase.auth.signOut();
   } catch {
     // ignore (e.g. offline)
   }
