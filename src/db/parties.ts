@@ -43,7 +43,7 @@ export const BALANCE_SQL = `
   + COALESCE((SELECT SUM(CASE WHEN i.kind IN ('credit_note', 'sales_return') THEN -i.total_paise ELSE i.total_paise END)
               FROM invoices i
               WHERE i.party_id = p.id AND i.deleted_at IS NULL AND i.cancelled_at IS NULL
-                AND i.doc_type != 'quotation'), 0)
+                AND i.doc_type NOT IN ('quotation', 'proforma')), 0)
   - COALESCE((SELECT SUM(CASE WHEN pay.direction = 'out' THEN -pay.amount_paise ELSE pay.amount_paise END)
               FROM payments pay
               WHERE pay.party_id = p.id AND pay.deleted_at IS NULL), 0)`;

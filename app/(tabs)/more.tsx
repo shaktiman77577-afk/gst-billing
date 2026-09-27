@@ -10,10 +10,12 @@ import { Button, Card, MadeInIndia } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import { stateName } from '../../src/data/states';
 import { useBusiness } from '../../src/hooks/useBusiness';
+import { en as pfEn, hi as pfHi, ParityProformaKey } from '../../src/i18n/parity_proforma';
 import { colors, radius, text } from '../../src/theme';
 
 export default function MoreScreen() {
   const { t, email, logout, language } = useApp();
+  const pf = (k: ParityProformaKey) => (language === 'hi' ? pfHi[k] : pfEn[k]);
   const business = useBusiness();
   const version = Constants.expoConfig?.version ?? '';
 
@@ -159,6 +161,17 @@ export default function MoreScreen() {
             <View style={styles.flexOnly}>
               <Text style={styles.rowText}>{t('newPurchaseReturn')}</Text>
               <Text style={styles.meta}>{t('purchaseReturnHint')}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.faint} />
+          </Pressable>
+          <View style={styles.sep} />
+          <Pressable style={styles.row} onPress={() => router.push('/proforma')}>
+            <View style={styles.rowIcon}>
+              <Ionicons name="clipboard-outline" size={18} color={colors.primary} />
+            </View>
+            <View style={styles.flexOnly}>
+              <Text style={styles.rowText}>{pf('pf_menuTitle')}</Text>
+              <Text style={styles.meta}>{pf('pf_menuHint')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.faint} />
           </Pressable>

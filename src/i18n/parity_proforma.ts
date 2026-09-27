@@ -1,0 +1,41 @@
+// Proforma invoice strings (Worker P2). The coordinator merges these into
+// src/i18n/strings.ts later — do NOT edit strings.ts directly.
+export const en = {
+  pf_proforma: 'Proforma Invoice',
+  pf_proformas: 'Proforma Invoices',
+  pf_newProforma: 'New Proforma',
+  pf_editProforma: 'Edit Proforma',
+  pf_saveProforma: 'Save Proforma',
+  pf_proformaHint: 'An estimate with tax breakup. It does not affect stock, GST totals or party balances.',
+  pf_convertToInvoice: 'Convert to Invoice',
+  pf_convertedTo: 'Converted to invoice',
+  pf_convertedNote: 'This proforma was converted. The bill below carries the real sale.',
+  pf_noProformas: 'No proforma invoices yet',
+  pf_noProformasHint: 'Create one with the + button. It will not affect stock, sales totals or party balances.',
+  pf_menuTitle: 'Proforma Invoices',
+  pf_menuHint: 'Estimates with tax breakup, convertible to bills',
+  pf_cancelProforma: 'Cancel proforma',
+  pf_cancelProformaConfirm: 'Cancel this proforma? It will not count anywhere. The proforma number stays used.',
+  pf_proformaCancelled: 'This proforma is cancelled',
+  pf_errNotProforma: 'This document is not a proforma invoice',
+};
+export type ParityProformaKey = keyof typeof en;
+export const hi: Record<ParityProformaKey, string> = {
+  pf_proforma: 'Proforma Invoice',
+  pf_proformas: 'Proforma Invoices',
+  pf_newProforma: 'Naya Proforma',
+  pf_editProforma: 'Proforma badlein',
+  pf_saveProforma: 'Proforma save karein',
+  pf_proformaHint: 'Tax breakup ke saath anumaan. Isse stock, GST total ya party hisaab par koi asar nahi hoga.',
+  pf_convertToInvoice: 'Invoice banayein',
+  pf_convertedTo: 'Invoice bana',
+  pf_convertedNote: 'Ye proforma convert ho chuka hai. Neeche wala bill asli sale hai.',
+  pf_noProformas: 'Abhi koi proforma invoice nahi',
+  pf_noProformasHint: '+ button se banayein. Isse stock, sales total ya party balance par koi asar nahi hoga.',
+  pf_menuTitle: 'Proforma Invoices',
+  pf_menuHint: 'Tax breakup wale anumaan, bill mein convert ho sakte hain',
+  pf_cancelProforma: 'Proforma cancel karein',
+  pf_cancelProformaConfirm: 'Ye proforma cancel karein? Ye kahin nahi ginega. Proforma number wahi rahega.',
+  pf_proformaCancelled: 'Ye proforma cancel ho chuka hai',
+  pf_errNotProforma: 'Ye document proforma invoice nahi hai',
+};

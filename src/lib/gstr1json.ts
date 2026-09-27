@@ -15,7 +15,7 @@
 //   doc_issue — documents issued in the month (Table 13).
 //
 // Explicitly excluded from every section: quotations (doc_type='quotation'),
-// bills of supply, soft-deleted and cancelled documents. Cancelled documents
+// proformas (doc_type='proforma'), bills of supply, soft-deleted and cancelled documents. Cancelled documents
 // still count in doc_issue (they were issued, then cancelled).
 //
 // Money is integer paise in the DB and becomes rupees (2 decimals) at the JSON

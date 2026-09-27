@@ -58,6 +58,7 @@ export default function HomeScreen() {
               .filter(
                 (r) =>
                   r.doc_type !== 'quotation' &&
+                  r.doc_type !== 'proforma' &&
                   r.invoice_date >= txRange.from &&
                   r.invoice_date <= txRange.to,
               )
@@ -65,7 +66,9 @@ export default function HomeScreen() {
           ),
         );
       } else {
-        listInvoices(db, businessId, 5).then((rows) => setRecent(rows.filter((r) => r.doc_type !== 'quotation')));
+        listInvoices(db, businessId, 5).then((rows) =>
+          setRecent(rows.filter((r) => r.doc_type !== 'quotation' && r.doc_type !== 'proforma')),
+        );
       }
       salesSummary(db, businessId, monthStartIso()).then(setMonth);
       totalExpenses(db, businessId, monthStartIso(), todayIso()).then(setMonthExp);

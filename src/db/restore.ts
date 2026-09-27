@@ -34,7 +34,7 @@ async function changeStock(db: SQLiteDatabase, itemId: string, delta: number, no
  */
 function classifyInvoice(kind: string, docType: string): RecycleDocKind {
   if (kind === 'credit_note' || kind === 'sales_return') return 'credit_note';
-  if (docType === 'quotation') return 'quotation';
+  if (docType === 'quotation' || docType === 'proforma') return 'quotation';
   return 'invoice';
 }
 
@@ -45,7 +45,7 @@ function classifyInvoice(kind: string, docType: string): RecycleDocKind {
  * matching cancelInvoice (which skips them too).
  */
 function liveStockSign(kind: string, docType: string): number {
-  if (docType === 'quotation') return 0;
+  if (docType === 'quotation' || docType === 'proforma') return 0;
   if (kind === 'credit_note' || kind === 'sales_return') return 1;
   return -1;
 }
