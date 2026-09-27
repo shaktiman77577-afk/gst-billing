@@ -4,6 +4,8 @@ import { StatusBar } from 'expo-status-bar';
 import { useCallback, useMemo, useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 import { BillRow } from '../../src/components/BillRow';
+import { DateRangeButton } from '../../src/components/DateRangeButton';
+import { DateRangePicker } from '../../src/components/DateRangePicker';
 import { EmptyState } from '../../src/components/EmptyState';
 import { Fab } from '../../src/components/Fab';
 import { Header } from '../../src/components/Header';
@@ -12,6 +14,7 @@ import { Chips } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import { getOverdueInvoices } from '../../src/lib/alerts';
 import { todayIso } from '../../src/lib/dates';
+import { DateRange } from '../../src/lib/dateRange';
 import { InvoiceListRow, InvoiceStatus, listInvoices } from '../../src/db/invoices';
 import { colors } from '../../src/theme';
 
@@ -25,6 +28,9 @@ export default function BillsScreen() {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
   const [overdueIds, setOverdueIds] = useState<Set<string>>(new Set());
+  // Last chosen range for this screen (useState only — no schema changes).
+  const [billRange, setBillRange] = useState<DateRange | null>(null);
+  const [rangeSheet, setRangeSheet] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -53,9 +59,10 @@ export default function BillsScreen() {
               : filter === 'quotation'
                 ? b.doc_type === 'quotation'
                 : b.kind === 'invoice' && b.doc_type !== 'quotation' && b.status === filter)) &&
+        (!billRange || (b.invoice_date >= billRange.from && b.invoice_date <= billRange.to)) &&
         (!q || b.party_name.toLowerCase().includes(q) || b.invoice_no.toLowerCase().includes(q)),
     );
-  }, [bills, query, filter, overdueIds]);
+  }, [bills, query, filter, overdueIds, billRange]);
 
   return (
     <View style={styles.flex}>
@@ -85,6 +92,12 @@ export default function BillsScreen() {
                 value={filter}
                 onChange={setFilter}
               />
+              <DateRangeButton
+                style={styles.rangeBtn}
+                range={billRange}
+                onPress={() => setRangeSheet(true)}
+                onClear={() => setBillRange(null)}
+              />
             </View>
           ) : null
         }
@@ -100,6 +113,15 @@ export default function BillsScreen() {
         renderItem={({ item }) => <BillRow bill={item} />}
       />
       <Fab label={t('newBill')} onPress={() => router.push('/bill/new')} />
+      <DateRangePicker
+        visible={rangeSheet}
+        onClose={() => setRangeSheet(false)}
+        value={billRange}
+        onApply={(r) => {
+          setBillRange(r);
+          setRangeSheet(false);
+        }}
+      />
     </View>
   );
 }
@@ -108,4 +130,5 @@ const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.background },
   list: { padding: 16, paddingBottom: 100, gap: 10 },
   top: { marginBottom: 4 },
+  rangeBtn: { marginTop: 8, alignSelf: 'flex-start' },
 });
