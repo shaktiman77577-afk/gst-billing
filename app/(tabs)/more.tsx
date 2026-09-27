@@ -86,6 +86,17 @@ export default function MoreScreen() {
             <Ionicons name="chevron-forward" size={18} color={colors.faint} />
           </Pressable>
           <View style={styles.sep} />
+          <Pressable style={styles.row} onPress={() => router.push('/settings/membership')}>
+            <View style={styles.rowIcon}>
+              <Ionicons name="star-outline" size={18} color={colors.primary} />
+            </View>
+            <View style={styles.flexOnly}>
+              <Text style={styles.rowText}>{t('mem_title')}</Text>
+              <Text style={styles.meta}>{t('mem_rowHint')}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.faint} />
+          </Pressable>
+          <View style={styles.sep} />
           <Pressable style={styles.row} onPress={() => router.push('/reports')}>
             <View style={styles.rowIcon}>
               <Ionicons name="bar-chart" size={18} color={colors.primary} />

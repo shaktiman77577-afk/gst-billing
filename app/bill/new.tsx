@@ -9,6 +9,7 @@ import { DateField } from '../../src/components/DateField';
 import { FormHeader } from '../../src/components/FormHeader';
 import { ItemPicker } from '../../src/components/ItemPicker';
 import { PartyPicker } from '../../src/components/PartyPicker';
+import { PaywallSheet } from '../../src/components/PaywallSheet';
 import { Button, Card, Chips, ErrorText, Field, Screen, SectionHeader } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import { stateName } from '../../src/data/states';
@@ -25,6 +26,7 @@ import { nextQuotationNo, saveQuotation } from '../../src/db/quotations';
 import { Item, listItems } from '../../src/db/items';
 import { listParties, PartyWithBalance } from '../../src/db/parties';
 import { useBusiness } from '../../src/hooks/useBusiness';
+import { useMembership } from '../../src/hooks/useMembership';
 import { todayIso } from '../../src/lib/dates';
 import { amountInWords, calcBill } from '../../src/lib/gst';
 import { formatPaise, paiseToInput, toPaise } from '../../src/lib/money';
@@ -44,6 +46,7 @@ export default function BillFormScreen() {
   const business = useBusiness();
   const { id, partyId: presetPartyId } = useLocalSearchParams<{ id?: string; partyId?: string }>();
   const editId = id && id !== 'new' ? id : null;
+  const mem = useMembership();
 
   const [parties, setParties] = useState<PartyWithBalance[]>([]);
   const [items, setItems] = useState<Item[]>([]);
@@ -280,6 +283,13 @@ export default function BillFormScreen() {
         { value: 'bill_of_supply', label: t('billOfSupply') },
         { value: 'quotation', label: t('q_quotation') },
       ];
+
+  // Paywall: only when creating a new bill, never while editing.
+  // Fail-open: block only when the membership state is known to be exhausted.
+  const showPaywall = !editId && !mem.loading && !mem.canCreateBill;
+  if (showPaywall) {
+    return <PaywallSheet visible={true} onClose={() => router.back()} />;
+  }
 
   return (
     <View style={styles.flex}>
