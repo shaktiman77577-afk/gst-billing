@@ -16,6 +16,7 @@ import { InvoiceListRow, listInvoices, salesSummary } from '../../src/db/invoice
 import { totalExpenses } from '../../src/db/expenses';
 import { partyTotals } from '../../src/db/parties';
 import { useBusiness } from '../../src/hooks/useBusiness';
+import { parityPayment } from '../../src/i18n/parity_payment';
 import { StringKey } from '../../src/i18n/strings';
 import { getAlertCounts } from '../../src/lib/alerts';
 import { monthStartIso, todayIso } from '../../src/lib/dates';
@@ -31,7 +32,8 @@ function greetingKey(): StringKey {
 
 export default function HomeScreen() {
   const db = useSQLiteContext();
-  const { t, businessId } = useApp();
+  const { t, businessId, language } = useApp();
+  const pt = parityPayment[language ?? 'en'];
   const business = useBusiness();
   const [totals, setTotals] = useState({ toCollect: 0, toPay: 0 });
   const [recent, setRecent] = useState<InvoiceListRow[]>([]);
@@ -122,6 +124,23 @@ export default function HomeScreen() {
               <Text style={[styles.statValue, { color: colors.danger }]}>{formatPaise(totals.toPay)}</Text>
             </View>
           </View>
+        </View>
+
+        <View style={styles.payActions}>
+          <Pressable
+            onPress={() => router.push({ pathname: '/payment/new', params: { direction: 'in' } })}
+            style={({ pressed }) => [styles.payBtn, { backgroundColor: colors.successSoft }, pressed && { opacity: 0.8 }]}
+          >
+            <Ionicons name="arrow-down-circle" size={22} color={colors.success} />
+            <Text style={[styles.payLabel, { color: colors.success }]}>{pt.receivePayment}</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => router.push({ pathname: '/payment/new', params: { direction: 'out' } })}
+            style={({ pressed }) => [styles.payBtn, { backgroundColor: colors.dangerSoft }, pressed && { opacity: 0.8 }]}
+          >
+            <Ionicons name="arrow-up-circle" size={22} color={colors.danger} />
+            <Text style={[styles.payLabel, { color: colors.danger }]}>{pt.paymentOutAction}</Text>
+          </Pressable>
         </View>
 
         {remind ? (
@@ -280,6 +299,21 @@ const styles = StyleSheet.create({
   },
   statLabel: { fontSize: text.xs, color: colors.muted, fontWeight: '600' },
   statValue: { fontSize: text.xl, fontWeight: '800', marginTop: 2 },
+  payActions: { flexDirection: 'row', gap: 12 },
+  payBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    paddingVertical: 14,
+    ...shadowSm,
+  },
+  payLabel: { fontSize: text.md, fontWeight: '700' },
   reminder: {
     flexDirection: 'row',
     alignItems: 'center',

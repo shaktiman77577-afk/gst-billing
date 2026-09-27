@@ -11,6 +11,7 @@ import { SearchBar } from '../../src/components/SearchBar';
 import { Chips } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import { listParties, PartyWithBalance } from '../../src/db/parties';
+import { parityPayment } from '../../src/i18n/parity_payment';
 import { formatPaise } from '../../src/lib/money';
 import { colors, radius, shadow, shadowSm, text } from '../../src/theme';
 
@@ -18,7 +19,8 @@ type Filter = 'all' | 'customer' | 'supplier';
 
 export default function PartiesScreen() {
   const db = useSQLiteContext();
-  const { t, businessId } = useApp();
+  const { t, businessId, language } = useApp();
+  const pt = parityPayment[language ?? 'en'];
   const [parties, setParties] = useState<PartyWithBalance[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [query, setQuery] = useState('');
@@ -77,6 +79,22 @@ export default function PartiesScreen() {
                 <Text style={styles.totalLabel}>{t('toPay')}</Text>
                 <Text style={[styles.totalValue, { color: colors.danger }]}>{formatPaise(totals.pay)}</Text>
               </View>
+            </View>
+            <View style={styles.quickPay}>
+              <Pressable
+                onPress={() => router.push({ pathname: '/payment/new', params: { direction: 'in' } })}
+                style={({ pressed }) => [styles.quickBtn, pressed && { opacity: 0.8 }]}
+              >
+                <Ionicons name="arrow-down-circle" size={18} color={colors.success} />
+                <Text style={[styles.quickLabel, { color: colors.success }]}>{pt.receivePayment}</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => router.push({ pathname: '/payment/new', params: { direction: 'out' } })}
+                style={({ pressed }) => [styles.quickBtn, pressed && { opacity: 0.8 }]}
+              >
+                <Ionicons name="arrow-up-circle" size={18} color={colors.danger} />
+                <Text style={[styles.quickLabel, { color: colors.danger }]}>{pt.paymentOutAction}</Text>
+              </Pressable>
             </View>
             <Chips
               options={[
@@ -168,6 +186,20 @@ const styles = StyleSheet.create({
   divider: { width: 1, backgroundColor: colors.border },
   totalLabel: { fontSize: text.xs, color: colors.muted, fontWeight: '600' },
   totalValue: { fontSize: text.lg, fontWeight: '800' },
+  quickPay: { flexDirection: 'row', gap: 10 },
+  quickBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    paddingVertical: 10,
+  },
+  quickLabel: { fontSize: text.sm, fontWeight: '700' },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
