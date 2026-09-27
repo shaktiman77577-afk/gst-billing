@@ -60,7 +60,7 @@ export default function BillsScreen() {
                 ? b.kind === 'sales_return'
               : filter === 'quotation'
                 ? b.doc_type === 'quotation'
-                : b.kind === 'invoice' && b.doc_type !== 'quotation' && b.status === filter)) &&
+                : b.kind === 'invoice' && b.doc_type !== 'quotation' && b.doc_type !== 'delivery_challan' && b.status === filter)) &&
         (!billRange || (b.invoice_date >= billRange.from && b.invoice_date <= billRange.to)) &&
         (!q || b.party_name.toLowerCase().includes(q) || b.invoice_no.toLowerCase().includes(q)),
     );

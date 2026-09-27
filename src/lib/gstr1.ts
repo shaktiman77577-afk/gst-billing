@@ -7,7 +7,8 @@
 //          ('credit_note','sales_return'), all money values NEGATED
 //          so the CA can sum the whole sheet directly (see NOTES.md).
 //
-// Explicitly excluded: quotations (doc_type='quotation'), bills of supply
+// Explicitly excluded: quotations (doc_type='quotation'), delivery challans
+// (doc_type='delivery_challan'), bills of supply
 // (doc_type='bill_of_supply'), soft-deleted and cancelled docs.
 //
 // Read-only: no DB writes, no schema changes. Money stays in integer paise

@@ -9,11 +9,13 @@ import { LanguageToggle } from '../../src/components/LanguageToggle';
 import { Button, Card, MadeInIndia } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import { stateName } from '../../src/data/states';
+import { en as chEn, hi as chHi, ParityChallanKey } from '../../src/i18n/parity_challan';
 import { useBusiness } from '../../src/hooks/useBusiness';
 import { colors, radius, text } from '../../src/theme';
 
 export default function MoreScreen() {
   const { t, email, logout, language } = useApp();
+  const tr = (k: ParityChallanKey) => (language === 'hi' ? chHi : chEn)[k];
   const business = useBusiness();
   const version = Constants.expoConfig?.version ?? '';
 
@@ -159,6 +161,17 @@ export default function MoreScreen() {
             <View style={styles.flexOnly}>
               <Text style={styles.rowText}>{t('newPurchaseReturn')}</Text>
               <Text style={styles.meta}>{t('purchaseReturnHint')}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.faint} />
+          </Pressable>
+          <View style={styles.sep} />
+          <Pressable style={styles.row} onPress={() => router.push('/challans')}>
+            <View style={styles.rowIcon}>
+              <Ionicons name="car-outline" size={18} color={colors.primary} />
+            </View>
+            <View style={styles.flexOnly}>
+              <Text style={styles.rowText}>{tr('ch_menuTitle')}</Text>
+              <Text style={styles.meta}>{tr('ch_menuHint')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.faint} />
           </Pressable>
