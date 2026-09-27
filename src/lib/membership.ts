@@ -48,9 +48,41 @@ function isNetworkError(e: unknown): boolean {
   return /network|fetch|failed to fetch|network request failed|timed out|timeout/i.test(msg);
 }
 
+/**
+ * Pulls a human-readable message out of anything thrown. Supabase and
+ * Razorpay reject with oddly-shaped objects (nested `message` /
+ * `description` / `error` fields, sometimes objects inside objects); a naive
+ * String(obj) renders as "[object Object]" — which is exactly what users saw
+ * in the Membership alert. This never returns "[object Object]".
+ */
+function readableError(e: unknown, depth = 0): string {
+  if (typeof e === 'string') {
+    const s = e.trim();
+    return s === '[object Object]' ? '' : s;
+  }
+  if (typeof e === 'number' || typeof e === 'boolean') return String(e);
+  if (e && typeof e === 'object' && depth < 3) {
+    const o = e as Record<string, unknown>;
+    for (const key of ['message', 'description', 'msg', 'error', 'details']) {
+      const v = o[key];
+      if (typeof v === 'string' && v.trim() && v.trim() !== '[object Object]') return v.trim();
+    }
+    for (const key of ['message', 'error', 'cause']) {
+      const inner = readableError(o[key], depth + 1);
+      if (inner) return inner;
+    }
+    try {
+      const j = JSON.stringify(o);
+      if (j && j !== '{}') return j;
+    } catch {
+      /* not serializable — fall through to '' */
+    }
+  }
+  return '';
+}
+
 function errMessage(e: unknown, fallback: string): string {
-  const m = String((e as { message?: unknown })?.message ?? e ?? '').trim();
-  return m || fallback;
+  return readableError(e) || fallback;
 }
 
 /** Active plans, cheapest first. Falls back to FALLBACK_PLANS offline. */
@@ -137,7 +169,7 @@ export async function createOrder(planId: string): Promise<CreateOrderResult> {
     throw new Error(isNetworkError(e) ? 'no_network' : errMessage(e, 'order_failed'));
   }
   const fnError = data?.error;
-  if (fnError) throw new Error(String(fnError));
+  if (fnError) throw new Error(readableError(fnError) || 'order_failed');
   const order_id = String(data?.order_id ?? data?.id ?? '');
   if (!order_id) throw new Error('order_failed');
   return {
@@ -179,7 +211,7 @@ export async function verifyPayment(p: VerifyPaymentParams): Promise<{ ok: boole
     throw new Error(isNetworkError(e) ? 'no_network' : errMessage(e, 'verify_failed'));
   }
   const fnError = data?.error;
-  if (fnError || data?.ok === false) throw new Error(String(fnError ?? 'verify_failed'));
+  if (fnError || data?.ok === false) throw new Error(readableError(fnError) || 'verify_failed');
   return { ok: true, expires_at: String(data?.expires_at ?? '') };
 }
 
