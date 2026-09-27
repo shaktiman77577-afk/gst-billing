@@ -5,6 +5,8 @@ import { StatusBar } from 'expo-status-bar';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { DateRangeButton } from '../../src/components/DateRangeButton';
+import { DateRangePicker } from '../../src/components/DateRangePicker';
 import { FormHeader } from '../../src/components/FormHeader';
 import { Button, Card } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
@@ -13,16 +15,26 @@ import { formatPaise } from '../../src/lib/money';
 import { receivablesTotal } from '../../src/lib/reports';
 import { exportGstr1Csv } from '../../src/lib/gstr1';
 import { exportGstr1Json, fpForDate, fpLabel, shiftFp } from '../../src/lib/gstr1json';
+import { exportTallyXml } from '../../src/lib/tally';
+import { en as tallyEn, hi as tallyHi, ParityTallyKey } from '../../src/i18n/parity_tally';
+import { DateRange, makeRange } from '../../src/lib/dateRange';
 import { colors, radius, text } from '../../src/theme';
 
 export default function ReportsScreen() {
   const db = useSQLiteContext();
-  const { t } = useApp();
+  const { t, language } = useApp();
+  const tt = useCallback(
+    (key: ParityTallyKey) => (language === 'hi' ? tallyHi : tallyEn)[key],
+    [language],
+  );
   const business = useBusiness();
   const [due, setDue] = useState<number | null>(null);
   const [exporting, setExporting] = useState(false);
   const [fp, setFp] = useState(() => fpForDate(new Date()));
   const [exportingJson, setExportingJson] = useState(false);
+  const [talRange, setTalRange] = useState<DateRange>(() => makeRange('thisMonth'));
+  const [talSheet, setTalSheet] = useState(false);
+  const [tallying, setTallying] = useState(false);
 
   const onExportGstr1 = useCallback(async () => {
     if (!business || exporting) return;
@@ -72,6 +84,23 @@ export default function ReportsScreen() {
     { route: '/reports/top' as const, icon: 'trophy' as const, title: t('r_topLists'), hint: t('r_topListsHint') },
   ];
 
+  const onExportTally = useCallback(async () => {
+    if (!business || tallying) return;
+    setTallying(true);
+    try {
+      const res = await exportTallyXml(db, business.id, business.name, talRange.from, talRange.to);
+      if (!res) {
+        Alert.alert(tt('tal_noDataTitle'), tt('tal_noData'));
+      } else {
+        Alert.alert(tt('tal_doneTitle'), tt('tal_done'));
+      }
+    } catch {
+      Alert.alert(tt('tal_failedTitle'), tt('tal_failed'));
+    } finally {
+      setTallying(false);
+    }
+  }, [business, db, tallying, talRange, tt]);
+
   useFocusEffect(
     useCallback(() => {
       let active = true;
@@ -90,6 +119,16 @@ export default function ReportsScreen() {
     <View style={styles.flex}>
       <StatusBar style="dark" />
       <FormHeader title={t('r_reports')} />
+      <DateRangePicker
+        visible={talSheet}
+        onClose={() => setTalSheet(false)}
+        value={talRange}
+        allowClear={false}
+        onApply={(r) => {
+          if (r) setTalRange(r);
+          setTalSheet(false);
+        }}
+      />
       <SafeAreaView style={styles.flex} edges={['bottom']}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <Card>
@@ -135,6 +174,15 @@ export default function ReportsScreen() {
               </Pressable>
             </View>
             <Button label={t('gj_export')} icon="cloud-upload" onPress={onExportGstr1Json} loading={exportingJson} />
+          </Card>
+
+          <Card>
+            <Text style={styles.rowText}>{tt('tal_title')}</Text>
+            <Text style={styles.meta}>{tt('tal_hint')}</Text>
+            <View style={styles.tallyRow}>
+              <DateRangeButton range={talRange} onPress={() => setTalSheet(true)} />
+            </View>
+            <Button label={tt('tal_export')} icon="swap-horizontal" onPress={onExportTally} loading={tallying} />
           </Card>
 
           <Card>
@@ -197,5 +245,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   monthLabel: { fontSize: 16, fontWeight: '700', color: colors.text, minWidth: 96, textAlign: 'center' },
+  tallyRow: { alignItems: 'flex-start', marginVertical: 8 },
   sep: { height: 1, backgroundColor: colors.border },
 });
