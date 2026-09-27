@@ -3,7 +3,8 @@ import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Image, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '../../src/components/Text';
 import { FormHeader } from '../../src/components/FormHeader';
 import { Button, Card, Field, MenuRow, Screen, SectionHeader } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
@@ -290,7 +291,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: 12 },
   muted: { fontSize: 12, color: colors.muted },
   preview: { backgroundColor: colors.primarySoft, borderRadius: radius.md, padding: 12, gap: 2 },
-  previewValue: { fontSize: 20, fontWeight: '800', color: colors.primary, letterSpacing: 0.5 },
+  previewValue: { fontSize: 18, fontWeight: '800', color: colors.primary, letterSpacing: 0.1 },
   imgRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   imgBox: {
     borderWidth: 1,

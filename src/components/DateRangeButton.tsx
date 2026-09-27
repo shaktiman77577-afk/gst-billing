@@ -2,7 +2,8 @@
 // date sublabel), or "Dates"/"Tareekh" when nothing is chosen. Optional clear
 // (×) resets to null when the caller supports an unfiltered state.
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Pressable, StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
+import { Pressable, StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
+import { Text } from './Text';
 import { useApp } from '../context/AppContext';
 import { DR_PRESET_LABELS } from '../lib/dateRange';
 import { DateRange } from '../lib/dateRange';
@@ -55,13 +56,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: radius.pill,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    minHeight: 44,
+    borderRadius: radius.md,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    minHeight: 36,
   },
   texts: { maxWidth: 220 },
-  label: { fontSize: text.sm, fontWeight: '700', color: colors.text },
+  label: { fontSize: text.sm, fontWeight: '500', color: colors.text },
   sub: { fontSize: text.xs, color: colors.muted, marginTop: 1 },
   clear: { padding: 4 },
 });

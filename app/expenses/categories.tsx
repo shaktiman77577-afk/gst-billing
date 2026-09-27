@@ -3,7 +3,8 @@ import { useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { Fragment, useCallback, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '../../src/components/Text';
 import { EmptyState } from '../../src/components/EmptyState';
 import { FormHeader } from '../../src/components/FormHeader';
 import { Button, Card, ErrorText, Field, Hairline, IconName, MenuRow, Screen } from '../../src/components/ui';
@@ -142,10 +143,10 @@ const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.background },
   cardLabel: {
     fontSize: 12,
-    fontWeight: '700',
-    color: colors.faint,
+    fontWeight: '500',
+    color: colors.muted,
     textTransform: 'uppercase',
-    letterSpacing: 0.6,
+    letterSpacing: 0.4,
     marginBottom: 4,
   },
   delBtn: { padding: 6 },

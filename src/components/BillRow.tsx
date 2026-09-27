@@ -1,9 +1,10 @@
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from './Text';
 import { InvoiceListRow } from '../db/invoices';
 import { formatDate } from '../lib/dates';
 import { formatPaise } from '../lib/money';
-import { colors, radius, shadowSm, text } from '../theme';
+import { colors, radius, tabular, text } from '../theme';
 import { StatusBadge } from './StatusBadge';
 
 export function BillRow({ bill, flat = false }: { bill: InvoiceListRow; flat?: boolean }) {
@@ -50,15 +51,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    ...shadowSm,
   },
   flex: { flex: 1 },
-  party: { fontSize: text.md, fontWeight: '700', color: colors.text },
-  sub: { fontSize: text.sm, color: colors.muted, marginTop: 2 },
+  party: { fontSize: text.md, fontWeight: '500', color: colors.text },
+  sub: { fontSize: text.xs, color: colors.muted, marginTop: 2 },
   right: { alignItems: 'flex-end', gap: 4 },
-  amount: { fontSize: text.md, fontWeight: '800', color: colors.text },
-  due: { fontSize: text.xs, fontWeight: '700', color: colors.warning },
+  amount: { fontSize: text.md, fontWeight: '700', color: colors.text, ...tabular },
+  due: { fontSize: text.xs, fontWeight: '500', color: colors.warning, ...tabular },
 });

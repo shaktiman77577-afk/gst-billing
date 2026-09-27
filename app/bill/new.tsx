@@ -3,14 +3,15 @@ import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Switch, View } from 'react-native';
+import { Text, TextInput } from '../../src/components/Text';
 import { BillLineCard } from '../../src/components/BillLineCard';
 import { DateField } from '../../src/components/DateField';
 import { FormHeader } from '../../src/components/FormHeader';
 import { ItemPicker } from '../../src/components/ItemPicker';
 import { PartyPicker } from '../../src/components/PartyPicker';
 import { PaywallSheet } from '../../src/components/PaywallSheet';
-import { Button, Card, Chips, ErrorText, Field, IconChip, MenuRow, Screen, SectionHeader } from '../../src/components/ui';
+import { Button, Card, Chips, ErrorText, Field, MenuRow, Screen } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import { stateName } from '../../src/data/states';
 import {
@@ -31,7 +32,7 @@ import { useMembership } from '../../src/hooks/useMembership';
 import { todayIso } from '../../src/lib/dates';
 import { amountInWords, calcBill } from '../../src/lib/gst';
 import { formatPaise, paiseToInput, toPaise } from '../../src/lib/money';
-import { colors, radius, text } from '../../src/theme';
+import { colors, radius, spacing, text } from '../../src/theme';
 
 type Line = LineDraft & { key: string };
 type PartyChoice = PartyWithBalance | null | undefined; // null = Cash Sale, undefined = not chosen
@@ -330,7 +331,6 @@ export default function BillFormScreen() {
             <View style={styles.footerBtn}>
               <Button
                 label={isQuotation ? t('q_saveQuotation') : t('saveBill')}
-                icon="checkmark-circle"
                 onPress={onSave}
                 loading={saving}
               />
@@ -340,11 +340,27 @@ export default function BillFormScreen() {
       >
         {/* Document type */}
         {!docTypeLocked ? (
-          <Card>
-            <Text style={styles.label}>{t('q_docType')}</Text>
-            <Chips options={typeOptions} value={docType} onChange={setDocTypeChoice} />
+          <View style={styles.docTypeWrap}>
+            <View style={styles.segment} accessibilityRole="tablist">
+              {typeOptions.map((o) => {
+                const on = o.value === docType;
+                return (
+                  <Pressable
+                    key={o.value}
+                    accessibilityRole="tab"
+                    accessibilityState={{ selected: on }}
+                    onPress={() => setDocTypeChoice(o.value)}
+                    style={[styles.segmentBtn, on && styles.segmentBtnOn]}
+                  >
+                    <Text style={[styles.segmentText, on && styles.segmentTextOn]} numberOfLines={1}>
+                      {o.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
             {isQuotation ? <Text style={styles.note}>{t('q_quotationHint')}</Text> : null}
-          </Card>
+          </View>
         ) : null}
 
         {/* Number & dates */}
@@ -370,7 +386,7 @@ export default function BillFormScreen() {
 
         {/* Party */}
         <Card>
-          <SectionHeader icon="person" title={t('party')} />
+          <Text style={styles.overline}>{t('party')}</Text>
           <MenuRow
             icon={party === undefined ? 'person-add-outline' : party ? 'person' : 'cash-outline'}
             title={party === undefined ? t('selectParty') : party ? party.name : t('cashSale')}
@@ -397,7 +413,7 @@ export default function BillFormScreen() {
 
         {/* Items */}
         <Card>
-          <SectionHeader icon="cube" title={`${t('itemsLabel')}${lines.length ? ` (${lines.length})` : ''}`} />
+          <Text style={styles.overline}>{`${t('itemsLabel')}${lines.length ? ` (${lines.length})` : ''}`}</Text>
           {lines.map((l, i) => (
             <BillLineCard
               key={l.key}
@@ -408,7 +424,13 @@ export default function BillFormScreen() {
               onRemove={() => setLines((ls) => ls.filter((x) => x.key !== l.key))}
             />
           ))}
-          <Button variant="outline" icon="add" label={t('addItems')} onPress={() => setItemsOpen(true)} />
+          <Pressable
+            onPress={() => setItemsOpen(true)}
+            style={({ pressed }) => [styles.addItems, pressed && { opacity: 0.7 }]}
+          >
+            <Ionicons name="add" size={18} color={colors.primary} />
+            <Text style={styles.addItemsText}>{t('addItems')}</Text>
+          </Pressable>
         </Card>
 
         {/* Totals */}
@@ -463,6 +485,7 @@ export default function BillFormScreen() {
               />
             </View>
 
+            <View style={styles.sumDivider} />
             <View style={styles.totalBox}>
               <Text style={styles.totalLabel}>{t('totalAmount')}</Text>
               <Text style={styles.totalValue}>{formatPaise(totals.totalPaise)}</Text>
@@ -474,7 +497,7 @@ export default function BillFormScreen() {
         {/* Payment — not for quotations (an estimate takes no money) */}
         {lines.length > 0 && !isQuotation ? (
           <Card>
-            <SectionHeader icon="wallet" title={t('received')} />
+            <Text style={styles.overline}>{t('received')}</Text>
             <View style={styles.switchRow}>
               <Text style={styles.flexText}>{t('fullyPaid')}</Text>
               <Switch
@@ -500,21 +523,23 @@ export default function BillFormScreen() {
                 <Chips options={MODES.map((m) => ({ value: m, label: t(m) }))} value={mode} onChange={setMode} />
               </>
             ) : null}
-            <SumRow
-              label={t('balanceDue')}
-              value={formatPaise(Math.max(balance, 0))}
-              color={balance > 0 ? colors.danger : colors.success}
-              bold
-            />
+            <View style={[styles.balanceBox, balance <= 0 && { backgroundColor: colors.successSoft }]}>
+              <SumRow
+                label={t('balanceDue')}
+                value={formatPaise(Math.max(balance, 0))}
+                color={balance > 0 ? colors.danger : colors.success}
+                bold
+              />
+            </View>
           </Card>
         ) : null}
 
         {/* More details */}
         <Card>
           <Pressable style={styles.moreHeader} onPress={() => setShowMore((s) => !s)}>
-            <IconChip icon="document-attach-outline" />
+            <Ionicons name="document-attach-outline" size={18} color={colors.muted} />
             <Text style={styles.moreText}>{t('moreDetails')}</Text>
-            <Ionicons name={showMore ? 'chevron-up' : 'chevron-down'} size={18} color={colors.faint} />
+            <Ionicons name={showMore ? 'chevron-up' : 'chevron-down'} size={16} color={colors.muted} />
           </Pressable>
           {showMore ? (
             <>
@@ -596,42 +621,75 @@ const styles = StyleSheet.create({
   note: { fontSize: text.xs, color: colors.warning, backgroundColor: colors.accentSoft, padding: 8, borderRadius: radius.sm },
   posRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   posText: { flex: 1, fontSize: text.xs, color: colors.muted },
-  taxChip: { backgroundColor: colors.primarySoft, paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill },
-  taxChipText: { fontSize: text.xs, fontWeight: '800', color: colors.primary },
+  taxChip: { backgroundColor: colors.primarySoft, paddingHorizontal: 8, paddingVertical: 2, borderRadius: radius.sm - 2 },
+  taxChipText: { fontSize: 11, fontWeight: '500', color: colors.primary },
   sumRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  sumLabel: { fontSize: text.md, color: colors.muted },
-  sumValue: { fontSize: text.md, color: colors.text, fontWeight: '600' },
-  bold: { fontWeight: '800', color: colors.text, fontSize: text.md },
+  sumLabel: { fontSize: text.sm, color: colors.muted },
+  sumValue: { fontSize: text.sm, color: colors.text, fontVariant: ['tabular-nums'] },
+  bold: { fontWeight: '700', color: colors.text, fontSize: text.sm },
+  sumDivider: { height: 1, backgroundColor: colors.border },
+  balanceBox: { backgroundColor: colors.dangerSoft, borderRadius: radius.md, paddingHorizontal: 12, paddingVertical: 10 },
+  overline: {
+    fontSize: text.xs,
+    lineHeight: 16,
+    fontWeight: '500',
+    color: colors.muted,
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+  },
+  docTypeWrap: { gap: spacing.sm },
+  segment: { flexDirection: 'row', backgroundColor: colors.divider, borderRadius: radius.md + 2, padding: 3, gap: 3 },
+  segmentBtn: { flex: 1, height: 38, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8 },
+  segmentBtnOn: {
+    backgroundColor: colors.card,
+    shadowColor: '#0F172A',
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
+  },
+  segmentText: { fontSize: text.sm, fontWeight: '500', color: colors.muted },
+  segmentTextOn: { color: colors.text, fontWeight: '700' },
+  addItems: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    height: 44,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: colors.faint,
+    backgroundColor: colors.primaryTint,
+  },
+  addItemsText: { fontSize: text.md, fontWeight: '500', color: colors.primary },
   chargesRow: { flexDirection: 'row', gap: 8 },
   smallInput: {
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.borderStrong,
     borderRadius: radius.sm,
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: colors.card,
     paddingHorizontal: 10,
     paddingVertical: 9,
     fontSize: text.md,
     color: colors.text,
   },
   switchRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  flexText: { flex: 1, fontSize: text.md, color: colors.text, fontWeight: '600' },
+  flexText: { flex: 1, fontSize: text.sm, color: colors.text, fontWeight: '500' },
   muted: { fontSize: text.sm, color: colors.muted },
   totalBox: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: colors.primarySoft,
-    padding: 12,
-    borderRadius: radius.md,
   },
-  totalLabel: { fontSize: text.md, fontWeight: '700', color: colors.primary },
-  totalValue: { fontSize: text.xl, fontWeight: '800', color: colors.primary },
-  words: { fontSize: text.xs, color: colors.muted, fontStyle: 'italic' },
-  label: { fontSize: text.sm, fontWeight: '600', color: colors.text },
+  totalLabel: { fontSize: text.md, fontWeight: '700', color: colors.text },
+  totalValue: { fontSize: 17, fontWeight: '700', color: colors.text, fontVariant: ['tabular-nums'] },
+  words: { fontSize: text.xs, color: colors.muted },
+  label: { fontSize: text.xs, fontWeight: '500', color: colors.muted },
   moreHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44 },
-  moreText: { flex: 1, fontSize: text.md, fontWeight: '700', color: colors.primary },
+  moreText: { flex: 1, fontSize: text.sm, fontWeight: '500', color: colors.muted },
   footerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   footerLabel: { fontSize: text.xs, color: colors.muted },
-  footerTotal: { fontSize: text.xl, fontWeight: '800', color: colors.primary },
-  footerBtn: { flex: 1.4 },
+  footerTotal: { fontSize: text.xl, fontWeight: '700', color: colors.text, fontVariant: ['tabular-nums'] },
+  footerBtn: { flex: 1.2 },
 });

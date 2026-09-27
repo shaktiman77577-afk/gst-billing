@@ -3,7 +3,8 @@ import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../../src/components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BillRow } from '../../src/components/BillRow';
 import { FormHeader } from '../../src/components/FormHeader';
@@ -491,10 +492,10 @@ const styles = StyleSheet.create({
   copyRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   copyLabel: {
     fontSize: text.xs,
-    fontWeight: '700',
-    color: colors.faint,
+    fontWeight: '500',
+    color: colors.muted,
     textTransform: 'uppercase',
-    letterSpacing: 0.6,
+    letterSpacing: 0.4,
   },
   chips: { flex: 1, flexDirection: 'row', gap: 8 },
   chip: {
@@ -519,11 +520,11 @@ const styles = StyleSheet.create({
   },
   cancelText: { fontSize: text.md, fontWeight: '700', color: colors.muted },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
-  docType: { fontSize: text.sm, fontWeight: '700', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.5 },
+  docType: { fontSize: text.sm, fontWeight: '500', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.4 },
   strike: { textDecorationLine: 'line-through', color: colors.faint },
   refLink: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 4 },
   refText: { fontSize: text.md, fontWeight: '700', color: colors.primary },
-  cardLabel: { fontSize: text.xs, fontWeight: '700', color: colors.faint, textTransform: 'uppercase', letterSpacing: 0.6 },
+  cardLabel: { fontSize: text.xs, fontWeight: '500', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.4 },
   partyName: { fontSize: text.md, fontWeight: '700', color: colors.text, marginTop: -6 },
   meta: { fontSize: text.sm, color: colors.muted },
   line: {
@@ -542,7 +543,7 @@ const styles = StyleSheet.create({
   payDel: { padding: 8 },
   actions: { flexDirection: 'row', gap: 12 },
   wa: {
-    minHeight: 52,
+    minHeight: 48,
     borderRadius: 14,
     backgroundColor: '#25D366',
     flexDirection: 'row',

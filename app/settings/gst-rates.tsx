@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '../../src/components/Text';
 import { EmptyState } from '../../src/components/EmptyState';
 import { FormHeader } from '../../src/components/FormHeader';
 import { SearchBar } from '../../src/components/SearchBar';
@@ -135,10 +136,10 @@ const styles = StyleSheet.create({
   filterRow: { marginTop: spacing.sm },
   filterLabel: {
     fontSize: text.xs,
-    fontWeight: '600',
+    fontWeight: '500',
     color: colors.muted,
     marginBottom: spacing.xs,
-    textTransform: 'uppercase',
+    textTransform: 'uppercase', letterSpacing: 0.4,
   },
   count: {
     fontSize: text.sm,
@@ -180,7 +181,7 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
   },
   detailLabel: { fontSize: text.xs, color: colors.muted, marginBottom: 2 },
-  detailHsn: { fontSize: 20, fontWeight: '800', color: colors.text, letterSpacing: 1 },
+  detailHsn: { fontSize: 18, fontWeight: '800', color: colors.text, letterSpacing: 0.1 },
   copyHint: { fontSize: text.xs, color: colors.faint, marginTop: spacing.xs },
   footer: { marginTop: spacing.md },
 });

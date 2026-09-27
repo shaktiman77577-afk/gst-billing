@@ -3,7 +3,8 @@
 // { preset, from, to } (or null when the caller allows clearing).
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from './Text';
 import { useApp } from '../context/AppContext';
 import { DateField } from './DateField';
 import { Button } from './ui';
@@ -142,7 +143,8 @@ const styles = StyleSheet.create({
     paddingBottom: 28,
     gap: 12,
     maxHeight: '82%',
-    ...shadow,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   handle: {
     width: 44,
@@ -152,7 +154,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     marginBottom: 4,
   },
-  title: { fontSize: 18, fontWeight: '800', color: colors.text, textAlign: 'center' },
+  title: { fontSize: 17, fontWeight: '800', color: colors.text, textAlign: 'center' },
   list: { marginHorizontal: -4 },
   row: {
     flexDirection: 'row',
@@ -161,7 +163,7 @@ const styles = StyleSheet.create({
     paddingVertical: 11,
     paddingHorizontal: 12,
     borderRadius: radius.md,
-    minHeight: 56,
+    minHeight: 48,
   },
   rowSelected: { backgroundColor: colors.primarySoft },
   radio: {

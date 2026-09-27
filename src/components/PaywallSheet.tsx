@@ -1,7 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from './Text';
 import { Button } from './ui';
 import { useApp } from '../context/AppContext';
 import { FREE_BILLS_PER_MONTH } from '../lib/membershipConfig';
@@ -96,7 +97,8 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: 28,
     gap: 12,
-    ...shadow,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   handle: {
     width: 44,
@@ -115,7 +117,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignSelf: 'center',
   },
-  title: { fontSize: 20, fontWeight: '800', color: colors.text, textAlign: 'center' },
+  title: { fontSize: 18, fontWeight: '800', color: colors.text, textAlign: 'center' },
   body: { fontSize: 13, color: colors.muted, textAlign: 'center', lineHeight: 18 },
   priceRow: { flexDirection: 'row', gap: 12 },
   priceTile: {
@@ -129,7 +131,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primaryTint,
   },
   priceLabel: { fontSize: 12, fontWeight: '700', color: colors.muted },
-  priceValue: { fontSize: 19, fontWeight: '800', color: colors.primary },
+  priceValue: { fontSize: 17, fontWeight: '800', color: colors.primary },
   saveBadge: { backgroundColor: colors.successSoft, borderRadius: radius.pill, paddingHorizontal: 8, paddingVertical: 2 },
   saveText: { fontSize: 10, fontWeight: '800', color: colors.success },
   feats: { gap: 6 },

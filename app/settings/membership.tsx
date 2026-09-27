@@ -2,7 +2,8 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '../../src/components/Text';
 import { FormHeader } from '../../src/components/FormHeader';
 import { Button, Card, IconName, Screen, SectionHeader } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
@@ -324,7 +325,7 @@ const styles = StyleSheet.create({
   status: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   icon: { width: 54, height: 54, borderRadius: radius.lg, alignItems: 'center', justifyContent: 'center' },
   muted: { fontSize: 13, color: colors.muted },
-  big: { fontSize: 21, fontWeight: '800', color: colors.text },
+  big: { fontSize: 18, fontWeight: '800', color: colors.text },
   text: { fontSize: 14, color: colors.text, lineHeight: 20 },
   offline: { fontSize: 12, color: colors.faint, textAlign: 'center' },
   kv: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
@@ -342,7 +343,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  featText: { fontSize: 15, color: colors.text, flex: 1, lineHeight: 21 },
+  featText: { fontSize: 14, color: colors.text, flex: 1, lineHeight: 21 },
   // Selectable plan cards
   planCard: {
     flexDirection: 'row',
@@ -367,12 +368,12 @@ const styles = StyleSheet.create({
   radioOn: { borderColor: colors.primary },
   radioDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: colors.primary },
   planTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
-  planName: { fontSize: 16, fontWeight: '800', color: colors.text },
+  planName: { fontSize: 15, fontWeight: '800', color: colors.text },
   saveBadge: { backgroundColor: colors.successSoft, borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 4 },
   saveText: { fontSize: 11, fontWeight: '800', color: colors.success },
   currentBadge: { backgroundColor: colors.primarySoft, borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 4 },
   currentText: { fontSize: 11, fontWeight: '800', color: colors.primary },
-  price: { fontSize: 19, fontWeight: '800', color: colors.primary, marginTop: 2 },
+  price: { fontSize: 17, fontWeight: '800', color: colors.primary, marginTop: 2 },
   per: { fontSize: 13, fontWeight: '400', color: colors.muted },
   billedNote: { fontSize: 12, color: colors.muted, marginTop: 2 },
   // Bottom buy bar (myBillBook-style, anchored)
@@ -388,14 +389,14 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   barPrice: { flex: 1 },
-  barAmount: { fontSize: 21, fontWeight: '800', color: colors.text },
+  barAmount: { fontSize: 18, fontWeight: '800', color: colors.text },
   barPer: { fontSize: 13, fontWeight: '400', color: colors.muted },
   barNote: { fontSize: 12, color: colors.muted, marginTop: 1 },
   currentPill: { backgroundColor: colors.successSoft, borderRadius: radius.pill, paddingHorizontal: 16, paddingVertical: 10 },
   currentPillText: { fontSize: 14, fontWeight: '800', color: colors.success },
   rowHead: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
-  head: { fontSize: 15, fontWeight: '700', color: colors.text },
-  rowText: { fontSize: 15, fontWeight: '600', color: colors.text },
+  head: { fontSize: 14, fontWeight: '700', color: colors.text },
+  rowText: { fontSize: 14, fontWeight: '600', color: colors.text },
   histRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   statusPill: { backgroundColor: colors.primaryTint, borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 4 },
   statusPillText: { fontSize: 11, fontWeight: '700', color: colors.primary, textTransform: 'capitalize' },

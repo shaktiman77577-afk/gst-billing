@@ -3,30 +3,31 @@ import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { IconName } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
-import { colors } from '../../src/theme';
+import { colors, fontFamilyFor } from '../../src/theme';
 
 function tabIcon(active: IconName, inactive: IconName) {
   return ({ focused, color }: { focused: boolean; color: string }) => (
-    <Ionicons name={focused ? active : inactive} size={24} color={color} />
+    <Ionicons name={focused ? active : inactive} size={22} color={color} />
   );
 }
 
 export default function TabsLayout() {
-  const { t } = useApp();
+  const { t, language } = useApp();
   const insets = useSafeAreaInsets();
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.faint,
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '700' },
+        tabBarInactiveTintColor: colors.muted,
+        tabBarLabelStyle: { fontSize: 11, fontFamily: fontFamilyFor('500', language ?? 'en') },
+        tabBarAllowFontScaling: false,
         tabBarItemStyle: { paddingTop: 2 },
         tabBarStyle: {
           backgroundColor: colors.white,
           borderTopWidth: 1,
           borderTopColor: colors.border,
-          height: 62 + insets.bottom,
+          height: 60 + insets.bottom,
           paddingTop: 4,
           paddingBottom: insets.bottom + 6,
         },

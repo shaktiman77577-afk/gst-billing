@@ -2,7 +2,8 @@ import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../../src/components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { DateRangeButton } from '../../src/components/DateRangeButton';
 import { DateRangePicker } from '../../src/components/DateRangePicker';
@@ -202,9 +203,9 @@ const styles = StyleSheet.create({
   content: { padding: 16, gap: 14, paddingBottom: 32 },
   dueRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   dueLabel: { fontSize: 13, fontWeight: '600', color: colors.muted },
-  dueAmount: { fontSize: 20, fontWeight: '800', color: colors.text, marginTop: 2 },
+  dueAmount: { fontSize: 18, fontWeight: '800', color: colors.text, marginTop: 2 },
   dueLoading: { alignSelf: 'flex-start', marginTop: 8 },
-  rowText: { fontSize: 15, fontWeight: '600', color: colors.text },
+  rowText: { fontSize: 14, fontWeight: '600', color: colors.text },
   meta: { fontSize: 13, color: colors.muted, marginTop: 2 },
   monthRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16 },
   monthBtn: {
@@ -212,6 +213,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 5, // 34px chip + 10 padding = 44px touch target (plus hitSlop)
   },
-  monthLabel: { fontSize: 16, fontWeight: '700', color: colors.text, minWidth: 96, textAlign: 'center' },
+  monthLabel: { fontSize: 15, fontWeight: '700', color: colors.text, minWidth: 96, textAlign: 'center' },
   tallyRow: { alignItems: 'flex-start', marginVertical: 8 },
 });

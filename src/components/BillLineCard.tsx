@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text, TextInput } from './Text';
 import { useApp } from '../context/AppContext';
 import { formatQty, GST_RATES, roundQty } from '../db/items';
 import { LineDraft } from '../db/invoices';
@@ -165,16 +166,16 @@ const styles = StyleSheet.create({
   card: {
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     padding: 12,
     gap: 10,
     backgroundColor: colors.card,
   },
   flex: { flex: 1 },
   top: { flexDirection: 'row', gap: 12 },
-  name: { fontSize: text.md, fontWeight: '700', color: colors.text },
-  sub: { fontSize: text.sm, color: colors.muted, marginTop: 2 },
-  amount: { fontSize: text.md, fontWeight: '800', color: colors.text },
+  name: { fontSize: text.md, fontWeight: '500', color: colors.text },
+  sub: { fontSize: text.xs, color: colors.muted, marginTop: 2, fontVariant: ['tabular-nums'] },
+  amount: { fontSize: text.md, fontWeight: '700', color: colors.text, fontVariant: ['tabular-nums'] },
   controls: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   stepper: {
     flexDirection: 'row',
@@ -201,18 +202,18 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   linkBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, padding: 4 },
-  link: { color: colors.primary, fontWeight: '700', fontSize: text.sm },
-  editor: { gap: 10, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 10 },
+  link: { color: colors.primary, fontWeight: '500', fontSize: text.sm },
+  editor: { gap: 10, borderTopWidth: 1, borderTopColor: colors.divider, paddingTop: 10 },
   row: { flexDirection: 'row', gap: 10 },
-  label: { fontSize: text.xs, fontWeight: '600', color: colors.muted, marginBottom: 4 },
+  label: { fontSize: text.xs, fontWeight: '500', color: colors.muted, marginBottom: 4 },
   input: {
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.borderStrong,
     borderRadius: radius.sm,
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: colors.card,
     paddingHorizontal: 10,
     paddingVertical: 9,
-    fontSize: 15,
+    fontSize: 14,
     color: colors.text,
   },
   discRow: { flexDirection: 'row', gap: 6 },

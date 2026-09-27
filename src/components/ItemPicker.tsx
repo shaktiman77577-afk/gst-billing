@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useMemo, useState } from 'react';
-import { FlatList, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Text, TextInput } from './Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { formatQty, isLowStock, Item, roundQty } from '../db/items';
@@ -173,7 +174,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     paddingVertical: 9,
     paddingHorizontal: 12,
-    minHeight: 52,
+    minHeight: 48,
     borderWidth: 1.5,
     borderColor: 'transparent',
   },

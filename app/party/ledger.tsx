@@ -3,7 +3,8 @@ import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useState } from 'react';
-import { FlatList, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Linking, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '../../src/components/Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EmptyState } from '../../src/components/EmptyState';
 import { IconChip, IconName } from '../../src/components/ui';
@@ -207,7 +208,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: radius.md,
     padding: 12,
-    minHeight: 52,
+    minHeight: 48,
   },
   entryTitle: { fontSize: text.md, fontWeight: '700', color: colors.text },
   strike: { textDecorationLine: 'line-through', color: colors.faint },

@@ -2,7 +2,8 @@ import { useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../../src/components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { EmptyState } from '../../src/components/EmptyState';
 import { DateRangeButton } from '../../src/components/DateRangeButton';
@@ -168,7 +169,7 @@ const styles = StyleSheet.create({
   rankTop: { backgroundColor: colors.accentSoft, borderColor: colors.accentSoft },
   rankText: { fontSize: 13, fontWeight: '700', color: colors.muted },
   rankTopText: { color: colors.warning },
-  name: { fontSize: 15, fontWeight: '600', color: colors.text },
+  name: { fontSize: 14, fontWeight: '600', color: colors.text },
   meta: { fontSize: 12, color: colors.muted, marginTop: 2 },
   amount: { fontSize: text.md, fontWeight: '700', color: colors.text },
 });

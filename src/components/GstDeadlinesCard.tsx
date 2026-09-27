@@ -1,5 +1,6 @@
 import { Fragment } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from './Text';
 import { useApp } from '../context/AppContext';
 import { useBusiness } from '../hooks/useBusiness';
 import { formatDate } from '../lib/dates';
@@ -61,7 +62,7 @@ function DeadlineRow({ deadline }: { deadline: GstDeadline }) {
 }
 
 const styles = StyleSheet.create({
-  pill: { borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 6 },
-  pillText: { fontSize: 12, fontWeight: '700' },
-  hint: { fontSize: 12, color: colors.faint, fontWeight: '600' },
+  pill: { borderRadius: radius.sm, paddingHorizontal: 8, paddingVertical: 3 },
+  pillText: { fontSize: 12, fontWeight: '500' },
+  hint: { fontSize: 12, color: colors.muted },
 });

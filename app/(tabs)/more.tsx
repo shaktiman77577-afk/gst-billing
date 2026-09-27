@@ -2,7 +2,8 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../../src/components/Text';
 import { Header } from '../../src/components/Header';
 import { LanguageToggle } from '../../src/components/LanguageToggle';
 import { Button, Card, Hairline, MadeInIndia, MenuRow } from '../../src/components/ui';
@@ -172,7 +173,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.background },
   flexOnly: { flex: 1 },
   content: { padding: 16, gap: 14, paddingBottom: 32 },
-  cardLabel: { fontSize: text.xs, fontWeight: '700', color: colors.faint, textTransform: 'uppercase', letterSpacing: 0.6 },
+  cardLabel: { fontSize: text.xs, fontWeight: '500', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.4 },
   profile: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   avatar: {
     width: 56,

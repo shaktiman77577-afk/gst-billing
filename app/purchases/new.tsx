@@ -3,7 +3,8 @@ import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '../../src/components/Text';
 import { BillLineCard } from '../../src/components/BillLineCard';
 import { DateField } from '../../src/components/DateField';
 import { FormHeader } from '../../src/components/FormHeader';
@@ -338,7 +339,7 @@ const styles = StyleSheet.create({
     padding: 12,
     backgroundColor: colors.background,
   },
-  partyName: { fontSize: 15, fontWeight: '700', color: colors.text, flexShrink: 1 },
+  partyName: { fontSize: 14, fontWeight: '700', color: colors.text, flexShrink: 1 },
   partySub: { fontSize: 13, color: colors.muted, marginTop: 1 },
   totalBox: {
     flexDirection: 'row',
@@ -348,11 +349,11 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: radius.md,
   },
-  totalLabel: { fontSize: 15, fontWeight: '700', color: colors.primary },
-  totalValue: { fontSize: 20, fontWeight: '800', color: colors.primary },
+  totalLabel: { fontSize: 14, fontWeight: '700', color: colors.primary },
+  totalValue: { fontSize: 18, fontWeight: '800', color: colors.primary },
   note: { fontSize: 12, color: colors.faint },
   footerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   footerLabel: { fontSize: 12, color: colors.muted },
-  footerTotal: { fontSize: 20, fontWeight: '800', color: colors.text },
+  footerTotal: { fontSize: 18, fontWeight: '800', color: colors.text },
   footerBtn: { flex: 1.4 },
 });

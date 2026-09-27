@@ -3,7 +3,8 @@ import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { ReactNode, useCallback, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../../src/components/Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BillRow } from '../../src/components/BillRow';
 import { DateRangeButton } from '../../src/components/DateRangeButton';
@@ -21,7 +22,7 @@ import { getAlertCounts } from '../../src/lib/alerts';
 import { monthStartIso, todayIso } from '../../src/lib/dates';
 import { DateRange } from '../../src/lib/dateRange';
 import { formatPaise } from '../../src/lib/money';
-import { colors, radius, shadow, shadowSm, spacing, text } from '../../src/theme';
+import { colors, radius, spacing, tabular, text } from '../../src/theme';
 
 function greetingKey(): StringKey {
   const h = new Date().getHours();
@@ -110,82 +111,104 @@ export default function HomeScreen() {
   ];
 
   const profit = month.total - monthExp;
+  const tiles = actions.slice(1); // "New bill" gets its own primary button
+  const initials =
+    (business?.name ?? '')
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((w) => w[0]?.toUpperCase() ?? '')
+      .join('') || '₹';
 
   return (
     <View style={styles.flex}>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
 
-      {/* Deep navy hero with layered "gradient" decoration */}
-      <View style={[styles.hero, { paddingTop: insets.top + spacing.lg }]}>
-        <View style={styles.heroGlowA} pointerEvents="none" />
-        <View style={styles.heroGlowB} pointerEvents="none" />
-        <Text style={styles.greeting}>{t(greetingKey())}</Text>
-        <Text style={styles.bizName} numberOfLines={1}>
-          {business?.name ?? ''}
-        </Text>
-        {business?.gstin ? (
-          <View style={styles.gstPill}>
-            <Ionicons name="checkmark-circle" size={14} color={colors.white} />
-            <Text style={styles.gstText}>GSTIN {business.gstin}</Text>
-          </View>
-        ) : null}
+      {/* Clean white header: logo mark + business name + GSTIN */}
+      <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>{initials}</Text>
+        </View>
+        <View style={styles.flexOnly}>
+          <Text style={styles.greeting}>{t(greetingKey())}</Text>
+          <Text style={styles.bizName} numberOfLines={1}>
+            {business?.name ?? ''}
+          </Text>
+          {business?.gstin ? (
+            <Text style={styles.gstText} numberOfLines={1}>
+              GSTIN {business.gstin}
+            </Text>
+          ) : null}
+        </View>
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-        style={styles.scroll}
-      >
-        {/* Hero money card overlapping the navy hero */}
-        <View style={styles.moneyCard}>
-          <View style={styles.moneyCol}>
-            <View style={styles.moneyLabelRow}>
-              <View style={[styles.dot, { backgroundColor: colors.success }]} />
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Money summary + payment actions */}
+        <View style={styles.card}>
+          <View style={styles.moneyRow}>
+            <View style={styles.moneyCol}>
               <Text style={styles.moneyLabel}>{t('toCollect')}</Text>
+              <Text style={[styles.moneyValue, { color: colors.success }]} numberOfLines={1} adjustsFontSizeToFit>
+                {formatPaise(totals.toCollect)}
+              </Text>
             </View>
-            <Text style={[styles.moneyValue, { color: colors.success }]}>
-              {formatPaise(totals.toCollect)}
-            </Text>
-          </View>
-          <View style={styles.moneyDivider} />
-          <View style={styles.moneyCol}>
-            <View style={styles.moneyLabelRow}>
-              <View style={[styles.dot, { backgroundColor: colors.danger }]} />
+            <View style={styles.moneyDivider} />
+            <View style={styles.moneyCol}>
               <Text style={styles.moneyLabel}>{t('toPay')}</Text>
+              <Text style={[styles.moneyValue, { color: colors.danger }]} numberOfLines={1} adjustsFontSizeToFit>
+                {formatPaise(totals.toPay)}
+              </Text>
             </View>
-            <Text style={[styles.moneyValue, { color: colors.danger }]}>
-              {formatPaise(totals.toPay)}
-            </Text>
+          </View>
+          <View style={styles.payActions}>
+            <Pressable
+              onPress={() => router.push({ pathname: '/payment/new', params: { direction: 'in' } })}
+              style={({ pressed }) => [styles.payBtn, pressed && styles.pressed]}
+            >
+              <Ionicons name="arrow-down" size={16} color={colors.success} />
+              <Text style={styles.payLabel} numberOfLines={1}>
+                {t('receivePayment')}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => router.push({ pathname: '/payment/new', params: { direction: 'out' } })}
+              style={({ pressed }) => [styles.payBtn, pressed && styles.pressed]}
+            >
+              <Ionicons name="arrow-up" size={16} color={colors.danger} />
+              <Text style={styles.payLabel} numberOfLines={1}>
+                {t('paymentOutAction')}
+              </Text>
+            </Pressable>
           </View>
         </View>
 
-        <View style={styles.payActions}>
-          <Pressable
-            onPress={() => router.push({ pathname: '/payment/new', params: { direction: 'in' } })}
-            style={({ pressed }) => [
-              styles.payBtn,
-              { backgroundColor: colors.successSoft },
-              pressed && { opacity: 0.8 },
-            ]}
-          >
-            <Ionicons name="arrow-down-circle" size={26} color={colors.success} />
-            <Text style={[styles.payLabel, { color: colors.success }]}>{t('receivePayment')}</Text>
-          </Pressable>
-          <Pressable
-            onPress={() => router.push({ pathname: '/payment/new', params: { direction: 'out' } })}
-            style={({ pressed }) => [
-              styles.payBtn,
-              { backgroundColor: colors.dangerSoft },
-              pressed && { opacity: 0.8 },
-            ]}
-          >
-            <Ionicons name="arrow-up-circle" size={26} color={colors.danger} />
-            <Text style={[styles.payLabel, { color: colors.danger }]}>{t('paymentOutAction')}</Text>
-          </Pressable>
+        {/* Primary action */}
+        <Pressable
+          onPress={() => router.push('/bill/new')}
+          style={({ pressed }) => [styles.newBill, pressed && styles.pressed]}
+        >
+          <Ionicons name="add" size={20} color={colors.white} />
+          <Text style={styles.newBillLabel}>{t('newBill')}</Text>
+        </Pressable>
+
+        {/* Secondary actions */}
+        <View style={styles.tiles}>
+          {tiles.map((a) => (
+            <Pressable
+              key={a.label}
+              onPress={a.onPress}
+              style={({ pressed }) => [styles.tile, pressed && styles.pressed]}
+            >
+              <Ionicons name={a.icon} size={20} color={colors.primary} />
+              <Text style={styles.tileLabel} numberOfLines={1}>
+                {a.label}
+              </Text>
+            </Pressable>
+          ))}
         </View>
 
-        {(alerts.lowStock > 0 || alerts.overdueCount > 0) ? (
-          <View>
+        {alerts.lowStock > 0 || alerts.overdueCount > 0 ? (
+          <View style={styles.section}>
             <SectionTitle>{t('a_needsAttention')}</SectionTitle>
             <Card list>
               {alerts.lowStock > 0 ? (
@@ -215,262 +238,181 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
-        <Pressable style={styles.insightCard} onPress={() => router.navigate('/bills')}>
-          <View style={styles.insightIcon}>
-            <Ionicons name="trending-up" size={22} color={colors.primary} />
-          </View>
-          <View style={styles.flexOnly}>
-            <Text style={styles.insightLabel}>{t('thisMonthSales')}</Text>
-            <Text style={styles.insightValue}>{formatPaise(month.total)}</Text>
-          </View>
-          <View style={styles.countChip}>
-            <Text style={styles.countChipText}>
-              {month.count} {t('billsCount')}
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color={colors.faint} />
-        </Pressable>
-
-        <View style={styles.insightCard}>
-          <View style={[styles.insightIcon, { backgroundColor: colors.successSoft }]}>
-            <Ionicons name="wallet-outline" size={22} color={colors.success} />
-          </View>
-          <View style={styles.flexOnly}>
-            <Text style={styles.insightLabel}>{t('e_profitMonth')}</Text>
-            <Text style={[styles.insightValue, { color: profit >= 0 ? colors.success : colors.danger }]}>
-              {formatPaise(profit)}
-            </Text>
-          </View>
-          <View style={styles.profitBreak}>
-            <Text style={styles.profitLine}>
-              {t('thisMonthSales')}: {formatPaise(month.total)}
-            </Text>
-            <Text style={styles.profitLine}>
-              {t('e_expenses')}: {formatPaise(monthExp)}
-            </Text>
+        {/* This month: sales + profit side by side */}
+        <View style={styles.section}>
+          <SectionTitle>{t('dr_preset_thisMonth')}</SectionTitle>
+          <View style={[styles.card, styles.statRow]}>
+            <Pressable
+              style={({ pressed }) => [styles.statCol, pressed && styles.pressed]}
+              onPress={() => router.navigate('/bills')}
+            >
+              <Text style={styles.statLabel} numberOfLines={1}>
+                {t('thisMonthSales')} · {month.count} {t('billsCount')}
+              </Text>
+              <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit>
+                {formatPaise(month.total)}
+              </Text>
+            </Pressable>
+            <View style={styles.moneyDivider} />
+            <View style={styles.statCol}>
+              <Text style={styles.statLabel} numberOfLines={1}>
+                {t('e_profitMonth')}
+              </Text>
+              <Text
+                style={[styles.statValue, { color: profit >= 0 ? colors.success : colors.danger }]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+              >
+                {formatPaise(profit)}
+              </Text>
+              <Text style={styles.statSub} numberOfLines={1}>
+                {t('e_expenses')}: {formatPaise(monthExp)}
+              </Text>
+            </View>
           </View>
         </View>
 
         <GstDeadlinesCard />
 
-        <SectionTitle>{t('quickActions')}</SectionTitle>
-        <View style={styles.actions}>
-          {actions.map((a) => (
-            <Pressable
-              key={a.label}
-              onPress={a.onPress}
-              style={({ pressed }) => [styles.action, pressed && { opacity: 0.85 }]}
-            >
-              <View style={[styles.actionTile, { backgroundColor: a.bg }]}>
-                <Ionicons name={a.icon} size={26} color={a.color} />
-              </View>
-              <Text style={styles.actionLabel} numberOfLines={2}>
-                {a.label}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-
-        <View style={styles.txHeader}>
-          <Text style={styles.txTitle}>{t('recentBills')}</Text>
-          <DateRangeButton
-            range={txRange}
-            onPress={() => setTxSheet(true)}
-            onClear={() => setTxRange(null)}
+        <View style={styles.section}>
+          <View style={styles.txHeader}>
+            <SectionTitle>{t('recentBills')}</SectionTitle>
+            <DateRangeButton
+              range={txRange}
+              onPress={() => setTxSheet(true)}
+              onClear={() => setTxRange(null)}
+            />
+          </View>
+          <DateRangePicker
+            visible={txSheet}
+            onClose={() => setTxSheet(false)}
+            value={txRange}
+            onApply={(r) => {
+              setTxRange(r);
+              setTxSheet(false);
+            }}
           />
+          <Card style={recent.length ? { gap: 0, paddingVertical: 4 } : undefined}>
+            {recent.length === 0 ? (
+              <EmptyState icon="receipt-outline" title={t('noBillsYet')} hint={t('noBillsHint')} />
+            ) : (
+              recent.map((b, i) => (
+                <View key={b.id} style={i < recent.length - 1 ? styles.rowSep : undefined}>
+                  <BillRow bill={b} flat />
+                </View>
+              ))
+            )}
+          </Card>
         </View>
-        <DateRangePicker
-          visible={txSheet}
-          onClose={() => setTxSheet(false)}
-          value={txRange}
-          onApply={(r) => {
-            setTxRange(r);
-            setTxSheet(false);
-          }}
-        />
-        <Card style={recent.length ? { gap: 0, paddingVertical: 6 } : undefined}>
-          {recent.length === 0 ? (
-            <EmptyState icon="receipt-outline" title={t('noBillsYet')} hint={t('noBillsHint')} />
-          ) : (
-            recent.map((b, i) => (
-              <View key={b.id} style={i < recent.length - 1 ? styles.rowSep : undefined}>
-                <BillRow bill={b} flat />
-              </View>
-            ))
-          )}
-        </Card>
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: colors.primaryDark },
+  flex: { flex: 1, backgroundColor: colors.background },
   flexOnly: { flex: 1 },
-  scroll: { backgroundColor: colors.background, borderTopLeftRadius: 0, borderTopRightRadius: 0 },
-  content: { padding: spacing.lg, gap: spacing.md, paddingBottom: 32 },
+  pressed: { opacity: 0.7 },
+  content: { padding: spacing.lg, gap: spacing.lg, paddingBottom: 32 },
+  section: { gap: spacing.sm },
 
-  // ---- Navy hero ----
-  hero: {
-    backgroundColor: colors.primaryDark,
-    paddingHorizontal: spacing.xl,
-    paddingBottom: 64,
-    overflow: 'hidden',
-  },
-  heroGlowA: {
-    position: 'absolute',
-    top: -90,
-    right: -70,
-    width: 240,
-    height: 240,
-    borderRadius: 120,
-    backgroundColor: 'rgba(255,255,255,0.07)',
-  },
-  heroGlowB: {
-    position: 'absolute',
-    bottom: -110,
-    left: -60,
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    backgroundColor: 'rgba(96,165,250,0.14)',
-  },
-  greeting: { color: colors.whiteSoft, fontSize: text.sm, fontWeight: '600' },
-  bizName: {
-    color: colors.white,
-    fontSize: text.display,
-    fontWeight: '800',
-    marginTop: 2,
-    letterSpacing: 0.2,
-  },
-  gstPill: {
+  // ---- Header ----
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    alignSelf: 'flex-start',
-    marginTop: 10,
-    backgroundColor: 'rgba(255,255,255,0.16)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: radius.pill,
-  },
-  gstText: { color: colors.white, fontSize: text.xs, fontWeight: '700', letterSpacing: 0.4 },
-
-  // ---- Overlapping money card ----
-  moneyCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    gap: spacing.md,
     backgroundColor: colors.card,
-    borderRadius: radius.xl,
-    padding: spacing.xl,
-    marginTop: -40,
-    ...shadow,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
-  moneyCol: { flex: 1 },
-  moneyLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  dot: { width: 8, height: 8, borderRadius: 4 },
-  moneyLabel: {
-    fontSize: text.xs,
-    color: colors.muted,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.md + 2,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  moneyValue: { fontSize: text.xxl, fontWeight: '800', marginTop: 6, letterSpacing: 0.2 },
-  moneyDivider: { width: 1, alignSelf: 'stretch', backgroundColor: colors.border, marginHorizontal: spacing.md },
+  avatarText: { color: colors.white, fontSize: 15, fontWeight: '700' },
+  greeting: { color: colors.muted, fontSize: text.xs, lineHeight: 16 },
+  bizName: { color: colors.text, fontSize: text.lg, lineHeight: 22, fontWeight: '700' },
+  gstText: { color: colors.muted, fontSize: text.xs, lineHeight: 16, ...tabular },
 
-  // ---- Pay buttons ----
-  payActions: { flexDirection: 'row', gap: 12 },
+  // ---- Cards ----
+  card: {
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    gap: spacing.lg,
+  },
+  moneyRow: { flexDirection: 'row', alignItems: 'stretch' },
+  moneyCol: { flex: 1, gap: 4 },
+  moneyLabel: { fontSize: text.xs, lineHeight: 16, fontWeight: '500', color: colors.muted },
+  moneyValue: { fontSize: text.xxl, lineHeight: 28, fontWeight: '700', letterSpacing: -0.3, ...tabular },
+  moneyDivider: { width: 1, backgroundColor: colors.border, marginHorizontal: spacing.lg },
+
+  payActions: { flexDirection: 'row', gap: spacing.sm },
   payBtn: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 10,
-    borderRadius: radius.xl,
-    paddingVertical: 18,
-    ...shadowSm,
+    gap: 6,
+    height: 44,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.card,
   },
-  payLabel: { fontSize: text.md, fontWeight: '800' },
+  payLabel: { fontSize: text.sm, fontWeight: '500', color: colors.text, flexShrink: 1 },
 
-  // ---- Insight cards (month sales / profit) ----
-  insightCard: {
+  newBill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.xl,
-    padding: spacing.lg,
-    ...shadowSm,
-  },
-  insightIcon: {
-    width: 48,
+    justifyContent: 'center',
+    gap: spacing.sm,
     height: 48,
-    borderRadius: 14,
-    backgroundColor: colors.primarySoft,
+    borderRadius: radius.md + 2,
+    backgroundColor: colors.primary,
+  },
+  newBillLabel: { color: colors.white, fontSize: 15, fontWeight: '500' },
+
+  tiles: { flexDirection: 'row', gap: spacing.sm, marginTop: -spacing.sm },
+  tile: {
+    flex: 1,
+    height: 72,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 6,
+    paddingHorizontal: 4,
+    borderRadius: radius.md + 2,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.card,
   },
-  insightLabel: {
-    fontSize: text.xs,
-    color: colors.muted,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-  },
-  insightValue: { fontSize: text.xxl, fontWeight: '800', color: colors.text, marginTop: 4 },
-  countChip: {
-    backgroundColor: colors.primaryTint,
-    borderRadius: radius.pill,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  countChipText: { fontSize: text.xs, color: colors.primary, fontWeight: '700' },
-  profitBreak: { alignItems: 'flex-end' },
-  profitLine: { fontSize: text.xs, color: colors.muted, fontWeight: '600', marginTop: 2 },
+  tileLabel: { fontSize: text.xs, fontWeight: '500', color: colors.textSecondary },
 
-  // ---- Section titles: small caps ----
+  // ---- This month ----
+  statRow: { flexDirection: 'row', gap: 0, paddingVertical: 14 },
+  statCol: { flex: 1, gap: 4 },
+  statLabel: { fontSize: text.xs, lineHeight: 16, color: colors.muted },
+  statValue: { fontSize: 17, lineHeight: 22, fontWeight: '700', color: colors.text, ...tabular },
+  statSub: { fontSize: text.xs, lineHeight: 16, color: colors.muted, ...tabular },
+
+  // ---- Section titles ----
   sectionTitle: {
     fontSize: text.xs,
-    fontWeight: '800',
-    letterSpacing: 1.1,
+    lineHeight: 16,
+    fontWeight: '500',
+    letterSpacing: 0.4,
     textTransform: 'uppercase',
     color: colors.muted,
-    marginTop: 6,
   },
-  txHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 6, gap: 8 },
-  txTitle: {
-    fontSize: text.xs,
-    fontWeight: '800',
-    letterSpacing: 1.1,
-    textTransform: 'uppercase',
-    color: colors.muted,
-    flex: 1,
-  },
-
-  // ---- Quick action tiles ----
-  actions: { flexDirection: 'row', gap: 12 },
-  action: {
-    flex: 1,
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.xl,
-    paddingVertical: spacing.lg,
-    alignItems: 'center',
-    gap: 10,
-    ...shadowSm,
-  },
-  actionTile: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actionLabel: { fontSize: text.sm, fontWeight: '700', color: colors.text, textAlign: 'center' },
-
-  rowSep: { borderBottomWidth: 1, borderBottomColor: colors.border },
+  txHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  rowSep: { borderBottomWidth: 1, borderBottomColor: colors.divider },
 });

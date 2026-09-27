@@ -3,7 +3,8 @@ import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../src/components/Text';
 import { FormHeader } from '../src/components/FormHeader';
 import { DateRangeButton } from '../src/components/DateRangeButton';
 import { DateRangePicker } from '../src/components/DateRangePicker';
@@ -280,7 +281,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  dateLabel: { fontSize: 15, fontWeight: '700', color: colors.text, minWidth: 150, textAlign: 'center' },
+  dateLabel: { fontSize: 14, fontWeight: '700', color: colors.text, minWidth: 150, textAlign: 'center' },
   todayBtn: {
     backgroundColor: colors.primarySoft,
     paddingHorizontal: 12,
@@ -290,14 +291,14 @@ const styles = StyleSheet.create({
   todayText: { fontSize: 13, fontWeight: '700', color: colors.primary },
   totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 4 },
   totalLabel: { fontSize: 14, fontWeight: '600', color: colors.muted },
-  totalValue: { fontSize: 16, fontWeight: '700' },
-  netLabel: { fontSize: 15, fontWeight: '800', color: colors.text },
-  netValue: { fontSize: 15, fontWeight: '800' },
+  totalValue: { fontSize: 15, fontWeight: '700' },
+  netLabel: { fontSize: 14, fontWeight: '800', color: colors.text },
+  netValue: { fontSize: 14, fontWeight: '800' },
   list: { gap: 10, marginTop: 4 },
   entry: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   entryText: { flex: 1 },
-  entryTitle: { fontSize: 15, fontWeight: '600', color: colors.text },
+  entryTitle: { fontSize: 14, fontWeight: '600', color: colors.text },
   entryMeta: { fontSize: 13, color: colors.muted, marginTop: 2 },
-  entryAmount: { fontSize: 15, fontWeight: '700', color: colors.text },
+  entryAmount: { fontSize: 14, fontWeight: '700', color: colors.text },
   emptyText: { fontSize: 13, color: colors.muted, textAlign: 'center', paddingVertical: 8 },
 });

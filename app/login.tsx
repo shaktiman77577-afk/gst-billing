@@ -2,7 +2,8 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../src/components/Text';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LanguageToggle } from '../src/components/LanguageToggle';
 import { ErrorText, IconChip, IconName, MadeInIndia } from '../src/components/ui';
@@ -120,9 +121,9 @@ const styles = StyleSheet.create({
   },
   toggleRow: { alignSelf: 'stretch', alignItems: 'flex-end', marginBottom: 16 },
   logo: { width: 84, height: 84, borderRadius: 22, borderWidth: 2, borderColor: 'rgba(255,255,255,0.25)' },
-  appName: { fontSize: 20, fontWeight: '800', color: colors.white, marginTop: 14, letterSpacing: 0.3 },
-  tagline: { fontSize: 15, color: 'rgba(255,255,255,0.75)', marginTop: 2 },
-  hindi: { fontSize: 16, color: colors.accent, marginTop: 10, fontWeight: '600' },
+  appName: { fontSize: 18, fontWeight: '800', color: colors.white, marginTop: 14, letterSpacing: 0.1 },
+  tagline: { fontSize: 14, color: 'rgba(255,255,255,0.75)', marginTop: 2 },
+  hindi: { fontSize: 15, color: colors.accent, marginTop: 10, fontWeight: '600' },
   card: {
     backgroundColor: colors.card,
     marginHorizontal: 16,
@@ -130,15 +131,16 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: 20,
     gap: 14,
-    ...shadow,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  title: { fontSize: 20, fontWeight: '800', color: colors.text },
+  title: { fontSize: 18, fontWeight: '800', color: colors.text },
   hint: { fontSize: 14, color: colors.muted, marginTop: -8 },
   benefits: { gap: 10, marginVertical: 4 },
   benefit: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  benefitText: { fontSize: 15, color: colors.text, flex: 1 },
+  benefitText: { fontSize: 14, color: colors.text, flex: 1 },
   google: {
-    minHeight: 54,
+    minHeight: 48,
     borderRadius: radius.md,
     borderWidth: 1.5,
     borderColor: colors.border,
@@ -149,7 +151,7 @@ const styles = StyleSheet.create({
     gap: 12,
     marginTop: 4,
   },
-  googleLabel: { fontSize: 15, fontWeight: '700', color: colors.text },
+  googleLabel: { fontSize: 14, fontWeight: '700', color: colors.text },
   checkingRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   checkingText: { fontSize: 14, color: colors.muted, fontWeight: '600' },
   bottom: { flex: 1, justifyContent: 'flex-end', paddingVertical: 20 },

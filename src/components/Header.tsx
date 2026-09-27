@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from './Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, text } from '../theme';
 
@@ -44,6 +45,6 @@ const styles = StyleSheet.create({
   },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   flex: { flex: 1 },
-  subtitle: { color: colors.muted, fontSize: text.sm, fontWeight: '600' },
-  title: { color: colors.text, fontSize: text.xl, fontWeight: '800', marginTop: 1 },
+  subtitle: { color: colors.muted, fontSize: text.xs, fontWeight: '500' },
+  title: { color: colors.text, fontSize: text.xl, lineHeight: 24, fontWeight: '700', marginTop: 1 },
 });

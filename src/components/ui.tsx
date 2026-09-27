@@ -8,12 +8,11 @@ import {
   ScrollView,
   StyleProp,
   StyleSheet,
-  Text,
-  TextInput,
   TextInputProps,
   View,
   ViewStyle,
 } from 'react-native';
+import { Text, TextInput } from './Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, radius, shadow, shadowSm, spacing, text } from '../theme';
 
@@ -56,7 +55,7 @@ export function SectionHeader({ icon, title, subtitle }: { icon: IconName; title
   return (
     <View style={styles.sectionHeader}>
       <View style={styles.sectionIcon}>
-        <Ionicons name={icon} size={17} color={colors.primary} />
+        <Ionicons name={icon} size={16} color={colors.primary} />
       </View>
       <View style={styles.flex}>
         <Text style={styles.sectionTitle}>{title}</Text>
@@ -115,7 +114,7 @@ export function Button({ label, onPress, loading, disabled, icon, variant = 'pri
         <ActivityIndicator color={fg} />
       ) : (
         <View style={styles.buttonRow}>
-          {icon ? <Ionicons name={icon} size={20} color={fg} /> : null}
+          {icon ? <Ionicons name={icon} size={18} color={fg} /> : null}
           <Text style={[styles.buttonLabel, { color: fg }]}>{label}</Text>
         </View>
       )}
@@ -145,7 +144,7 @@ export function Field({ label, optionalLabel, error, helper, icon, style, onFocu
           error ? { borderColor: colors.danger } : focused ? { borderColor: colors.primary } : null,
         ]}
       >
-        {icon ? <Ionicons name={icon} size={18} color={colors.faint} style={{ marginRight: spacing.sm }} /> : null}
+        {icon ? <Ionicons name={icon} size={17} color={colors.faint} style={{ marginRight: spacing.sm }} /> : null}
         <TextInput
           placeholderTextColor={colors.faint}
           style={[styles.input, style]}
@@ -197,7 +196,7 @@ export function Chips<T extends string>({
             style={[styles.chip, selected && styles.chipSelected]}
           >
             {o.icon ? (
-              <Ionicons name={o.icon} size={16} color={selected ? colors.white : colors.muted} />
+              <Ionicons name={o.icon} size={16} color={selected ? colors.primary : colors.muted} />
             ) : null}
             <Text style={[styles.chipLabel, selected && styles.chipLabelSelected]}>{o.label}</Text>
           </Pressable>
@@ -325,16 +324,16 @@ const styles = StyleSheet.create({
   },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: 2 },
   sectionIcon: {
-    width: 36,
-    height: 36,
+    width: 32,
+    height: 32,
     borderRadius: radius.md,
-    backgroundColor: colors.primaryTint,
+    backgroundColor: colors.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sectionTitle: { fontSize: text.md, fontWeight: '700', color: colors.text },
+  sectionTitle: { fontSize: text.md, fontWeight: '700', color: colors.text, lineHeight: 20 },
   sectionSubtitle: { fontSize: text.xs, color: colors.muted, marginTop: 1 },
-  title: { fontSize: text.xxl, fontWeight: '700', color: colors.text },
+  title: { fontSize: 20, lineHeight: 26, fontWeight: '700', color: colors.text },
   hint: { fontSize: text.sm, color: colors.muted },
   errorBox: {
     flexDirection: 'row',
@@ -349,57 +348,57 @@ const styles = StyleSheet.create({
   helperRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: spacing.xs },
   helper: { color: colors.success, fontSize: text.sm },
   button: {
-    minHeight: 52,
+    minHeight: 48,
     borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.lg,
   },
   buttonRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  buttonPrimary: { backgroundColor: colors.primary, ...shadowSm },
-  buttonOutline: { borderWidth: 1.5, borderColor: colors.primary, backgroundColor: colors.card },
+  buttonPrimary: { backgroundColor: colors.primary },
+  buttonOutline: { borderWidth: 1, borderColor: colors.borderStrong, backgroundColor: colors.card },
   buttonDanger: { backgroundColor: colors.dangerSoft },
   buttonTextOnly: { minHeight: 44 },
-  buttonLabel: { fontSize: text.md, fontWeight: '600' },
-  field: { gap: spacing.sm },
-  label: { fontSize: text.sm, fontWeight: '600', color: colors.text },
+  buttonLabel: { fontSize: text.md, fontWeight: '500' },
+  field: { gap: 6 },
+  label: { fontSize: text.xs, fontWeight: '500', color: colors.muted },
   optional: { fontWeight: '400', color: colors.faint },
   inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    minHeight: 52,
+    minHeight: 44,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.borderStrong,
     borderRadius: radius.md,
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: colors.card,
     paddingHorizontal: spacing.md,
   },
-  input: { flex: 1, paddingVertical: spacing.md, fontSize: text.md, color: colors.text },
+  input: { flex: 1, paddingVertical: 10, fontSize: text.md, color: colors.text },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
     borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    borderColor: colors.borderStrong,
+    borderRadius: radius.md,
+    paddingHorizontal: 14,
+    minHeight: 36,
     backgroundColor: colors.card,
   },
-  chipSelected: { borderColor: colors.primary, backgroundColor: colors.primary },
-  chipLabel: { fontSize: text.sm, fontWeight: '600', color: colors.text },
-  chipLabelSelected: { color: colors.white, fontWeight: '700' },
+  chipSelected: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
+  chipLabel: { fontSize: text.sm, fontWeight: '500', color: colors.textSecondary },
+  chipLabelSelected: { color: colors.primary, fontWeight: '700' },
   madeWrap: { alignItems: 'center', gap: spacing.xs, paddingVertical: spacing.sm },
-  made: { fontSize: text.sm, color: colors.muted, fontWeight: '600' },
+  made: { fontSize: text.xs, color: colors.muted, fontWeight: '500' },
   madeHindi: { fontSize: text.xs, color: colors.faint },
   // Elegant row language
   iconChip: { alignItems: 'center', justifyContent: 'center' },
-  menuRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: 9, minHeight: 52 },
+  menuRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: 10, minHeight: 48 },
   menuTextWrap: { flex: 1 },
-  menuTitle: { fontSize: text.md, fontWeight: '600', color: colors.text, lineHeight: 21 },
-  menuSubtitle: { fontSize: text.sm, color: colors.muted, marginTop: 1, lineHeight: 18 },
-  hairline: { height: 1, backgroundColor: colors.border, marginVertical: 2 },
+  menuTitle: { fontSize: text.md, fontWeight: '500', color: colors.text, lineHeight: 20 },
+  menuSubtitle: { fontSize: text.xs, color: colors.muted, marginTop: 1, lineHeight: 16 },
+  hairline: { height: 1, backgroundColor: colors.divider, marginVertical: 2 },
   // Slim card variant for lists: wrap MenuRows + Hairlines in <Card list>.
   list: { paddingVertical: 6, gap: 0 },
 });

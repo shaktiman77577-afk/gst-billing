@@ -3,7 +3,8 @@ import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '../../src/components/Text';
 import { EmptyState } from '../../src/components/EmptyState';
 import { Fab } from '../../src/components/Fab';
 import { FormHeader } from '../../src/components/FormHeader';
@@ -121,5 +122,5 @@ const styles = StyleSheet.create({
   right: { alignItems: 'flex-end', gap: 4 },
   amount: { fontSize: text.md, fontWeight: '800', color: colors.text },
   strike: { textDecorationLine: 'line-through', color: colors.faint },
-  cancelledTag: { fontSize: text.xs, color: colors.faint, textTransform: 'uppercase' },
+  cancelledTag: { fontSize: text.xs, color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.4 },
 });

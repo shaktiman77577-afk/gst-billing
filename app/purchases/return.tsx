@@ -7,7 +7,8 @@ import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '../../src/components/Text';
 import { BillLineCard } from '../../src/components/BillLineCard';
 import { DateField } from '../../src/components/DateField';
 import { EmptyState } from '../../src/components/EmptyState';
@@ -385,7 +386,7 @@ const styles = StyleSheet.create({
     padding: 12,
     backgroundColor: colors.background,
   },
-  partyName: { fontSize: 15, fontWeight: '700', color: colors.text, flexShrink: 1 },
+  partyName: { fontSize: 14, fontWeight: '700', color: colors.text, flexShrink: 1 },
   partySub: { fontSize: 13, color: colors.muted, marginTop: 1 },
   footerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   footerLabel: { fontSize: text.xs, color: colors.muted },

@@ -1,5 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from './Text';
 import { colors, radius, spacing, text } from '../theme';
 import { IconName } from './ui';
 
@@ -17,7 +18,7 @@ export function EmptyState({
   return (
     <View style={styles.wrap}>
       <View style={styles.circle}>
-        <Ionicons name={icon} size={34} color={colors.primary} />
+        <Ionicons name={icon} size={26} color={colors.primary} />
       </View>
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.hint}>{hint}</Text>
@@ -34,10 +35,10 @@ export function EmptyState({
 const styles = StyleSheet.create({
   wrap: { alignItems: 'center', paddingVertical: spacing.xxl, paddingHorizontal: spacing.xl, gap: spacing.sm },
   circle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: colors.primaryTint,
+    width: 56,
+    height: 56,
+    borderRadius: radius.lg,
+    backgroundColor: colors.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.sm,
@@ -51,8 +52,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accentSoft,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
     marginTop: spacing.sm,
   },
-  badgeText: { fontSize: text.xs, fontWeight: '600', color: colors.warning },
+  badgeText: { fontSize: text.xs, fontWeight: '500', color: colors.warning },
 });

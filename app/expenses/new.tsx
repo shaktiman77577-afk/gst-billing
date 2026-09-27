@@ -148,5 +148,5 @@ export default function ExpenseFormScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.background },
-  amountInput: { fontSize: 20, fontWeight: '800' },
+  amountInput: { fontSize: 18, fontWeight: '800' },
 });

@@ -3,7 +3,8 @@ import { useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '../../src/components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import { FormHeader } from '../../src/components/FormHeader';
@@ -139,7 +140,7 @@ const styles = StyleSheet.create({
   wa: {
     marginHorizontal: 16,
     marginTop: 12,
-    minHeight: 52,
+    minHeight: 48,
     borderRadius: 14,
     backgroundColor: '#25D366',
     flexDirection: 'row',

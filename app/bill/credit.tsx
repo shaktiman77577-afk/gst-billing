@@ -3,7 +3,8 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Switch, View } from 'react-native';
+import { Text, TextInput } from '../../src/components/Text';
 import { DateField } from '../../src/components/DateField';
 import { FormHeader } from '../../src/components/FormHeader';
 import { Button, Card, Chips, ErrorText, Field, Hairline, Hint, Screen, SectionHeader } from '../../src/components/ui';
@@ -259,7 +260,7 @@ const styles = StyleSheet.create({
   flexOnly: { flex: 1 },
   muted: { fontSize: text.xs, color: colors.muted },
   party: { fontSize: text.md, fontWeight: '700', color: colors.text, marginTop: -6 },
-  line: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 9, minHeight: 52 },
+  line: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 9, minHeight: 48 },
   lineName: { fontSize: text.md, fontWeight: '700', color: colors.text },
   lineSub: { fontSize: text.sm, color: colors.muted, marginTop: 2 },
   stepper: {

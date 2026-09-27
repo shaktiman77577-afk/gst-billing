@@ -1,13 +1,14 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from './Text';
 import { useApp } from '../context/AppContext';
 import { InvoiceKind, InvoiceStatus, isReturnKind } from '../db/invoices';
 import { colors, radius, spacing, text } from '../theme';
 
 const STYLE: Record<InvoiceStatus, { bg: string; fg: string }> = {
   paid: { bg: colors.successSoft, fg: colors.success },
-  partial: { bg: colors.accentSoft, fg: colors.warning },
+  partial: { bg: colors.warningSoft, fg: colors.warning },
   unpaid: { bg: colors.dangerSoft, fg: colors.danger },
-  cancelled: { bg: colors.border, fg: colors.muted },
+  cancelled: { bg: colors.surfaceAlt, fg: colors.muted },
 };
 
 export function StatusBadge({ status, kind }: { status: InvoiceStatus; kind?: InvoiceKind }) {
@@ -29,9 +30,9 @@ export function StatusBadge({ status, kind }: { status: InvoiceStatus; kind?: In
 const styles = StyleSheet.create({
   badge: {
     paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.pill,
+    paddingVertical: 2,
+    borderRadius: radius.sm - 2,
     alignSelf: 'flex-start',
   },
-  text: { fontSize: text.xs, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.4 },
+  text: { fontSize: 11, lineHeight: 16, fontWeight: '500' },
 });

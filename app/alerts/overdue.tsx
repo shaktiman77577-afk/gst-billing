@@ -3,7 +3,8 @@ import { useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useState } from 'react';
-import { Alert, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { Alert, FlatList, RefreshControl, StyleSheet, View } from 'react-native';
+import { Text } from '../../src/components/Text';
 import { EmptyState } from '../../src/components/EmptyState';
 import { FormHeader } from '../../src/components/FormHeader';
 import { Button } from '../../src/components/ui';
@@ -148,7 +149,7 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   rowMain: { flex: 1, gap: 4 },
-  party: { fontSize: 15, fontWeight: '700', color: colors.text },
+  party: { fontSize: 14, fontWeight: '700', color: colors.text },
   meta: { fontSize: 12, color: colors.muted, fontWeight: '500' },
   badge: {
     flexDirection: 'row',
@@ -163,5 +164,5 @@ const styles = StyleSheet.create({
   },
   badgeText: { fontSize: 12, fontWeight: '700', color: colors.danger },
   rowSide: { alignItems: 'flex-end', gap: 8 },
-  balance: { fontSize: 17, fontWeight: '800', color: colors.danger },
+  balance: { fontSize: 16, fontWeight: '800', color: colors.danger },
 });

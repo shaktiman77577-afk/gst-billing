@@ -1,7 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { useState } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from './Text';
 import { formatDate, fromIsoDate, toIsoDate } from '../lib/dates';
 import { colors, radius, text } from '../theme';
 
@@ -61,17 +62,17 @@ export function DateField({ label, value, onChange, placeholder, clearable }: Pr
 
 const styles = StyleSheet.create({
   wrap: { flex: 1, gap: 6 },
-  label: { fontSize: text.sm, fontWeight: '600', color: colors.text },
+  label: { fontSize: text.xs, fontWeight: '500', color: colors.muted },
   box: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.borderStrong,
     borderRadius: radius.md,
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: colors.card,
     paddingHorizontal: 12,
-    paddingVertical: 13,
+    minHeight: 44,
   },
   value: { flex: 1, fontSize: text.md, color: colors.text },
 });

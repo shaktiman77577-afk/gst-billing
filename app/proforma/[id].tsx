@@ -3,7 +3,8 @@ import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../../src/components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FormHeader } from '../../src/components/FormHeader';
 import { Button, Card } from '../../src/components/ui';
@@ -340,7 +341,7 @@ const styles = StyleSheet.create({
   },
   cancelText: { fontSize: 14, fontWeight: '700', color: colors.muted },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
-  docType: { fontSize: text.sm, fontWeight: '700', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.5 },
+  docType: { fontSize: text.sm, fontWeight: '500', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.4 },
   total: { fontSize: text.xl, fontWeight: '800', color: colors.primary },
   strike: { textDecorationLine: 'line-through', color: colors.faint },
   words: { fontSize: text.xs, color: colors.faint, fontStyle: 'italic', marginTop: -6 },
@@ -348,7 +349,7 @@ const styles = StyleSheet.create({
   metaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   refLink: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 4 },
   refText: { fontSize: 14, fontWeight: '700', color: colors.primary },
-  cardLabel: { fontSize: text.xs, fontWeight: '700', color: colors.faint, textTransform: 'uppercase', letterSpacing: 0.6 },
+  cardLabel: { fontSize: text.xs, fontWeight: '500', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.4 },
   partyName: { fontSize: text.md, fontWeight: '700', color: colors.text, marginTop: -6 },
   meta: { fontSize: text.sm, color: colors.muted },
   line: {
@@ -366,7 +367,7 @@ const styles = StyleSheet.create({
   divider: { height: 1, backgroundColor: colors.border },
   actions: { flexDirection: 'row', gap: 12 },
   wa: {
-    minHeight: 52,
+    minHeight: 48,
     borderRadius: 14,
     backgroundColor: '#25D366',
     flexDirection: 'row',
@@ -374,5 +375,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
   },
-  waText: { color: colors.white, fontSize: 16, fontWeight: '700' },
+  waText: { color: colors.white, fontSize: 15, fontWeight: '700' },
 });

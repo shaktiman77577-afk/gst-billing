@@ -3,7 +3,8 @@ import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../../src/components/Text';
 import { EmptyState } from '../../src/components/EmptyState';
 import { Fab } from '../../src/components/Fab';
 import { FormHeader } from '../../src/components/FormHeader';
@@ -155,16 +156,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   navBtnDisabled: { opacity: 0.5 },
-  monthLabel: { fontSize: 15, fontWeight: '800', color: colors.text, minWidth: 110, textAlign: 'center' },
+  monthLabel: { fontSize: 14, fontWeight: '800', color: colors.text, minWidth: 110, textAlign: 'center' },
   totalCard: { flexDirection: 'row', alignItems: 'center' },
   statLabel: { fontSize: 12, color: colors.muted, fontWeight: '600' },
-  totalValue: { fontSize: 20, fontWeight: '800', color: colors.text, marginTop: 2 },
+  totalValue: { fontSize: 18, fontWeight: '800', color: colors.text, marginTop: 2 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 },
   rowSep: { borderBottomWidth: 1, borderBottomColor: colors.border },
-  rowTitle: { fontSize: 15, fontWeight: '700', color: colors.text },
+  rowTitle: { fontSize: 14, fontWeight: '700', color: colors.text },
   rowMeta: { fontSize: 13, color: colors.muted, marginTop: 2 },
-  rowAmt: { fontSize: 15, fontWeight: '800', color: colors.danger },
+  rowAmt: { fontSize: 14, fontWeight: '800', color: colors.danger },
   returnAmt: { color: colors.primary },
-  returnBadge: { fontWeight: '800', color: colors.primary, textTransform: 'uppercase' },
+  returnBadge: { fontWeight: '500', color: colors.primary, textTransform: 'uppercase', letterSpacing: 0.4 },
   delBtn: { padding: 6 },
 });
