@@ -68,7 +68,8 @@ async function tableExists(db: SQLiteDatabase, name: string): Promise<boolean> {
 async function listPurchases(
   db: SQLiteDatabase,
   businessId: string,
-  date: string,
+  from: string,
+  to: string,
 ): Promise<{ rows: DaybookPurchase[]; available: boolean }> {
   if (!(await tableExists(db, 'purchases'))) return { rows: [], available: false };
   try {
@@ -88,8 +89,11 @@ async function listPurchases(
       params.push(businessId);
     }
     if (names.has('deleted_at')) where.push('deleted_at IS NULL');
-    where.push(`${dateCol} = ?`);
-    params.push(date);
+    // Purchase returns (v10) are money coming back, not kharid — keep them
+    // out of the day's purchases. Guarded so old databases keep working.
+    if (names.has('kind')) where.push(`(kind IS NULL OR kind = 'purchase')`);
+    where.push(`${dateCol} >= ? AND ${dateCol} <= ?`);
+    params.push(from, to);
     const rows = await db.getAllAsync<DaybookPurchase>(
       `SELECT ${names.has('id') ? 'id' : `'x' AS id`},
               ${noCol ? `${noCol}` : `'—'`} AS bill_no,
@@ -147,7 +151,7 @@ export async function getDaybook(
   );
 
   const expenses = await listExpenses(db, businessId, date, date);
-  const { rows: purchases, available: purchasesAvailable } = await listPurchases(db, businessId, date);
+  const { rows: purchases, available: purchasesAvailable } = await listPurchases(db, businessId, date, date);
 
   const sum = (xs: { amount_paise?: number; total_paise?: number }[]): number =>
     xs.reduce((a, x) => a + (x.total_paise ?? x.amount_paise ?? 0), 0);
@@ -160,6 +164,75 @@ export async function getDaybook(
 
   return {
     date,
+    sales,
+    paymentsIn,
+    expenses,
+    purchases,
+    purchasesAvailable,
+    totalIn,
+    totalOut,
+    net: totalIn - totalOut,
+  };
+}
+
+/** Full daybook aggregated over an inclusive YYYY-MM-DD range (same sections
+ *  and money rules as getDaybook — read-only, no schema changes). */
+export async function getDaybookRange(
+  db: SQLiteDatabase,
+  businessId: string,
+  from: string,
+  to: string,
+): Promise<Daybook> {
+  // Live sales only: quotations, deleted and cancelled bills never count.
+  const sales = await db.getAllAsync<DaybookSale>(
+    `SELECT id, invoice_no, party_name, total_paise
+     FROM invoices
+     WHERE business_id = ? AND kind = 'invoice' AND doc_type != 'quotation'
+       AND deleted_at IS NULL AND cancelled_at IS NULL
+       AND invoice_date >= ? AND invoice_date <= ?
+     ORDER BY invoice_date DESC, invoice_no`,
+    businessId,
+    from,
+    to,
+  );
+
+  // Payments received, one entry per payment (split payments merged by group_id).
+  const paymentsIn = await db.getAllAsync<DaybookPaymentIn>(
+    `SELECT g.gid AS id, pa.name AS party_name, g.mode, g.amount_paise, g.splits, g.note
+     FROM (
+       SELECT COALESCE(group_id, id) AS gid,
+              MAX(party_id) AS party_id,
+              MAX(mode) AS mode,
+              SUM(amount_paise) AS amount_paise,
+              COUNT(*) AS splits,
+              MAX(notes) AS note,
+              MIN(created_at) AS first_at
+       FROM payments
+       WHERE business_id = ? AND direction = 'in' AND deleted_at IS NULL
+         AND paid_on >= ? AND paid_on <= ?
+       GROUP BY gid
+     ) g
+     LEFT JOIN parties pa ON pa.id = g.party_id
+     ORDER BY g.first_at`,
+    businessId,
+    from,
+    to,
+  );
+
+  const expenses = await listExpenses(db, businessId, from, to);
+  const { rows: purchases, available: purchasesAvailable } = await listPurchases(db, businessId, from, to);
+
+  const sum = (xs: { amount_paise?: number; total_paise?: number }[]): number =>
+    xs.reduce((a, x) => a + (x.total_paise ?? x.amount_paise ?? 0), 0);
+  const salesTotal = sum(sales);
+  const receivedTotal = sum(paymentsIn);
+  const expenseTotal = sum(expenses);
+  const purchaseTotal = sum(purchases);
+  const totalIn = salesTotal + receivedTotal;
+  const totalOut = expenseTotal + purchaseTotal;
+
+  return {
+    date: `${from}..${to}`,
     sales,
     paymentsIn,
     expenses,

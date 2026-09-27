@@ -36,11 +36,11 @@ export type PartyInput = {
 
 export type PartyWithBalance = Party & { balance_paise: number };
 
-// Balance = opening + bills − credit notes − money received + money paid out.
+// Balance = opening + bills − returns (credit notes + sales returns) − money received + money paid out.
 // Positive = you will collect, negative = you will pay.
 export const BALANCE_SQL = `
   p.opening_balance_paise
-  + COALESCE((SELECT SUM(CASE WHEN i.kind = 'credit_note' THEN -i.total_paise ELSE i.total_paise END)
+  + COALESCE((SELECT SUM(CASE WHEN i.kind IN ('credit_note', 'sales_return') THEN -i.total_paise ELSE i.total_paise END)
               FROM invoices i
               WHERE i.party_id = p.id AND i.deleted_at IS NULL AND i.cancelled_at IS NULL
                 AND i.doc_type != 'quotation'), 0)

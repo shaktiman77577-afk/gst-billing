@@ -2,7 +2,7 @@
 import { stateName } from '../data/states';
 import { Business } from '../db/businesses';
 import { formatQty } from '../db/items';
-import { Invoice, InvoiceLine } from '../db/invoices';
+import { Invoice, InvoiceLine, isReturnKind } from '../db/invoices';
 import { formatDate } from '../lib/dates';
 import { amountInWords } from '../lib/gst';
 import { formatPaise } from '../lib/money';
@@ -160,7 +160,8 @@ export function buildDoc(
       }
     });
 
-  const isCreditNote = inv.kind === 'credit_note';
+  const isCreditNote = isReturnKind(inv.kind);
+  const isSalesReturn = inv.kind === 'sales_return';
   const cancelled = !!inv.cancelled_at;
   const balance = isCreditNote ? 0 : inv.total_paise - inv.received_paise - inv.credited_paise;
   const upi = business.upi_id?.trim() ?? '';
@@ -172,7 +173,7 @@ export function buildDoc(
   const totalQty = lines.reduce((s, l) => s + l.qty, 0);
 
   return {
-    title: isCreditNote ? 'CREDIT NOTE' : isQuotation ? 'QUOTATION' : applyGst ? 'TAX INVOICE' : 'BILL OF SUPPLY',
+    title: isSalesReturn ? 'SALES RETURN' : isCreditNote ? 'CREDIT NOTE' : isQuotation ? 'QUOTATION' : applyGst ? 'TAX INVOICE' : 'BILL OF SUPPLY',
     isCreditNote,
     cancelled,
     applyGst,

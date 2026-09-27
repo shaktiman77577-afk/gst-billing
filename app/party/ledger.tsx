@@ -18,7 +18,7 @@ import { colors, radius, shadow, text } from '../../src/theme';
 
 export default function PartyLedgerScreen() {
   const db = useSQLiteContext();
-  const { t } = useApp();
+  const { t, language } = useApp();
   const business = useBusiness();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -77,6 +77,8 @@ export default function PartyLedgerScreen() {
         return e.ref;
       case 'credit_note':
         return `${t('creditNote')} ${e.ref}`;
+      case 'sales_return':
+        return `${t('salesReturn')} ${e.ref}`;
       case 'payment_in':
         return `${t('paymentIn')} · ${t(e.ref as PaymentMode)}`;
       default:
@@ -127,7 +129,7 @@ export default function PartyLedgerScreen() {
         ListEmptyComponent={<EmptyState icon="book-outline" title={t('noEntries')} hint="" />}
         renderItem={({ item: e }) => {
           const up = e.amount_paise > 0;
-          const isBill = e.type === 'invoice' || e.type === 'credit_note';
+          const isBill = e.type === 'invoice' || e.type === 'credit_note' || e.type === 'sales_return';
           return (
             <Pressable
               disabled={!e.invoice_id}
@@ -139,7 +141,7 @@ export default function PartyLedgerScreen() {
                   name={
                     e.type === 'invoice'
                       ? 'document-text-outline'
-                      : e.type === 'credit_note'
+                      : e.type === 'credit_note' || e.type === 'sales_return'
                         ? 'return-down-back-outline'
                         : e.type === 'opening'
                           ? 'flag-outline'

@@ -7,7 +7,7 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { EmptyState } from '../../src/components/EmptyState';
 import { Fab } from '../../src/components/Fab';
 import { FormHeader } from '../../src/components/FormHeader';
-import { Card } from '../../src/components/ui';
+import { Button, Card } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import { formatDate } from '../../src/lib/dates';
 import { formatPaise } from '../../src/lib/money';
@@ -19,7 +19,7 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 
 export default function PurchasesScreen() {
   const db = useSQLiteContext();
-  const { t, businessId } = useApp();
+  const { t, businessId, language } = useApp();
   const now = new Date();
   const [ym, setYm] = useState({ y: now.getFullYear(), m: now.getMonth() });
   const [rows, setRows] = useState<Purchase[]>([]);
@@ -82,34 +82,63 @@ export default function PurchasesScreen() {
           </View>
         </Card>
 
+        <Button
+          variant="outline"
+          icon="arrow-undo-outline"
+          label={t('createPurchaseReturn')}
+          onPress={() => router.push('/purchases/return')}
+        />
+
         <Card style={rows.length ? { gap: 0, paddingVertical: 6 } : undefined}>
           {rows.length === 0 ? (
             <EmptyState icon="bag-handle-outline" title={t('pur_noPurchases')} hint={t('pur_noPurchasesHint')} />
           ) : (
-            rows.map((p, i) => (
+            rows.map((p, i) => {
+              const isReturn = p.kind === 'purchase_return';
+              return (
               <Pressable
                 key={p.id}
-                onPress={() => router.push({ pathname: '/purchases/new', params: { id: p.id } })}
+                onPress={() => {
+                  // Returns are one-way stock-out docs — not editable.
+                  if (!isReturn) router.push({ pathname: '/purchases/new', params: { id: p.id } });
+                }}
                 style={[styles.row, i < rows.length - 1 && styles.rowSep]}
               >
                 <View style={styles.pIcon}>
-                  <Ionicons name="bag-handle-outline" size={18} color={colors.primary} />
+                  <Ionicons
+                    name={isReturn ? 'arrow-undo-outline' : 'bag-handle-outline'}
+                    size={18}
+                    color={colors.primary}
+                  />
                 </View>
                 <View style={styles.flexOnly}>
                   <Text style={styles.rowTitle} numberOfLines={1}>
                     {p.party_name}
                   </Text>
                   <Text style={styles.rowMeta} numberOfLines={1}>
-                    {formatDate(p.purchase_date)}
-                    {p.supplier_bill_no ? ` · ${t('pur_supplierBillNo')}: ${p.supplier_bill_no}` : ''}
+                    {isReturn ? (
+                      <Text>
+                        <Text style={styles.returnBadge}>{t('purchaseReturn')} </Text>
+                        {p.return_no ?? ''} · {formatDate(p.purchase_date)}
+                      </Text>
+                    ) : (
+                      <Text>
+                        {formatDate(p.purchase_date)}
+                        {p.supplier_bill_no ? ` · ${t('pur_supplierBillNo')}: ${p.supplier_bill_no}` : ''}
+                      </Text>
+                    )}
                   </Text>
                 </View>
-                <Text style={styles.rowAmt}>{formatPaise(p.total_paise)}</Text>
+                <Text style={[styles.rowAmt, isReturn && styles.returnAmt]}>
+                  {isReturn ? '− ' : ''}
+                  {formatPaise(p.total_paise)}
+                </Text>
                 <Pressable onPress={() => confirmDelete(p)} hitSlop={12} style={styles.delBtn}>
                   <Ionicons name="trash-outline" size={18} color={colors.danger} />
                 </Pressable>
               </Pressable>
-            ))
+              );
+            })
           )}
         </Card>
       </ScrollView>
@@ -159,5 +188,7 @@ const styles = StyleSheet.create({
   rowTitle: { fontSize: 15, fontWeight: '700', color: colors.text },
   rowMeta: { fontSize: 12, color: colors.muted, marginTop: 2 },
   rowAmt: { fontSize: 15, fontWeight: '800', color: colors.danger },
+  returnAmt: { color: colors.primary },
+  returnBadge: { fontWeight: '800', color: colors.primary, textTransform: 'uppercase' },
   delBtn: { padding: 6 },
 });

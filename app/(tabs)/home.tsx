@@ -6,6 +6,8 @@ import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { BillRow } from '../../src/components/BillRow';
 import { CloudPill } from '../../src/components/CloudStatus';
+import { DateRangeButton } from '../../src/components/DateRangeButton';
+import { DateRangePicker } from '../../src/components/DateRangePicker';
 import { EmptyState } from '../../src/components/EmptyState';
 import { GstDeadlinesCard } from '../../src/components/GstDeadlinesCard';
 import { Header } from '../../src/components/Header';
@@ -19,6 +21,7 @@ import { useBusiness } from '../../src/hooks/useBusiness';
 import { StringKey } from '../../src/i18n/strings';
 import { getAlertCounts } from '../../src/lib/alerts';
 import { monthStartIso, todayIso } from '../../src/lib/dates';
+import { DateRange } from '../../src/lib/dateRange';
 import { formatPaise } from '../../src/lib/money';
 import { colors, radius, shadowSm, text } from '../../src/theme';
 
@@ -31,7 +34,7 @@ function greetingKey(): StringKey {
 
 export default function HomeScreen() {
   const db = useSQLiteContext();
-  const { t, businessId } = useApp();
+  const { t, businessId, language } = useApp();
   const business = useBusiness();
   const [totals, setTotals] = useState({ toCollect: 0, toPay: 0 });
   const [recent, setRecent] = useState<InvoiceListRow[]>([]);
@@ -39,12 +42,31 @@ export default function HomeScreen() {
   const [monthExp, setMonthExp] = useState(0);
   const [remind, setRemind] = useState(false);
   const [alerts, setAlerts] = useState({ lowStock: 0, overdueCount: 0, overdueTotal: 0 });
+  // Last chosen range for this screen (useState only — no schema changes).
+  // Null = unfiltered, showing the 5 most recent bills as before.
+  const [txRange, setTxRange] = useState<DateRange | null>(null);
+  const [txSheet, setTxSheet] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
       if (!businessId) return;
       partyTotals(db, businessId).then(setTotals);
-      listInvoices(db, businessId, 5).then((rows) => setRecent(rows.filter((r) => r.doc_type !== 'quotation')));
+      if (txRange) {
+        listInvoices(db, businessId, 500).then((rows) =>
+          setRecent(
+            rows
+              .filter(
+                (r) =>
+                  r.doc_type !== 'quotation' &&
+                  r.invoice_date >= txRange.from &&
+                  r.invoice_date <= txRange.to,
+              )
+              .slice(0, 50),
+          ),
+        );
+      } else {
+        listInvoices(db, businessId, 5).then((rows) => setRecent(rows.filter((r) => r.doc_type !== 'quotation')));
+      }
       salesSummary(db, businessId, monthStartIso()).then(setMonth);
       totalExpenses(db, businessId, monthStartIso(), todayIso()).then(setMonthExp);
       // Remind when no cloud backup has succeeded in 7 days (backupNow stamps
@@ -53,7 +75,7 @@ export default function HomeScreen() {
         setRemind(!last || Date.now() - new Date(last).getTime() > 7 * 86400000);
       });
       getAlertCounts(db, businessId, todayIso()).then(setAlerts);
-    }, [db, businessId]),
+    }, [db, businessId, txRange]),
   );
 
   const actions: { icon: IconName; label: string; color: string; bg: string; onPress: () => void }[] = [
@@ -122,6 +144,23 @@ export default function HomeScreen() {
               <Text style={[styles.statValue, { color: colors.danger }]}>{formatPaise(totals.toPay)}</Text>
             </View>
           </View>
+        </View>
+
+        <View style={styles.payActions}>
+          <Pressable
+            onPress={() => router.push({ pathname: '/payment/new', params: { direction: 'in' } })}
+            style={({ pressed }) => [styles.payBtn, { backgroundColor: colors.successSoft }, pressed && { opacity: 0.8 }]}
+          >
+            <Ionicons name="arrow-down-circle" size={22} color={colors.success} />
+            <Text style={[styles.payLabel, { color: colors.success }]}>{t('receivePayment')}</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => router.push({ pathname: '/payment/new', params: { direction: 'out' } })}
+            style={({ pressed }) => [styles.payBtn, { backgroundColor: colors.dangerSoft }, pressed && { opacity: 0.8 }]}
+          >
+            <Ionicons name="arrow-up-circle" size={22} color={colors.danger} />
+            <Text style={[styles.payLabel, { color: colors.danger }]}>{t('paymentOutAction')}</Text>
+          </Pressable>
         </View>
 
         {remind ? (
@@ -224,7 +263,23 @@ export default function HomeScreen() {
           ))}
         </View>
 
-        <Text style={styles.sectionTitle}>{t('recentBills')}</Text>
+        <View style={styles.txHeader}>
+          <Text style={styles.txTitle}>{t('recentBills')}</Text>
+          <DateRangeButton
+            range={txRange}
+            onPress={() => setTxSheet(true)}
+            onClear={() => setTxRange(null)}
+          />
+        </View>
+        <DateRangePicker
+          visible={txSheet}
+          onClose={() => setTxSheet(false)}
+          value={txRange}
+          onApply={(r) => {
+            setTxRange(r);
+            setTxSheet(false);
+          }}
+        />
         <Card style={recent.length ? { gap: 0, paddingVertical: 6 } : undefined}>
           {recent.length === 0 ? (
             <EmptyState icon="receipt-outline" title={t('noBillsYet')} hint={t('noBillsHint')} />
@@ -280,6 +335,21 @@ const styles = StyleSheet.create({
   },
   statLabel: { fontSize: text.xs, color: colors.muted, fontWeight: '600' },
   statValue: { fontSize: text.xl, fontWeight: '800', marginTop: 2 },
+  payActions: { flexDirection: 'row', gap: 12 },
+  payBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    paddingVertical: 14,
+    ...shadowSm,
+  },
+  payLabel: { fontSize: text.md, fontWeight: '700' },
   reminder: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -336,6 +406,8 @@ const styles = StyleSheet.create({
   profitBreak: { alignItems: 'flex-end' },
   profitLine: { fontSize: text.xs, color: colors.muted, fontWeight: '600', marginTop: 2 },
   sectionTitle: { fontSize: text.md, fontWeight: '700', letterSpacing: 0.2, color: colors.muted, marginTop: 4 },
+  txHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4, gap: 8 },
+  txTitle: { fontSize: text.md, fontWeight: '700', letterSpacing: 0.2, color: colors.muted, flex: 1 },
   actions: { flexDirection: 'row', gap: 12 },
   action: {
     flex: 1,

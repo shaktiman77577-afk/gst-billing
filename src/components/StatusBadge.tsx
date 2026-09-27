@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { useApp } from '../context/AppContext';
-import { InvoiceKind, InvoiceStatus } from '../db/invoices';
+import { InvoiceKind, InvoiceStatus, isReturnKind } from '../db/invoices';
 import { colors, radius, spacing, text } from '../theme';
 
 const STYLE: Record<InvoiceStatus, { bg: string; fg: string }> = {
@@ -11,12 +11,17 @@ const STYLE: Record<InvoiceStatus, { bg: string; fg: string }> = {
 };
 
 export function StatusBadge({ status, kind }: { status: InvoiceStatus; kind?: InvoiceKind }) {
-  const { t } = useApp();
-  const isCn = kind === 'credit_note' && status !== 'cancelled';
+  const { t, language } = useApp();
+  const isCn = !!kind && isReturnKind(kind) && status !== 'cancelled';
   const s = isCn ? { bg: colors.primarySoft, fg: colors.primary } : STYLE[status];
+  const label = isCn
+    ? kind === 'sales_return'
+      ? t('salesReturn')
+      : t('creditNote')
+    : t(status);
   return (
     <View style={[styles.badge, { backgroundColor: s.bg }]}>
-      <Text style={[styles.text, { color: s.fg }]}>{isCn ? t('creditNote') : t(status)}</Text>
+      <Text style={[styles.text, { color: s.fg }]}>{label}</Text>
     </View>
   );
 }

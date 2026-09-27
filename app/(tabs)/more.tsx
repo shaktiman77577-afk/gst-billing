@@ -13,7 +13,7 @@ import { useBusiness } from '../../src/hooks/useBusiness';
 import { colors, radius, text } from '../../src/theme';
 
 export default function MoreScreen() {
-  const { t, email, logout } = useApp();
+  const { t, email, logout, language } = useApp();
   const business = useBusiness();
   const version = Constants.expoConfig?.version ?? '';
 
@@ -97,6 +97,17 @@ export default function MoreScreen() {
             <Ionicons name="chevron-forward" size={18} color={colors.faint} />
           </Pressable>
           <View style={styles.sep} />
+          <Pressable style={styles.row} onPress={() => router.push('/settings/recycle')}>
+            <View style={styles.rowIcon}>
+              <Ionicons name="trash-bin-outline" size={18} color={colors.primary} />
+            </View>
+            <View style={styles.flexOnly}>
+              <Text style={styles.rowText}>{t('rc_menuTitle')}</Text>
+              <Text style={styles.meta}>{t('rc_menuHint')}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.faint} />
+          </Pressable>
+          <View style={styles.sep} />
           <Pressable style={styles.row} onPress={() => router.push('/reports')}>
             <View style={styles.rowIcon}>
               <Ionicons name="bar-chart" size={18} color={colors.primary} />
@@ -126,6 +137,28 @@ export default function MoreScreen() {
             <View style={styles.flexOnly}>
               <Text style={styles.rowText}>{t('pur_purchases')}</Text>
               <Text style={styles.meta}>{t('pur_purchasesHint')}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.faint} />
+          </Pressable>
+          <View style={styles.sep} />
+          <Pressable style={styles.row} onPress={() => router.push('/returns/sales')}>
+            <View style={styles.rowIcon}>
+              <Ionicons name="arrow-undo-outline" size={18} color={colors.primary} />
+            </View>
+            <View style={styles.flexOnly}>
+              <Text style={styles.rowText}>{t('newSalesReturn')}</Text>
+              <Text style={styles.meta}>{t('salesReturnHint')}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.faint} />
+          </Pressable>
+          <View style={styles.sep} />
+          <Pressable style={styles.row} onPress={() => router.push('/purchases/return')}>
+            <View style={styles.rowIcon}>
+              <Ionicons name="arrow-redo-outline" size={18} color={colors.primary} />
+            </View>
+            <View style={styles.flexOnly}>
+              <Text style={styles.rowText}>{t('newPurchaseReturn')}</Text>
+              <Text style={styles.meta}>{t('purchaseReturnHint')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.faint} />
           </Pressable>

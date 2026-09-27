@@ -20,6 +20,7 @@ import {
   Invoice,
   InvoiceLine,
   InvoiceListRow,
+  isReturnKind,
   Payment,
   paymentsForInvoice,
 } from '../../src/db/invoices';
@@ -36,7 +37,7 @@ type Data = { invoice: Invoice; lines: InvoiceLine[]; payments: Payment[]; credi
 
 export default function BillDetailScreen() {
   const db = useSQLiteContext();
-  const { t, businessId } = useApp();
+  const { t, businessId, language } = useApp();
   const business = useBusiness();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [data, setData] = useState<Data | null>(null);
@@ -62,13 +63,13 @@ export default function BillDetailScreen() {
     const qInv = data.invoice;
     const qBal = qInv.total_paise - qInv.received_paise - qInv.credited_paise;
     const ok =
-      !!upiId && !qInv.cancelled_at && qInv.kind !== 'credit_note' && qInv.doc_type !== 'quotation' && qBal > 0;
+      !!upiId && !qInv.cancelled_at && !isReturnKind(qInv.kind) && qInv.doc_type !== 'quotation' && qBal > 0;
     return ok && business ? qrDataUrl(upiLink(upiId, business.name ?? '', qBal, qInv.invoice_no)) : '';
   }, [data, business, upiId]);
 
   if (!data) return <View style={styles.flex} />;
   const { invoice: inv, lines, payments, creditNotes } = data;
-  const isCn = inv.kind === 'credit_note';
+  const isCn = isReturnKind(inv.kind);
   const isQuotation = inv.doc_type === 'quotation';
   const cancelled = !!inv.cancelled_at;
   const balance = inv.total_paise - inv.received_paise - inv.credited_paise;
@@ -423,6 +424,14 @@ export default function BillDetailScreen() {
               icon="return-down-back-outline"
               label={t('creditNote')}
               onPress={() => router.push({ pathname: '/bill/credit', params: { invoiceId: inv.id } })}
+            />
+          ) : null}
+          {!isCn && !isQuotation && !cancelled ? (
+            <Button
+              variant="outline"
+              icon="arrow-undo-outline"
+              label={t('createSalesReturn')}
+              onPress={() => router.push({ pathname: '/returns/sales', params: { invoiceId: inv.id } })}
             />
           ) : null}
           {!cancelled ? <Button variant="danger" icon="close-circle-outline" label={t('cancelBill')} onPress={onCancel} /> : null}

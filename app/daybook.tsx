@@ -5,9 +5,12 @@ import { StatusBar } from 'expo-status-bar';
 import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { FormHeader } from '../src/components/FormHeader';
+import { DateRangeButton } from '../src/components/DateRangeButton';
+import { DateRangePicker } from '../src/components/DateRangePicker';
 import { Card, IconName, SectionHeader } from '../src/components/ui';
 import { useApp } from '../src/context/AppContext';
-import { Daybook, getDaybook } from '../src/db/daybook';
+import { Daybook, getDaybook, getDaybookRange } from '../src/db/daybook';
+import { DateRange } from '../src/lib/dateRange';
 import { formatDate, fromIsoDate, toIsoDate, todayIso } from '../src/lib/dates';
 import { formatPaise } from '../src/lib/money';
 import { colors, radius } from '../src/theme';
@@ -45,11 +48,15 @@ export default function DaybookScreen() {
   const { t, businessId } = useApp();
   const [day, setDay] = useState(todayIso());
   const [data, setData] = useState<Daybook | null>(null);
+  // Last chosen range for this screen (useState only — no schema changes).
+  const [dbRange, setDbRange] = useState<DateRange | null>(null);
+  const [rangeSheet, setRangeSheet] = useState(false);
 
   const reload = useCallback(() => {
     if (!businessId) return;
-    getDaybook(db, businessId, day).then(setData);
-  }, [db, businessId, day]);
+    if (dbRange) getDaybookRange(db, businessId, dbRange.from, dbRange.to).then(setData);
+    else getDaybook(db, businessId, day).then(setData);
+  }, [db, businessId, day, dbRange]);
 
   useFocusEffect(
     useCallback(() => {
@@ -90,27 +97,49 @@ export default function DaybookScreen() {
       <StatusBar style="dark" />
       <FormHeader title={t('dbk_daybook')} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.dateNav}>
-          <Pressable onPress={() => shift(-1)} hitSlop={10} style={styles.navBtn}>
-            <Ionicons name="chevron-back" size={22} color={colors.primary} />
-          </Pressable>
-          <Text style={styles.dateLabel}>
-            {formatDate(day)}
-            {isToday ? ` · ${t('dbk_today')}` : ''}
-          </Text>
-          <Pressable onPress={() => shift(1)} hitSlop={10} style={styles.navBtn} disabled={isToday}>
-            <Ionicons
-              name="chevron-forward"
-              size={22}
-              color={isToday ? colors.faint : colors.primary}
+        {dbRange ? (
+          <View style={styles.dateNav}>
+            <DateRangeButton
+              range={dbRange}
+              onPress={() => setRangeSheet(true)}
+              onClear={() => setDbRange(null)}
             />
-          </Pressable>
-          {!isToday ? (
-            <Pressable onPress={() => setDay(todayIso())} hitSlop={10} style={styles.todayBtn}>
-              <Text style={styles.todayText}>{t('dbk_today')}</Text>
+          </View>
+        ) : (
+          <View style={styles.dateNav}>
+            <Pressable onPress={() => shift(-1)} hitSlop={10} style={styles.navBtn}>
+              <Ionicons name="chevron-back" size={22} color={colors.primary} />
             </Pressable>
-          ) : null}
-        </View>
+            <Text style={styles.dateLabel}>
+              {formatDate(day)}
+              {isToday ? ` · ${t('dbk_today')}` : ''}
+            </Text>
+            <Pressable onPress={() => shift(1)} hitSlop={10} style={styles.navBtn} disabled={isToday}>
+              <Ionicons
+                name="chevron-forward"
+                size={22}
+                color={isToday ? colors.faint : colors.primary}
+              />
+            </Pressable>
+            {!isToday ? (
+              <Pressable onPress={() => setDay(todayIso())} hitSlop={10} style={styles.todayBtn}>
+                <Text style={styles.todayText}>{t('dbk_today')}</Text>
+              </Pressable>
+            ) : null}
+            <Pressable onPress={() => setRangeSheet(true)} hitSlop={10} style={styles.navBtn}>
+              <Ionicons name="calendar-outline" size={20} color={colors.primary} />
+            </Pressable>
+          </View>
+        )}
+        <DateRangePicker
+          visible={rangeSheet}
+          onClose={() => setRangeSheet(false)}
+          value={dbRange}
+          onApply={(r) => {
+            setDbRange(r);
+            setRangeSheet(false);
+          }}
+        />
 
         <Card>
           <View style={styles.totalRow}>

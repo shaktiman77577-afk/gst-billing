@@ -5,20 +5,20 @@ import { useCallback, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { EmptyState } from '../../src/components/EmptyState';
+import { DateRangeButton } from '../../src/components/DateRangeButton';
+import { DateRangePicker } from '../../src/components/DateRangePicker';
 import { FormHeader } from '../../src/components/FormHeader';
-import { Card, Chips, SectionHeader } from '../../src/components/ui';
+import { Card, SectionHeader } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import { useBusiness } from '../../src/hooks/useBusiness';
 import { formatPaise } from '../../src/lib/money';
 import {
-  formatRange,
-  reportRange,
-  RangePreset,
   topItems,
   TopItem,
   topParties,
   TopParty,
 } from '../../src/lib/reports';
+import { DateRange, makeRange } from '../../src/lib/dateRange';
 import { colors, radius, text } from '../../src/theme';
 
 function formatQty(qty: number): string {
@@ -56,27 +56,21 @@ export default function TopReportScreen() {
   const db = useSQLiteContext();
   const { t } = useApp();
   const business = useBusiness();
-  const [preset, setPreset] = useState<RangePreset>('month');
+  // Last chosen range for this screen (useState only — no schema changes).
+  const [range, setRange] = useState<DateRange>(() => makeRange('thisMonth'));
+  const [sheet, setSheet] = useState(false);
   const [items, setItems] = useState<TopItem[] | null>(null);
   const [parties, setParties] = useState<TopParty[] | null>(null);
 
-  const ranges: { value: RangePreset; label: string }[] = [
-    { value: 'today', label: t('r_today') },
-    { value: 'week', label: t('r_week') },
-    { value: 'month', label: t('r_month') },
-    { value: 'lastMonth', label: t('r_lastMonth') },
-  ];
-
   const load = useCallback(async () => {
     if (!business) return;
-    const { from, to } = reportRange(preset);
     const [it, pa] = await Promise.all([
-      topItems(db, business.id, from, to),
-      topParties(db, business.id, from, to),
+      topItems(db, business.id, range.from, range.to),
+      topParties(db, business.id, range.from, range.to),
     ]);
     setItems(it);
     setParties(pa);
-  }, [db, business, preset]);
+  }, [db, business, range]);
 
   useFocusEffect(
     useCallback(() => {
@@ -86,19 +80,25 @@ export default function TopReportScreen() {
     }, [load]),
   );
 
-  const { from, to } = reportRange(preset);
   const loading = items === null || parties === null;
 
   return (
     <View style={styles.flex}>
       <StatusBar style="dark" />
       <FormHeader title={t('r_topLists')} />
+      <DateRangePicker
+        visible={sheet}
+        onClose={() => setSheet(false)}
+        value={range}
+        allowClear={false}
+        onApply={(r) => {
+          if (r) setRange(r);
+          setSheet(false);
+        }}
+      />
       <SafeAreaView style={styles.flex} edges={['bottom']}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <View>
-            <Chips options={ranges} value={preset} onChange={setPreset} />
-            <Text style={styles.range}>{formatRange(from, to)}</Text>
-          </View>
+          <DateRangeButton range={range} onPress={() => setSheet(true)} />
 
           {loading ? (
             <ActivityIndicator color={colors.primary} style={styles.loader} />
@@ -152,7 +152,6 @@ const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.background },
   grow: { flex: 1 },
   content: { padding: 16, gap: 14, paddingBottom: 32 },
-  range: { fontSize: 13, color: colors.muted, marginTop: 8 },
   loader: { marginTop: 40 },
   listCard: { paddingVertical: 6, paddingHorizontal: 14 },
   sep: { height: 1, backgroundColor: colors.border },

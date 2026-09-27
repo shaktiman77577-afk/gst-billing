@@ -245,7 +245,7 @@ const LINE_COLS = `i.id AS inv_id, i.invoice_no, i.invoice_date, i.party_gstin,
 async function fetchDocs(
   db: SQLiteDatabase,
   businessId: string,
-  kind: 'invoice' | 'credit_note',
+  kind: 'invoice' | 'credit_note' | 'sales_return',
   start: string,
   end: string,
   businessState: string,
@@ -253,7 +253,7 @@ async function fetchDocs(
   const kindFilter =
     kind === 'invoice'
       ? `i.kind = 'invoice' AND i.doc_type = 'tax_invoice'`
-      : `i.kind = 'credit_note'`;
+      : `i.kind IN ('credit_note', 'sales_return')`;
   const rows = await db.getAllAsync<LineRow>(
     `SELECT ${LINE_COLS}
      FROM invoices i
@@ -502,12 +502,13 @@ type IssuedRow = {
 };
 
 // Documents issued (Table 13): doc_num 1 = invoices for outward supply,
-// doc_num 5 = credit notes. Cancelled documents count in `cancel`; the other
-// ten document types are unused by the app and go out as empty arrays.
+// doc_num 5 = credit notes and sales returns. Cancelled documents count in
+// `cancel`; the other ten document types are unused by the app and go out as
+// empty arrays.
 export function buildDocIssue(rows: IssuedRow[]): { doc_det: unknown[] } {
   const groups = new Map<string, { doc_num: number; prefix: string; rows: IssuedRow[] }>();
   for (const r of rows) {
-    const doc_num = r.kind === 'credit_note' ? 5 : 1;
+    const doc_num = r.kind === 'credit_note' || r.kind === 'sales_return' ? 5 : 1;
     const prefix = r.prefix || '';
     const key = `${doc_num}|${prefix}`;
     const g = groups.get(key) ?? { doc_num, prefix, rows: [] };
@@ -588,7 +589,7 @@ export async function fetchGstr1Json(
     `SELECT kind, prefix, invoice_no, (cancelled_at IS NOT NULL) AS cancelled
      FROM invoices
      WHERE business_id = ? AND deleted_at IS NULL
-       AND ((kind = 'invoice' AND doc_type = 'tax_invoice') OR kind = 'credit_note')
+       AND ((kind = 'invoice' AND doc_type = 'tax_invoice') OR kind IN ('credit_note', 'sales_return'))
        AND invoice_date >= ? AND invoice_date < ?
      ORDER BY kind, prefix, invoice_no`,
     businessId,

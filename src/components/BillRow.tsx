@@ -8,7 +8,7 @@ import { StatusBadge } from './StatusBadge';
 
 export function BillRow({ bill, flat = false }: { bill: InvoiceListRow; flat?: boolean }) {
   const due = bill.total_paise - bill.received_paise - bill.credited_paise;
-  const isCn = bill.kind === 'credit_note';
+  const isCn = bill.kind === 'credit_note' || bill.kind === 'sales_return';
   const cancelled = bill.status === 'cancelled';
   return (
     <Pressable

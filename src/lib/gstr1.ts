@@ -3,7 +3,8 @@
 // One CSV, three sections marked by the `section` column:
 //   B2B  — live tax invoices to GST-registered parties (party has a GSTIN)
 //   B2C  — live tax invoices to unregistered parties / consumers (no GSTIN)
-//   CDNR — live credit notes: kind='credit_note', all money values NEGATED
+//   CDNR — live credit notes and sales returns: kind IN
+//          ('credit_note','sales_return'), all money values NEGATED
 //          so the CA can sum the whole sheet directly (see NOTES.md).
 //
 // Explicitly excluded: quotations (doc_type='quotation'), bills of supply
@@ -83,7 +84,7 @@ export async function fetchGstr1Rows(db: SQLiteDatabase, businessId: string): Pr
   );
   const creditNotes = await db.getAllAsync<DbRow>(
     `SELECT ${COLS} FROM invoices
-     WHERE business_id = ? AND kind = 'credit_note' AND ${LIVE}
+     WHERE business_id = ? AND kind IN ('credit_note', 'sales_return') AND ${LIVE}
      ORDER BY invoice_date ASC, invoice_no ASC`,
     businessId,
   );

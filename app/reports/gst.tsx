@@ -5,12 +5,15 @@ import { useCallback, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { EmptyState } from '../../src/components/EmptyState';
+import { DateRangeButton } from '../../src/components/DateRangeButton';
+import { DateRangePicker } from '../../src/components/DateRangePicker';
 import { FormHeader } from '../../src/components/FormHeader';
-import { Card, Chips } from '../../src/components/ui';
+import { Card } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import { useBusiness } from '../../src/hooks/useBusiness';
 import { formatPaise } from '../../src/lib/money';
-import { formatRange, gstSummary, GstRateRow, reportRange, RangePreset } from '../../src/lib/reports';
+import { gstSummary, GstRateRow } from '../../src/lib/reports';
+import { DateRange, makeRange } from '../../src/lib/dateRange';
 import { colors, radius, text } from '../../src/theme';
 
 function Cell({ children, bold, right, header }: { children: string; bold?: boolean; right?: boolean; header?: boolean }) {
@@ -33,21 +36,14 @@ export default function GstReportScreen() {
   const db = useSQLiteContext();
   const { t } = useApp();
   const business = useBusiness();
-  const [preset, setPreset] = useState<RangePreset>('month');
+  const [range, setRange] = useState<DateRange>(() => makeRange('thisMonth'));
+  const [sheet, setSheet] = useState(false);
   const [rows, setRows] = useState<GstRateRow[] | null>(null);
-
-  const ranges: { value: RangePreset; label: string }[] = [
-    { value: 'today', label: t('r_today') },
-    { value: 'week', label: t('r_week') },
-    { value: 'month', label: t('r_month') },
-    { value: 'lastMonth', label: t('r_lastMonth') },
-  ];
 
   const load = useCallback(async () => {
     if (!business) return;
-    const { from, to } = reportRange(preset);
-    setRows(await gstSummary(db, business.id, from, to));
-  }, [db, business, preset]);
+    setRows(await gstSummary(db, business.id, range.from, range.to));
+  }, [db, business, range]);
 
   useFocusEffect(
     useCallback(() => {
@@ -56,7 +52,6 @@ export default function GstReportScreen() {
     }, [load]),
   );
 
-  const { from, to } = reportRange(preset);
   const totals = (rows ?? []).reduce(
     (a, r) => ({
       taxable: a.taxable + r.taxablePaise,
@@ -72,12 +67,19 @@ export default function GstReportScreen() {
     <View style={styles.flex}>
       <StatusBar style="dark" />
       <FormHeader title={t('r_gstSummary')} />
+      <DateRangePicker
+        visible={sheet}
+        onClose={() => setSheet(false)}
+        value={range}
+        allowClear={false}
+        onApply={(r) => {
+          if (r) setRange(r);
+          setSheet(false);
+        }}
+      />
       <SafeAreaView style={styles.flex} edges={['bottom']}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <View>
-            <Chips options={ranges} value={preset} onChange={setPreset} />
-            <Text style={styles.range}>{formatRange(from, to)}</Text>
-          </View>
+          <DateRangeButton range={range} onPress={() => setSheet(true)} />
 
           {rows === null ? (
             <ActivityIndicator color={colors.primary} style={styles.loader} />
@@ -133,7 +135,6 @@ const COL = 108;
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.background },
   content: { padding: 16, gap: 14, paddingBottom: 32 },
-  range: { fontSize: 13, color: colors.muted, marginTop: 8 },
   loader: { marginTop: 40 },
   tableCard: { padding: 12 },
   table: { minWidth: COL * 6 },
