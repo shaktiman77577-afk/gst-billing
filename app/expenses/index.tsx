@@ -12,12 +12,15 @@ import { useApp } from '../../src/context/AppContext';
 import {
   deleteExpense,
   Expense,
+  expenseCategoryLabel,
   ExpenseCategory,
   expensesByCategory,
+  isBuiltinCategory,
   listExpenses,
   monthBounds,
   totalExpenses,
 } from '../../src/db/expenses';
+import { en as peEn, hi as peHi, ParityExpenseKey } from '../../src/i18n/parity_expense';
 import { formatDate } from '../../src/lib/dates';
 import { formatPaise } from '../../src/lib/money';
 import { colors, radius } from '../../src/theme';
@@ -35,7 +38,8 @@ const CATEGORY_ICONS: Record<ExpenseCategory, IconName> = {
 
 export default function ExpensesScreen() {
   const db = useSQLiteContext();
-  const { t, businessId } = useApp();
+  const { t, language, businessId } = useApp();
+  const tp = (k: ParityExpenseKey) => (language === 'hi' ? peHi : peEn)[k];
   const now = new Date();
   const [ym, setYm] = useState({ y: now.getFullYear(), m: now.getMonth() });
   const [rows, setRows] = useState<Expense[]>([]);
@@ -80,7 +84,14 @@ export default function ExpensesScreen() {
   return (
     <View style={styles.flex}>
       <StatusBar style="dark" />
-      <FormHeader title={t('e_expenses')} />
+      <FormHeader
+        title={t('e_expenses')}
+        right={
+          <Pressable onPress={() => router.push('/expenses/categories')} hitSlop={10}>
+            <Text style={styles.manageLink}>{tp('pe_manage')}</Text>
+          </Pressable>
+        }
+      />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.monthNav}>
           <Pressable onPress={() => shift(-1)} hitSlop={10} style={styles.navBtn}>
@@ -111,12 +122,16 @@ export default function ExpensesScreen() {
               <View key={c.category} style={[styles.catRow, i > 0 && styles.rowSep]}>
                 <View style={styles.catIcon}>
                   <Ionicons
-                    name={CATEGORY_ICONS[c.category as ExpenseCategory] ?? 'ellipsis-horizontal-outline'}
+                    name={
+                      isBuiltinCategory(c.category)
+                        ? CATEGORY_ICONS[c.category]
+                        : 'ellipsis-horizontal-outline'
+                    }
                     size={18}
                     color={colors.primary}
                   />
                 </View>
-                <Text style={styles.catName}>{t(`e_cat_${c.category}`)}</Text>
+                <Text style={styles.catName}>{expenseCategoryLabel(c.category, t)}</Text>
                 <Text style={styles.catAmt}>{formatPaise(c.total)}</Text>
               </View>
             ))}
@@ -135,13 +150,17 @@ export default function ExpensesScreen() {
               >
                 <View style={styles.catIcon}>
                   <Ionicons
-                    name={CATEGORY_ICONS[e.category] ?? 'ellipsis-horizontal-outline'}
+                    name={
+                      isBuiltinCategory(e.category)
+                        ? CATEGORY_ICONS[e.category]
+                        : 'ellipsis-horizontal-outline'
+                    }
                     size={18}
                     color={colors.primary}
                   />
                 </View>
                 <View style={styles.flexOnly}>
-                  <Text style={styles.rowTitle}>{t(`e_cat_${e.category}`)}</Text>
+                  <Text style={styles.rowTitle}>{expenseCategoryLabel(e.category, t)}</Text>
                   <Text style={styles.rowMeta} numberOfLines={1}>
                     {formatDate(e.date)}
                     {e.note ? ` · ${e.note}` : ''}
@@ -178,6 +197,7 @@ const styles = StyleSheet.create({
   },
   navBtnDisabled: { opacity: 0.5 },
   monthLabel: { fontSize: 17, fontWeight: '800', color: colors.text, minWidth: 110, textAlign: 'center' },
+  manageLink: { fontSize: 14, fontWeight: '700', color: colors.primary },
   totalCard: { flexDirection: 'row', alignItems: 'center' },
   totalIcon: {
     width: 44,

@@ -11,7 +11,8 @@ export type MetaKey =
   | 'sync_last_ok' // time of the last successful sync
   | 'backup_auto' // '1' when daily auto cloud backup is enabled
   | 'backup_last_auto' // ISO time of the last automatic cloud backup
-  | 'device_id'; // stable per-install id (devices table / future 1-user feature)
+  | 'device_id' // stable per-install id (devices table / future 1-user feature)
+  | 'expense_categories'; // JSON { [businessId]: string[] } of user-added expense category names
 
 export async function getMeta(db: SQLiteDatabase, key: MetaKey): Promise<string | null> {
   const row = await db.getFirstAsync<{ value: string | null }>(
