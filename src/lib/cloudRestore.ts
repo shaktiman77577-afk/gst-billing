@@ -1,115 +1,102 @@
-// Silent cloud restore after login / on app start ("invisible cloud").
+// Cloud restore after login ("Loading your data" screen, app/restoring.tsx).
 //
 // Order: row-level sync data first (src/sync/engine.ts pullAll), then the
-// daily full-file backup, then the business-profile-only fast path.
+// newest daily full-file backup, then the business-profile-only fast path.
 //
-// The user never sees backup/restore UI. When they log in with Google on a
-// fresh install (or open the app while logged in but with no local business),
-// we silently bring their data back:
+// Everything is written INTO the live database with the same `db` handle —
+// no file swap, no app reload — so the loading screen can simply move on
+// to Home when it finishes.
 //
-//   1. GATE — only when the local DB has NO business at all. Existing local
-//      data is NEVER touched.
-//   2. Full restore — the newest row in public.backups is downloaded and the
-//      whole SQLite file is swapped in (reuses restoreBackup from backup.ts).
-//      This brings back everything: business, parties, items, bills.
-//   3. Fast path — public.business_profiles (one row per user; the table may
-//      not exist yet — any failure is ignored). Only the business row comes
-//      back; used when no full backup exists.
-//
-// The full restore is tried FIRST on purpose: restoring only the business
-// row first would trip the gate above, and the full backup (bills etc.)
-// would then never be restored.
-//
-// Completely silent: no dialogs, no toasts — internal logging only via the
-// returned status. Any error -> 'failed'.
-//
-// IMPORTANT for callers: a 'restored' full restore closes the passed `db`
-// handle and asks the app to remount its SQLiteProvider (see backup.ts).
-// After 'restored', do NOT use `db` again — navigate immediately and let the
-// remount rebuild the tree from the new file. (The fast path does not swap
-// the file; it also stamps active_business_id so the caller can re-read it
-// with the same handle.)
+// Result:
+//   restored      — a business exists now; businessId is set.
+//   nothing-found — every cloud check worked and the account has no data:
+//                   a genuinely new user → business setup.
+//   failed        — something could not be checked or downloaded (offline,
+//                   server error). The data may exist: never start fresh.
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { setMeta } from '../db/meta';
-import { CloudBackupRow, restoreBackup } from './backup';
+import { CloudBackupRow, restoreBackupInPlace } from './backup';
 import { pullBusinessProfileIfMissing } from './businessProfile';
 import { cloudHasSyncData, pullAll } from '../sync/engine';
 import { supabase } from './supabase';
 
-export type AutoRestoreResult = 'restored' | 'nothing-found' | 'failed';
+export type AutoRestoreStatus = 'restored' | 'nothing-found' | 'failed';
+export type AutoRestoreResult = { status: AutoRestoreStatus; businessId: string | null };
 
-async function localBusinessExists(db: SQLiteDatabase): Promise<boolean> {
-  const row = await db.getFirstAsync<{ id: string }>(
-    'SELECT id FROM businesses WHERE deleted_at IS NULL LIMIT 1',
-  );
-  return !!row;
+async function firstBusinessId(db: SQLiteDatabase, userId?: string): Promise<string | null> {
+  const row = userId
+    ? await db.getFirstAsync<{ id: string }>(
+        'SELECT id FROM businesses WHERE user_id = ? AND deleted_at IS NULL ORDER BY created_at LIMIT 1',
+        userId,
+      )
+    : await db.getFirstAsync<{ id: string }>(
+        'SELECT id FROM businesses WHERE deleted_at IS NULL ORDER BY created_at LIMIT 1',
+      );
+  return row?.id ?? null;
 }
 
-export async function autoRestoreAfterLogin(
-  db: SQLiteDatabase,
-): Promise<AutoRestoreResult> {
-  try {
-    // GATE: never touch a phone that already has a business set up.
-    if (await localBusinessExists(db)) return 'nothing-found';
+async function done(db: SQLiteDatabase, id: string): Promise<AutoRestoreResult> {
+  await setMeta(db, 'active_business_id', id);
+  return { status: 'restored', businessId: id };
+}
 
+export async function autoRestoreAfterLogin(db: SQLiteDatabase): Promise<AutoRestoreResult> {
+  try {
     let userId: string | undefined;
     try {
       const { data } = await supabase.auth.getSession();
       userId = data.session?.user?.id;
     } catch {
-      return 'failed'; // e.g. offline
+      return { status: 'failed', businessId: null };
     }
-    if (!userId) return 'failed';
+    if (!userId) return { status: 'failed', businessId: null };
 
-    // 0) Row-level sync (primary copy): download every row and write it into
-    //    the live database. No file swap — the same `db` handle stays valid.
+    // Already on this phone (e.g. an earlier attempt finished) → just use it.
+    const local = await firstBusinessId(db, userId);
+    if (local) return done(db, local);
+
+    let hadError = false;
+
+    // 0) Row-level sync — the primary copy.
     try {
       const pulled = await pullAll(db);
       if (pulled.businesses > 0) {
-        const biz = await db.getFirstAsync<{ id: string }>(
-          'SELECT id FROM businesses WHERE user_id = ? AND deleted_at IS NULL ORDER BY created_at LIMIT 1',
-          userId,
-        );
-        if (biz) {
-          await setMeta(db, 'active_business_id', biz.id);
-          return 'restored';
-        }
+        const id = await firstBusinessId(db, userId);
+        if (id) return done(db, id);
       }
     } catch {
-      // fall through to the daily file backup
+      hadError = true;
     }
 
-    // 1) Full restore from the newest daily file backup (safety copy).
+    // 1) Newest daily full-file backup — the safety copy.
     try {
       const { data: rows, error } = await supabase
         .from('backups')
         .select('id, created_at, file_path, size_bytes, device_name, app_version')
+        .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(1);
-      if (!error && rows && rows.length > 0) {
-        await restoreBackup(db, rows[0] as CloudBackupRow);
-        // The restored file carries its own app_meta (active_business_id,
-        // user_id, email). The caller must navigate; the provider remount
-        // re-reads everything from the new file.
-        return 'restored';
+      if (error) throw error;
+      if (rows && rows.length > 0) {
+        await restoreBackupInPlace(db, rows[0] as CloudBackupRow);
+        const id = await firstBusinessId(db, userId);
+        if (id) return done(db, id);
       }
     } catch {
-      // fall through to the fast path
+      hadError = true;
     }
 
-    // 2) Fast path: business profile only (the table may not exist yet).
+    // 2) Business profile only (the table may not exist — ignore errors).
     try {
       const pulledId = await pullBusinessProfileIfMissing(db, userId);
-      if (pulledId) {
-        await setMeta(db, 'active_business_id', pulledId);
-        return 'restored';
-      }
+      if (pulledId) return done(db, pulledId);
     } catch {
-      // ignore — table missing / offline
+      // ignore
     }
-    return 'nothing-found';
+
+    return { status: hadError ? 'failed' : 'nothing-found', businessId: null };
   } catch {
-    return 'failed';
+    return { status: 'failed', businessId: null };
   }
 }
 

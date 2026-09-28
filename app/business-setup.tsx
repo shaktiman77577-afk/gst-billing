@@ -2,7 +2,9 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '../src/components/Text';
+import { colors } from '../src/theme';
 import { FormHeader } from '../src/components/FormHeader';
 import { LanguageToggle } from '../src/components/LanguageToggle';
 import { StatePicker } from '../src/components/StatePicker';
@@ -23,7 +25,7 @@ import { useApp } from '../src/context/AppContext';
 import { BusinessType, createBusiness, updateBusiness } from '../src/db/businesses';
 import { useBusiness } from '../src/hooks/useBusiness';
 import { loginWithGoogle } from '../src/lib/auth';
-import { autoRestoreAfterLogin, cloudBackupExists } from '../src/lib/cloudRestore';
+import { cloudBackupExists } from '../src/lib/cloudRestore';
 import {
   isValidGstin,
   normalizeGstin,
@@ -40,7 +42,7 @@ const clean = (v: string) => {
 
 export default function BusinessSetupScreen() {
   const db = useSQLiteContext();
-  const { t, userId, businessId, setActiveBusiness, completeLogin } = useApp();
+  const { t, userId, businessId, setActiveBusiness, completeLogin, logout } = useApp();
   const { edit } = useLocalSearchParams<{ edit?: string }>();
   const isEdit = edit === '1';
   const existing = useBusiness();
@@ -168,14 +170,8 @@ export default function BusinessSetupScreen() {
         return;
       }
       if (cloud === 'yes') {
-        const r = await autoRestoreAfterLogin(db);
-        if (r === 'restored') {
-          // The database file was swapped; the app reloads it and the effect
-          // above moves to home. Do not touch `db` again here.
-          router.replace('/');
-          return;
-        }
-        setSaveError(t('v2_cloudRestoreFailed'));
+        // The account already has data — load it instead of starting fresh.
+        router.replace('/restoring');
         return;
       }
       const id = await createBusiness(db, userId, input);
@@ -350,6 +346,19 @@ export default function BusinessSetupScreen() {
 
         <MadeInIndia />
         <ErrorText>{saveError}</ErrorText>
+        {!isEdit && userId ? (
+          // Escape hatch: a logged-in user on setup can always switch account.
+          <Pressable
+            onPress={async () => {
+              await logout(true);
+              router.replace('/login');
+            }}
+            hitSlop={8}
+            style={styles.logoutLink}
+          >
+            <Text style={styles.logoutLinkText}>{t('logout')}</Text>
+          </Pressable>
+        ) : null}
       </Screen>
     </View>
   );
@@ -360,4 +369,6 @@ const styles = StyleSheet.create({
   headerText: { flex: 1, gap: 4 },
   row: { flexDirection: 'row', gap: 12 },
   flex: { flex: 1 },
+  logoutLink: { alignSelf: 'center', paddingVertical: 8, paddingHorizontal: 16 },
+  logoutLinkText: { fontSize: 14, fontWeight: '500', color: colors.danger },
 });

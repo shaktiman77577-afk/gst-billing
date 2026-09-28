@@ -18,7 +18,7 @@ import { Directory, File, Paths } from 'expo-file-system';
 import { openDatabaseAsync, type SQLiteDatabase } from 'expo-sqlite';
 import { getMeta, setMeta } from '../db/meta';
 import { checkThisDevice, reportDeviceReplaced } from '../sync/device';
-import { flushSyncNow, retrySync, scheduleSync } from '../sync/engine';
+import { SYNC_TABLES, flushSyncNow, retrySync, scheduleSync } from '../sync/engine';
 import { getDeviceId } from './deviceId';
 import { supabase } from './supabase';
 
@@ -387,4 +387,88 @@ export async function maybeDailyBackup(db: SQLiteDatabase): Promise<void> {
   } finally {
     dailyRunning = false;
   }
+}
+
+/**
+ * Restores a daily backup INTO the live database (no file swap, no app
+ * reload): the downloaded file is attached and every data table is copied
+ * across. Used on login when the phone has no data yet, so the same `db`
+ * handle stays valid and the "Loading your data" screen can simply move on.
+ * Columns are matched by name, so an older backup still restores cleanly.
+ */
+export async function restoreBackupInPlace(db: SQLiteDatabase, row: CloudBackupRow): Promise<void> {
+  await requireUserId();
+
+  let bytes: Uint8Array;
+  try {
+    const { data, error } = await supabase.storage.from(BUCKET).download(row.file_path);
+    if (error || !data) {
+      throw new BackupError(isNetworkError(error) ? 'no_network' : 'failed', error?.message);
+    }
+    bytes = new Uint8Array(await data.arrayBuffer());
+  } catch (e) {
+    if (e instanceof BackupError) throw e;
+    throw new BackupError(isNetworkError(e) ? 'no_network' : 'failed', String(e));
+  }
+  let header = '';
+  for (let i = 0; i < SQLITE_MAGIC.length && i < bytes.length; i++) header += String.fromCharCode(bytes[i]);
+  if (header !== SQLITE_MAGIC) throw new BackupError('invalid');
+
+  const dir = sqliteDir();
+  const tmp = new File(dir, TMP_RESTORE_NAME);
+  if (tmp.exists) await tmp.delete();
+  await tmp.write(bytes);
+
+  // Integrity + version check on the downloaded copy.
+  const probe = await openDatabaseAsync(TMP_RESTORE_NAME);
+  try {
+    const chk = await probe.getFirstAsync<{ integrity_check: string }>('PRAGMA integrity_check');
+    if (!chk || chk.integrity_check !== 'ok') throw new BackupError('invalid');
+    const ver = await probe.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
+    const cur = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
+    if ((ver?.user_version ?? 0) > (cur?.user_version ?? 0)) throw new BackupError('newer');
+  } finally {
+    await probe.closeAsync();
+  }
+
+  const path = decodeURIComponent(tmp.uri.replace(/^file:\/\//, ''));
+  await db.execAsync('PRAGMA foreign_keys = OFF');
+  await db.runAsync('ATTACH DATABASE ? AS bk', path);
+  try {
+    await db.withTransactionAsync(async () => {
+      for (const t of SYNC_TABLES) {
+        const exists = await db.getFirstAsync<{ n: number }>(
+          "SELECT COUNT(*) AS n FROM bk.sqlite_master WHERE type = 'table' AND name = ?",
+          t,
+        );
+        if (!exists?.n) continue;
+        const mine = await db.getAllAsync<{ name: string }>(`PRAGMA main.table_info(${t})`);
+        const theirs = new Set((await db.getAllAsync<{ name: string }>(`PRAGMA bk.table_info(${t})`)).map((c) => c.name));
+        const cols = mine.map((c) => c.name).filter((c) => theirs.has(c));
+        if (cols.length === 0) continue;
+        const list = cols.map((c) => `"${c}"`).join(', ');
+        await db.runAsync(`INSERT OR REPLACE INTO main.${t} (${list}) SELECT ${list} FROM bk.${t}`);
+      }
+      // Custom expense categories live in app_meta.
+      const cat = await db.getFirstAsync<{ value: string | null }>(
+        "SELECT value FROM bk.app_meta WHERE key = 'expense_categories'",
+      );
+      if (cat?.value) await setMeta(db, 'expense_categories', cat.value);
+    });
+  } finally {
+    try {
+      await db.execAsync('DETACH DATABASE bk');
+    } catch {
+      // ignore
+    }
+    await db.execAsync('PRAGMA foreign_keys = ON');
+    try {
+      if (tmp.exists) await tmp.delete();
+    } catch {
+      // ignore
+    }
+  }
+  // Everything that came from the file must also reach row-level sync.
+  await setMeta(db, 'sync_pushed_at', null);
+  scheduleSync(db);
 }

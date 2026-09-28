@@ -4,7 +4,6 @@ import { getFirstBusinessForUser } from '../db/businesses';
 import { getMeta, setMeta } from '../db/meta';
 import { Language, STRINGS, StringKey } from '../i18n/strings';
 import { logoutGoogle } from '../lib/auth';
-import { autoRestoreAfterLogin } from '../lib/cloudRestore';
 import { claimThisDevice } from '../sync/device';
 import { cancelSync, flushSyncNow, hasUnsyncedChanges, wipeLocalData } from '../sync/engine';
 
@@ -47,26 +46,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const language = (await getMeta(db, 'language')) as Language | null;
       const userId = await getMeta(db, 'user_id');
       const email = await getMeta(db, 'email');
-      let businessId = await getMeta(db, 'active_business_id');
-      // App start: a Supabase session may exist while the local business table
-      // is empty (fresh install, or a restore that failed while offline).
-      // Silently pull the cloud BEFORE first paint — local rows are never
-      // overwritten. If a full backup is restored the DB file is swapped and
-      // this handle is closed; the SQLiteProvider remount then re-runs this
-      // effect on the new file.
-      if (userId && !businessId) {
-        try {
-          if ((await autoRestoreAfterLogin(db)) === 'restored') {
-            try {
-              businessId = await getMeta(db, 'active_business_id');
-            } catch {
-              return; // file swapped — the remount re-runs this effect
-            }
-          }
-        } catch {
-          // silent — the app just keeps working locally
-        }
-      }
+      const businessId = await getMeta(db, 'active_business_id');
+      // Logged in but no business on this phone → app/index.tsx sends the
+      // user to the "Loading your data" screen (app/restoring.tsx).
       setState({ ready: true, language, userId, email, businessId });
     })();
   }, [db]);
@@ -97,31 +79,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       await claimThisDevice();
       await setMeta(db, 'user_id', userId);
       await setMeta(db, 'email', email);
-      // Silent cloud restore right after login. Gated on "no local business":
-      // existing local data is never overwritten. When a full backup restores,
-      // the DB file is swapped and this handle is closed — the provider remount
-      // rebuilds state from the new file, so the caller must navigate
-      // immediately without touching `db` again.
-      let restored = false;
-      try {
-        restored = (await autoRestoreAfterLogin(db)) === 'restored';
-      } catch {
-        // silent
-      }
-      if (restored) {
-        try {
-          const active = await getMeta(db, 'active_business_id');
-          if (active) {
-            // Fast path: the profile was pulled into the live DB.
-            setState((s) => ({ ...s, userId, email, businessId: active }));
-            return active;
-          }
-        } catch {
-          // Closed handle after a full restore — the remount rebuilds state.
-        }
-        setState((s) => ({ ...s, userId, email, businessId: null }));
-        return null;
-      }
+      // If this phone has no business for the account yet, app/index.tsx
+      // opens the "Loading your data" screen, which restores from the cloud.
       const existing = await getFirstBusinessForUser(db, userId);
       await setMeta(db, 'active_business_id', existing?.id ?? null);
       setState((s) => ({ ...s, userId, email, businessId: existing?.id ?? null }));

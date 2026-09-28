@@ -3,7 +3,8 @@ import { ActivityIndicator, View } from 'react-native';
 import { useApp } from '../src/context/AppContext';
 import { colors } from '../src/theme';
 
-// Decides which screen to open: login → business setup → home.
+// Decides which screen to open: login → loading your data → home
+// (business setup only for a brand-new account, decided by app/restoring.tsx).
 export default function Index() {
   const { ready, userId, businessId } = useApp();
 
@@ -15,6 +16,6 @@ export default function Index() {
     );
   }
   if (!userId) return <Redirect href="/login" />;
-  if (!businessId) return <Redirect href="/business-setup" />;
+  if (!businessId) return <Redirect href="/restoring" />;
   return <Redirect href="/home" />;
 }

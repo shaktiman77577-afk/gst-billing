@@ -31,9 +31,8 @@ export default function LoginScreen() {
     try {
       const result = await loginWithGoogle();
       if (result.ok) {
-        // completeLogin records the identity and silently restores the cloud
-        // (full backup first, business profile as fallback) when this phone
-        // has no business yet. Local data is never overwritten.
+        // completeLogin records the identity and claims this phone. If there is
+        // no business here yet, app/index.tsx opens "Loading your data".
         setChecking(true);
         try {
           await completeLogin(result.uid, result.email);
