@@ -8,7 +8,7 @@ import { AppAlert } from '../../src/components/AppDialog';
 import { Text } from '../../src/components/Text';
 import { FormHeader } from '../../src/components/FormHeader';
 import { StatePicker } from '../../src/components/StatePicker';
-import { Button, Card, Chips, Field, Hint, Label, Screen, SectionHeader } from '../../src/components/ui';
+import { Button, Card, Chips, Field, Hint, Label, Screen, Overline } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import { createParty, deleteParty, getParty, PartyType, updateParty } from '../../src/db/parties';
 import { useBusiness } from '../../src/hooks/useBusiness';
@@ -135,10 +135,10 @@ export default function PartyFormScreen() {
       />
       <Screen
         edges={['bottom']}
-        footer={<Button label={t('save')} icon="checkmark-circle" onPress={onSave} loading={saving} />}
+        footer={<Button label={t('save')} onPress={onSave} loading={saving} />}
       >
         <Card>
-          <SectionHeader icon="person" title={t('sectionBasic')} />
+          <Overline>{t('sectionBasic')}</Overline>
           <Field
             label={t('partyName')}
             placeholder={t('partyNamePlaceholder')}
@@ -171,7 +171,7 @@ export default function PartyFormScreen() {
         </Card>
 
         <Card>
-          <SectionHeader icon="receipt" title={t('sectionPartyGst')} />
+          <Overline>{t('sectionPartyGst')}</Overline>
           <Field
             label={t('gstin')}
             optionalLabel={t('optional')}
@@ -222,7 +222,7 @@ export default function PartyFormScreen() {
         </Card>
 
         <Card>
-          <SectionHeader icon="wallet" title={t('sectionOpening')} subtitle={t('openingHint')} />
+          <Overline>{t('sectionOpening')} subtitle={t('openingHint')}</Overline>
           <Field
             label={t('amount')}
             optionalLabel={t('optional')}

@@ -6,7 +6,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { AppAlert } from '../../src/components/AppDialog';
 import { Text } from '../../src/components/Text';
 import { FormHeader } from '../../src/components/FormHeader';
-import { Button, Card, IconName, Screen, SectionHeader } from '../../src/components/ui';
+import { Button, Card, IconName, Screen, Overline } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import { useMembership } from '../../src/hooks/useMembership';
 import { StringKey } from '../../src/i18n/strings';
@@ -241,7 +241,7 @@ export default function MembershipScreen() {
             ) : null}
 
             {/* ---------- What's included ---------- */}
-            <SectionHeader icon="sparkles-outline" title={t('mem_includesPro')} />
+            <Overline>{t('mem_includesPro')}</Overline>
             <Card style={styles.featCard}>
               {PRO_FEATURES.map((f, i) => (
                 <View key={f.key}>
@@ -262,7 +262,7 @@ export default function MembershipScreen() {
             </Card>
 
             {/* ---------- Plans ---------- */}
-            <SectionHeader icon="star-outline" title={t('mem_viewPlans')} />
+            <Overline>{t('mem_viewPlans')}</Overline>
             {plans.map((plan) => {
               const yearly = plan.duration_days >= 300;
               const current = mem.planId === plan.id;
@@ -345,7 +345,7 @@ const styles = StyleSheet.create({
   status: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   icon: { width: 54, height: 54, borderRadius: radius.lg, alignItems: 'center', justifyContent: 'center' },
   muted: { fontSize: 13, color: colors.muted },
-  big: { fontSize: 18, fontWeight: '800', color: colors.text },
+  big: { fontSize: 18, fontWeight: '700', color: colors.text },
   text: { fontSize: 14, color: colors.text, lineHeight: 20 },
   offline: { fontSize: 12, color: colors.faint, textAlign: 'center' },
   kv: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
@@ -388,12 +388,12 @@ const styles = StyleSheet.create({
   radioOn: { borderColor: colors.primary },
   radioDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: colors.primary },
   planTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
-  planName: { fontSize: 15, fontWeight: '800', color: colors.text },
+  planName: { fontSize: 15, fontWeight: '700', color: colors.text },
   saveBadge: { backgroundColor: colors.successSoft, borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 4 },
-  saveText: { fontSize: 11, fontWeight: '800', color: colors.success },
+  saveText: { fontSize: 11, fontWeight: '700', color: colors.success },
   currentBadge: { backgroundColor: colors.primarySoft, borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 4 },
-  currentText: { fontSize: 11, fontWeight: '800', color: colors.primary },
-  price: { fontSize: 17, fontWeight: '800', color: colors.primary, marginTop: 2 },
+  currentText: { fontSize: 11, fontWeight: '700', color: colors.primary },
+  price: { fontSize: 17, fontWeight: '700', color: colors.primary, marginTop: 2 },
   per: { fontSize: 13, fontWeight: '400', color: colors.muted },
   billedNote: { fontSize: 12, color: colors.muted, marginTop: 2 },
   // Bottom buy bar (myBillBook-style, anchored)
@@ -409,11 +409,11 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   barPrice: { flex: 1 },
-  barAmount: { fontSize: 18, fontWeight: '800', color: colors.text },
+  barAmount: { fontSize: 18, fontWeight: '700', color: colors.text },
   barPer: { fontSize: 13, fontWeight: '400', color: colors.muted },
   barNote: { fontSize: 12, color: colors.muted, marginTop: 1 },
   currentPill: { backgroundColor: colors.successSoft, borderRadius: radius.pill, paddingHorizontal: 16, paddingVertical: 10 },
-  currentPillText: { fontSize: 14, fontWeight: '800', color: colors.success },
+  currentPillText: { fontSize: 14, fontWeight: '700', color: colors.success },
   rowHead: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
   head: { fontSize: 14, fontWeight: '700', color: colors.text },
   rowText: { fontSize: 14, fontWeight: '600', color: colors.text },

@@ -7,7 +7,7 @@ import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { AppAlert } from '../../src/components/AppDialog';
 import { Text } from '../../src/components/Text';
 import { FormHeader } from '../../src/components/FormHeader';
-import { Card, Hint, Screen, SectionHeader } from '../../src/components/ui';
+import { Card, Hint, Screen, Overline } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import {
   RECYCLE_NOT_CANCELLED,
@@ -208,7 +208,7 @@ export default function RecycleScreen() {
             if (section.length === 0) return null;
             return (
               <View key={kind}>
-                <SectionHeader icon={icon} title={`${t(key)} (${section.length})`} />
+                <Overline>{`${t(key)} (${section.length})`}</Overline>
                 <Card>{section.map(renderRow)}</Card>
               </View>
             );

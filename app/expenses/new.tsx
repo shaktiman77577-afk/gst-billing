@@ -108,7 +108,7 @@ export default function ExpenseFormScreen() {
       <FormHeader title={editing ? t('e_editExpense') : t('e_addExpense')} />
       <Screen
         edges={['bottom']}
-        footer={<Button label={t('save')} icon="checkmark-circle" onPress={onSave} loading={saving} />}
+        footer={<Button label={t('save')} onPress={onSave} loading={saving} />}
       >
         <Card>
           <Field
@@ -148,5 +148,5 @@ export default function ExpenseFormScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.background },
-  amountInput: { fontSize: 18, fontWeight: '800' },
+  amountInput: { fontSize: 18, fontWeight: '700' },
 });

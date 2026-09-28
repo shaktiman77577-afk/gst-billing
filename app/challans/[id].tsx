@@ -278,10 +278,10 @@ export default function ChallanDetailScreen() {
               style={({ pressed }) => [styles.wa, pressed && { opacity: 0.85 }, busy === 'whatsapp' && { opacity: 0.7 }]}
             >
               {busy === 'whatsapp' ? (
-                <ActivityIndicator color={colors.white} />
+                <ActivityIndicator color={colors.primary} />
               ) : (
                 <>
-                  <Ionicons name="logo-whatsapp" size={22} color={colors.white} />
+                  <Ionicons name="logo-whatsapp" size={18} color="#1DA851" />
                   <Text style={styles.waText}>{t('whatsapp')}</Text>
                 </>
               )}
@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
   cancelText: { fontSize: 14, fontWeight: '700', color: colors.muted },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
   docType: { fontSize: text.sm, fontWeight: '500', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.4 },
-  total: { fontSize: text.xl, fontWeight: '800', color: colors.primary },
+  total: { fontSize: text.xl, fontWeight: '700', color: colors.primary },
   strike: { textDecorationLine: 'line-through', color: colors.faint },
   words: { fontSize: text.xs, color: colors.faint, fontStyle: 'italic', marginTop: -6 },
   metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 14 },
@@ -353,17 +353,19 @@ const styles = StyleSheet.create({
   lineAmt: { fontSize: text.md, fontWeight: '700', color: colors.text },
   rowLabel: { fontSize: 14, color: colors.muted, flexShrink: 1 },
   rowValue: { fontSize: 14, color: colors.text, fontWeight: '600' },
-  bold: { fontWeight: '800', color: colors.text, fontSize: text.md },
+  bold: { fontWeight: '700', color: colors.text, fontSize: text.md },
   divider: { height: 1, backgroundColor: colors.border },
   actions: { flexDirection: 'row', gap: 12 },
   wa: {
-    minHeight: 48,
-    borderRadius: 14,
-    backgroundColor: '#25D366',
+    minHeight: 44,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    backgroundColor: colors.card,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
   },
-  waText: { color: colors.white, fontSize: 15, fontWeight: '700' },
+  waText: { color: colors.text, fontSize: 15, fontWeight: '500' },
 });

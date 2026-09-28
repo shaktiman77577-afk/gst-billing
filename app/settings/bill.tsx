@@ -7,7 +7,7 @@ import { Image, Pressable, StyleSheet, View } from 'react-native';
 import { AppAlert } from '../../src/components/AppDialog';
 import { Text } from '../../src/components/Text';
 import { FormHeader } from '../../src/components/FormHeader';
-import { Button, Card, Field, MenuRow, Screen, SectionHeader } from '../../src/components/ui';
+import { Button, Card, Field, MenuRow, Screen, Overline } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import { updateBillDesign } from '../../src/db/businesses';
 import { getInvoiceNextSeq, setInvoiceNextSeq } from '../../src/db/invoices';
@@ -131,7 +131,7 @@ export default function BillSettingsScreen() {
       <FormHeader title={t('billSettings')} />
       <Screen
         edges={['bottom']}
-        footer={<Button label={t('save')} icon="checkmark-circle" onPress={onSave} loading={saving} />}
+        footer={<Button label={t('save')} onPress={onSave} loading={saving} />}
       >
         {/* Design */}
         <Card list>
@@ -147,7 +147,7 @@ export default function BillSettingsScreen() {
 
         {/* Number */}
         <Card>
-          <SectionHeader icon="document-text" title={t('invoicePrefix')} subtitle={t('prefixHint')} />
+          <Overline>{t('invoicePrefix')} subtitle={t('prefixHint')}</Overline>
           <Field
             label={t('invoicePrefix')}
             value={prefix}
@@ -176,7 +176,7 @@ export default function BillSettingsScreen() {
 
         {/* Logo & signature */}
         <Card>
-          <SectionHeader icon="image" title={t('sectionLogo')} />
+          <Overline>{t('sectionLogo')}</Overline>
           <ImageRow label={t('logo')} uri={logo} square onPick={() => choose('logo')} onRemove={() => setLogo(null)} />
           <ImageRow
             label={t('signature')}
@@ -196,7 +196,7 @@ export default function BillSettingsScreen() {
 
         {/* Bank & UPI */}
         <Card>
-          <SectionHeader icon="card" title={t('sectionBank')} />
+          <Overline>{t('sectionBank')}</Overline>
           <Field label={t('bankAccountName')} value={accName} onChangeText={setAccName} autoCapitalize="words" />
           <Field
             label={t('bankAccountNo')}
@@ -232,7 +232,7 @@ export default function BillSettingsScreen() {
 
         {/* Terms */}
         <Card>
-          <SectionHeader icon="list" title={t('sectionTerms')} subtitle={t('termsHint')} />
+          <Overline>{t('sectionTerms')} subtitle={t('termsHint')}</Overline>
           <Field
             label={t('sectionTerms')}
             value={terms}
@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: 12 },
   muted: { fontSize: 12, color: colors.muted },
   preview: { backgroundColor: colors.primarySoft, borderRadius: radius.md, padding: 12, gap: 2 },
-  previewValue: { fontSize: 18, fontWeight: '800', color: colors.primary, letterSpacing: 0.1 },
+  previewValue: { fontSize: 18, fontWeight: '700', color: colors.primary, letterSpacing: 0.1 },
   imgRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   imgBox: {
     borderWidth: 1,

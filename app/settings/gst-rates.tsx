@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
   },
   detailLabel: { fontSize: text.xs, color: colors.muted, marginBottom: 2 },
-  detailHsn: { fontSize: 18, fontWeight: '800', color: colors.text, letterSpacing: 0.1 },
+  detailHsn: { fontSize: 18, fontWeight: '700', color: colors.text, letterSpacing: 0.1 },
   copyHint: { fontSize: text.xs, color: colors.faint, marginTop: spacing.xs },
   footer: { marginTop: spacing.md },
 });

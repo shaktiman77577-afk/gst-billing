@@ -100,10 +100,10 @@ export default function BillPreviewScreen() {
             style={({ pressed }) => [styles.wa, pressed && { opacity: 0.85 }, busy === 'whatsapp' && { opacity: 0.7 }]}
           >
             {busy === 'whatsapp' ? (
-              <ActivityIndicator color={colors.white} />
+              <ActivityIndicator color={colors.primary} />
             ) : (
               <>
-                <Ionicons name="logo-whatsapp" size={22} color={colors.white} />
+                <Ionicons name="logo-whatsapp" size={18} color="#1DA851" />
                 <Text style={styles.waText}>{t('whatsapp')}</Text>
               </>
             )}
@@ -141,13 +141,15 @@ const styles = StyleSheet.create({
   wa: {
     marginHorizontal: 16,
     marginTop: 12,
-    minHeight: 48,
-    borderRadius: 14,
-    backgroundColor: '#25D366',
+    minHeight: 44,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    backgroundColor: colors.card,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
   },
-  waText: { color: colors.white, fontSize: text.md, fontWeight: '700' },
+  waText: { color: colors.text, fontSize: text.md, fontWeight: '500' },
 });

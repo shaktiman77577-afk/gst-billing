@@ -8,19 +8,7 @@ import { colors } from '../src/theme';
 import { FormHeader } from '../src/components/FormHeader';
 import { LanguageToggle } from '../src/components/LanguageToggle';
 import { StatePicker } from '../src/components/StatePicker';
-import {
-  Button,
-  Card,
-  Chips,
-  ErrorText,
-  Field,
-  Hint,
-  Label,
-  MadeInIndia,
-  Screen,
-  SectionHeader,
-  Title,
-} from '../src/components/ui';
+import { Button, Card, Chips, ErrorText, Field, Hint, Label, MadeInIndia, Screen, Title, Overline } from '../src/components/ui';
 import { useApp } from '../src/context/AppContext';
 import { BusinessType, createBusiness, updateBusiness } from '../src/db/businesses';
 import { useBusiness } from '../src/hooks/useBusiness';
@@ -190,7 +178,7 @@ export default function BusinessSetupScreen() {
         footer={
           <Button
             label={isEdit ? t('save') : t('saveBusiness')}
-            icon="checkmark-circle"
+           
             onPress={onSave}
             loading={saving}
           />
@@ -221,7 +209,7 @@ export default function BusinessSetupScreen() {
         )}
 
       <Card>
-        <SectionHeader icon="storefront" title={t('sectionBusiness')} />
+        <Overline>{t('sectionBusiness')}</Overline>
         <Field
           label={t('businessName')}
           placeholder={t('businessNamePlaceholder')}
@@ -255,7 +243,7 @@ export default function BusinessSetupScreen() {
       </Card>
 
       <Card>
-        <SectionHeader icon="receipt" title={t('sectionGst')} />
+        <Overline>{t('sectionGst')}</Overline>
         <Label>{t('gstRegistered')}</Label>
         <Chips
           options={[
@@ -299,7 +287,7 @@ export default function BusinessSetupScreen() {
       </Card>
 
       <Card>
-        <SectionHeader icon="location" title={t('sectionAddress')} />
+        <Overline>{t('sectionAddress')}</Overline>
         <StatePicker
           label={t('state')}
           placeholder={t('selectState')}

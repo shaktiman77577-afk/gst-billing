@@ -1,16 +1,48 @@
-// Five bill designs. Each returns a complete HTML page (A4) for printing / PDF.
+// Bill designs. Each returns a complete HTML page for printing / PDF.
+// Free: Simple, Stylish (A4). Pro (paid): Professional, Minimal, Luxury,
+// Advance GST, Tally (A4) and Compact, Retail (A5).
 import { Doc } from './data';
 import { PLAY_STORE_URL } from '../lib/config';
 
-export type TemplateId = 'simple' | 'stylish' | 'luxury' | 'advance' | 'tally';
+export type TemplateId =
+  | 'simple'
+  | 'stylish'
+  | 'professional'
+  | 'minimal'
+  | 'luxury'
+  | 'advance'
+  | 'tally'
+  | 'a5_compact'
+  | 'a5_retail';
 
-export const TEMPLATES: { id: TemplateId; name: string; premium: boolean }[] = [
-  { id: 'simple', name: 'Simple', premium: false },
-  { id: 'stylish', name: 'Stylish', premium: false },
-  { id: 'luxury', name: 'Luxury', premium: true },
-  { id: 'advance', name: 'Advance GST', premium: true },
-  { id: 'tally', name: 'Advance GST (Tally)', premium: true },
+export type PaperSize = 'A4' | 'A5';
+
+export const TEMPLATES: { id: TemplateId; name: string; premium: boolean; size: PaperSize }[] = [
+  { id: 'simple', name: 'Simple', premium: false, size: 'A4' },
+  { id: 'stylish', name: 'Stylish', premium: false, size: 'A4' },
+  { id: 'professional', name: 'Professional', premium: true, size: 'A4' },
+  { id: 'minimal', name: 'Minimal', premium: true, size: 'A4' },
+  { id: 'luxury', name: 'Luxury', premium: true, size: 'A4' },
+  { id: 'advance', name: 'Advance GST', premium: true, size: 'A4' },
+  { id: 'tally', name: 'Advance GST (Tally)', premium: true, size: 'A4' },
+  { id: 'a5_compact', name: 'Compact', premium: true, size: 'A5' },
+  { id: 'a5_retail', name: 'Retail', premium: true, size: 'A5' },
 ];
+
+export function isPremiumTemplate(id: string | null | undefined): boolean {
+  return !!TEMPLATES.find((x) => x.id === id)?.premium;
+}
+
+export function templateSize(id: string | null | undefined): PaperSize {
+  return TEMPLATES.find((x) => x.id === id)?.size ?? 'A4';
+}
+
+/** Free users always print a free design (their saved premium choice falls back to Simple). */
+export function effectiveTemplate(id: string | null | undefined, isPro: boolean): TemplateId {
+  const known = TEMPLATES.find((x) => x.id === id);
+  if (!known) return 'simple';
+  return known.premium && !isPro ? 'simple' : known.id;
+}
 
 export const THEME_COLORS = ['#111827', '#3F7D20', '#1E3A8A', '#0E6BA8', '#7E22CE', '#B91C1C', '#4F46E5', '#B7791F'];
 
@@ -484,8 +516,231 @@ function tally(d: Doc): string {
   return page(d.meta.invoiceNo, gridCss(d), body, d);
 }
 
+
+// ---------- 6. Professional (A4, Pro) ----------
+// Clean corporate look: thin brand bar, three-part info strip, solid header row.
+function professional(d: Doc): string {
+  const c = d.color;
+  const css = `
+    .bar { height: 6px; background: ${c}; margin: 0 0 14px; border-radius: 2px; }
+    .hd td { vertical-align: top; }
+    .title { color: ${c}; font-size: 17px; font-weight: 700; letter-spacing: 1px; }
+    .copy { font-size: 8.5px; color: #6b7280; letter-spacing: .3px; margin-top: 2px; }
+    .strip { border: 1px solid #e5e7eb; border-radius: 6px; margin-top: 14px; }
+    .strip td { padding: 9px 11px; border-left: 1px solid #e5e7eb; }
+    .strip td:first-child { border-left: 0; }
+    .lbl { font-size: 8.5px; font-weight: 700; color: #6b7280; letter-spacing: .4px; text-transform: uppercase; }
+    .items { margin-top: 14px; }
+    .items th { background: ${c}; color: #fff; font-size: 8.5px; letter-spacing: .3px; text-transform: uppercase; padding: 7px 6px; text-align: left; }
+    .items td { padding: 7px 6px; border-bottom: 1px solid #e5e7eb; }
+    .sum td { padding: 3px 0; } .sum .grand td { background: ${c}; color: #fff; padding: 7px 8px; font-size: 13px; }
+    .kv td { padding: 1px 8px 1px 0; } .terms { margin: 2px 0 0 16px; padding: 0; }
+  `;
+  const g = d.applyGst;
+  const meta = metaItems(d);
+  const body = `
+  <div class="bar"></div>
+  <table class="hd"><tr>
+    <td style="width:${d.seller.logo ? '64px' : '0'}">${d.seller.logo ? `<img class="logo" style="max-width:56px;max-height:56px" src="${d.seller.logo}"/>` : ''}</td>
+    <td>${sellerBlock(d, 'font-size:15px')}</td>
+    <td class="r" style="width:180px"><div class="title">${d.title}</div><div class="copy">${d.copyLabel}</div></td>
+  </tr></table>
+  <table class="strip"><tr>
+    <td style="width:40%">${buyerBlock(d)}</td>
+    <td>${meta
+      .slice(0, 3)
+      .map(([k, v]) => `<div class="lbl">${k}</div><div class="b" style="margin-bottom:4px">${v}</div>`)
+      .join('')}</td>
+    <td>${meta
+      .slice(3)
+      .map(([k, v]) => `<div class="lbl">${k}</div><div class="b" style="margin-bottom:4px">${v}</div>`)
+      .join('')}${g ? `<div class="lbl">Tax</div><div class="b">${d.isIgst ? 'IGST' : 'CGST + SGST'}</div>` : ''}</td>
+  </tr></table>
+  <table class="items"><thead><tr>
+    <th style="width:22px">#</th><th>Item</th>${g ? '<th>HSN</th>' : ''}<th class="r">Qty</th><th class="r">Rate</th>
+    ${g ? '<th class="r">GST</th>' : ''}<th class="r">Amount</th></tr></thead><tbody>
+    ${d.lines
+      .map(
+        (l) => `<tr><td class="muted">${l.sno}</td><td><div class="b">${l.name}</div>${
+          l.discount ? `<div class="small muted">Disc. ${l.discountPct || '₹' + l.discount}</div>` : ''
+        }</td>${g ? `<td class="muted">${l.hsn}</td>` : ''}<td class="r nowrap">${l.qty}</td><td class="r">${l.rate}</td>${
+          g ? `<td class="r muted">${l.gstRate}</td>` : ''
+        }<td class="r b">${l.amount}</td></tr>`,
+      )
+      .join('')}
+  </tbody></table>
+  <table style="margin-top:12px"><tr>
+    <td style="width:58%;padding-right:18px">
+      <div class="lbl">Amount in words</div><div class="b" style="margin-bottom:8px">${d.totals.words}</div>
+      ${hsnTable(d, '#e5e7eb')}
+    </td>
+    <td><table class="sum">${totalsRows(d)}</table></td>
+  </tr></table>
+  <div class="grow"></div>
+  <table style="margin-top:14px;border-top:1px solid #e5e7eb"><tr>
+    <td style="padding-top:10px">${bankBlock(d)}<div style="margin-top:6px">${termsBlock(d)}</div></td>
+    <td style="width:170px;padding-top:10px">${signBlock(d)}</td>
+  </tr></table>`;
+  return page(d.meta.invoiceNo, css, body, d);
+}
+
+// ---------- 7. Minimal (A4, Pro) ----------
+// Black-and-white, lots of space, hairline rules — prints well on any printer.
+function minimal(d: Doc): string {
+  const css = `
+    body { color: #111827; }
+    .title { font-size: 26px; font-weight: 300; letter-spacing: 2px; }
+    .rule { border-top: 1px solid #111827; margin: 12px 0; }
+    .lbl { font-size: 8.5px; color: #6b7280; letter-spacing: .6px; text-transform: uppercase; margin-bottom: 2px; }
+    .items th { font-size: 8.5px; color: #6b7280; letter-spacing: .5px; text-transform: uppercase; text-align: left; padding: 6px 4px; border-bottom: 1px solid #111827; font-weight: 500; }
+    .items td { padding: 8px 4px; border-bottom: 1px solid #e5e7eb; }
+    .sum td { padding: 3px 0; } .sum .grand td { border-top: 1px solid #111827; padding-top: 8px; font-size: 15px; }
+    .kv td { padding: 1px 8px 1px 0; } .terms { margin: 2px 0 0 16px; padding: 0; }
+  `;
+  const g = d.applyGst;
+  const body = `
+  <table><tr>
+    <td><div class="title">${d.title}</div><div class="small muted">${d.copyLabel}</div></td>
+    <td class="r">${d.seller.logo ? `<img class="logo" src="${d.seller.logo}"/>` : ''}</td>
+  </tr></table>
+  <div class="rule"></div>
+  <table><tr>
+    <td style="width:38%"><div class="lbl">From</div>${sellerBlock(d, 'font-size:13px')}</td>
+    <td style="width:38%"><div class="lbl">Billed to</div>${buyerBlock(d, '')}</td>
+    <td class="r">${metaItems(d)
+      .map(([k, v]) => `<div class="lbl">${k}</div><div class="b" style="margin-bottom:5px">${v}</div>`)
+      .join('')}</td>
+  </tr></table>
+  <table class="items" style="margin-top:16px"><thead><tr>
+    <th>Item</th>${g ? '<th>HSN</th>' : ''}<th class="r">Qty</th><th class="r">Rate</th>${g ? '<th class="r">GST</th>' : ''}<th class="r">Amount</th>
+  </tr></thead><tbody>
+    ${d.lines
+      .map(
+        (l) => `<tr><td>${l.name}</td>${g ? `<td class="muted">${l.hsn}</td>` : ''}<td class="r nowrap">${l.qty}</td><td class="r">${l.rate}</td>${
+          g ? `<td class="r muted">${l.gstRate}</td>` : ''
+        }<td class="r">${l.amount}</td></tr>`,
+      )
+      .join('')}
+  </tbody></table>
+  <table style="margin-top:12px"><tr>
+    <td style="width:55%;padding-right:18px"><div class="lbl">Amount in words</div><div>${d.totals.words}</div>${hsnTable(d, '#e5e7eb')}</td>
+    <td><table class="sum">${totalsRows(d)}</table></td>
+  </tr></table>
+  <div class="grow"></div>
+  <div class="rule"></div>
+  <table><tr><td>${bankBlock(d)}<div style="margin-top:6px">${termsBlock(d)}</div></td><td style="width:170px">${signBlock(d)}</td></tr></table>`;
+  return page(d.meta.invoiceNo, css, body, d);
+}
+
+// ---------- A5 shared ----------
+const A5_CSS = `
+  @page { size: A5; margin: 7mm; }
+  body { font-size: 9.5px; }
+  .sheet { min-height: 194mm; }
+  .logo { max-width: 70px; max-height: 44px; }
+  .qr svg { width: 70px; height: 70px; }
+  .sign { max-width: 110px; max-height: 40px; }
+`;
+
+// ---------- 8. Compact (A5, Pro) ----------
+function a5Compact(d: Doc): string {
+  const c = d.color;
+  const css = `${A5_CSS}
+    .hd { border-bottom: 2px solid ${c}; padding-bottom: 6px; }
+    .title { color: ${c}; font-size: 13px; font-weight: 700; letter-spacing: .8px; }
+    .items th { background: ${d.tint}; color: ${c}; font-size: 8px; text-transform: uppercase; padding: 5px 4px; text-align: left; }
+    .items td { padding: 5px 4px; border-bottom: 1px solid #e5e7eb; }
+    .sum td { padding: 2px 0; } .sum .grand td { border-top: 1.5px solid ${c}; padding-top: 5px; font-size: 11.5px; }
+    .kv td { padding: 0 6px 0 0; } .terms { margin: 2px 0 0 14px; padding: 0; }
+  `;
+  const g = d.applyGst;
+  const body = `
+  <table class="hd"><tr>
+    <td>${sellerBlock(d, 'font-size:13px')}</td>
+    <td class="r" style="width:120px"><div class="title">${d.title}</div><div class="small muted">${d.copyLabel}</div>
+      ${metaItems(d)
+        .slice(0, 3)
+        .map(([k, v]) => `<div class="small"><span class="muted">${k}</span> <b>${v}</b></div>`)
+        .join('')}</td>
+  </tr></table>
+  <div style="margin-top:6px">${buyerBlock(d)}</div>
+  <table class="items" style="margin-top:6px"><thead><tr>
+    <th>Item</th><th class="r">Qty</th><th class="r">Rate</th>${g ? '<th class="r">GST</th>' : ''}<th class="r">Amt</th>
+  </tr></thead><tbody>
+    ${d.lines
+      .map(
+        (l) => `<tr><td><b>${l.name}</b>${g && l.hsn ? `<div class="small muted">HSN ${l.hsn}</div>` : ''}</td><td class="r nowrap">${l.qty}</td><td class="r">${l.rate}</td>${
+          g ? `<td class="r">${l.gstRate}</td>` : ''
+        }<td class="r b">${l.amount}</td></tr>`,
+      )
+      .join('')}
+  </tbody></table>
+  <table style="margin-top:6px"><tr>
+    <td style="width:52%;padding-right:10px" class="small"><b>In words:</b> ${d.totals.words}</td>
+    <td><table class="sum">${totalsRows(d, { strongColor: c })}</table></td>
+  </tr></table>
+  <div class="grow"></div>
+  <table style="margin-top:8px"><tr><td class="small">${bankBlock(d)}${termsBlock(d)}</td><td style="width:120px">${signBlock(d)}</td></tr></table>`;
+  return page(d.meta.invoiceNo, css, body, d);
+}
+
+// ---------- 9. Retail (A5, Pro) ----------
+// Shop-counter style: centred header, dashed rules, big total.
+function a5Retail(d: Doc): string {
+  const css = `${A5_CSS}
+    .center { text-align: center; }
+    .dash { border-top: 1px dashed #6b7280; margin: 6px 0; }
+    .items th { font-size: 8px; text-transform: uppercase; color: #6b7280; padding: 3px 2px; text-align: left; font-weight: 500; }
+    .items td { padding: 4px 2px; }
+    .sum td { padding: 2px 0; } .sum .grand td { font-size: 14px; padding-top: 5px; border-top: 1px dashed #6b7280; }
+    .kv td { padding: 0 6px 0 0; } .terms { margin: 2px 0 0 14px; padding: 0; }
+  `;
+  const s = d.seller;
+  const g = d.applyGst;
+  const body = `
+  <div class="center">
+    ${s.logo ? `<img class="logo" src="${s.logo}"/>` : ''}
+    <div class="b" style="font-size:14px">${s.name}</div>
+    ${s.address ? `<div class="small">${s.address}</div>` : ''}
+    <div class="small">${[s.phone ? `Ph ${s.phone}` : '', s.gstin ? `GSTIN ${s.gstin}` : ''].filter(Boolean).join(' · ')}</div>
+    <div class="b" style="margin-top:4px;letter-spacing:1px">${d.title}</div>
+  </div>
+  <div class="dash"></div>
+  <table class="small"><tr>
+    <td><b>${d.buyer.name}</b>${d.buyer.phone ? `<br/>${d.buyer.phone}` : ''}${d.buyer.gstin ? `<br/>GSTIN ${d.buyer.gstin}` : ''}</td>
+    <td class="r">${metaItems(d)
+      .slice(0, 2)
+      .map(([k, v]) => `${k}: <b>${v}</b>`)
+      .join('<br/>')}</td>
+  </tr></table>
+  <div class="dash"></div>
+  <table class="items"><thead><tr><th>Item</th><th class="r">Qty</th><th class="r">Rate</th><th class="r">Amt</th></tr></thead><tbody>
+    ${d.lines
+      .map(
+        (l) => `<tr><td>${l.name}${g ? `<span class="muted small"> · ${l.gstRate}</span>` : ''}</td><td class="r nowrap">${l.qty}</td><td class="r">${l.rate}</td><td class="r b">${l.amount}</td></tr>`,
+      )
+      .join('')}
+  </tbody></table>
+  <div class="dash"></div>
+  <table class="sum">${totalsRows(d)}</table>
+  <div class="small" style="margin-top:4px">${d.totals.words}</div>
+  <div class="grow"></div>
+  <div class="dash"></div>
+  <table><tr><td class="small">${bankBlock(d)}${termsBlock(d)}</td><td style="width:110px">${signBlock(d)}</td></tr></table>
+  <div class="center small muted" style="margin-top:4px">Thank you — visit again!</div>`;
+  return page(d.meta.invoiceNo, css, body, d);
+}
+
 export function renderInvoiceHtml(d: Doc, template: string): string {
   switch (template) {
+    case 'professional':
+      return professional(d);
+    case 'minimal':
+      return minimal(d);
+    case 'a5_compact':
+      return a5Compact(d);
+    case 'a5_retail':
+      return a5Retail(d);
     case 'stylish':
       return stylish(d);
     case 'luxury':

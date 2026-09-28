@@ -6,7 +6,7 @@ import { Linking, Platform } from 'react-native';
 import { Business } from '../db/businesses';
 import { Invoice, InvoiceLine } from '../db/invoices';
 import { CopyKind, buildDoc } from './data';
-import { renderInvoiceHtml } from './templates';
+import { effectiveTemplate, renderInvoiceHtml } from './templates';
 
 export type InvoiceHtmlOpts = {
   isPro?: boolean; // Pro: no footer at all — completely clean professional bill
@@ -20,7 +20,8 @@ export function invoiceHtml(
   opts: InvoiceHtmlOpts = {},
 ): string {
   const doc = buildDoc(business, invoice, lines, { color: business.theme_color, showFooter: true, ...opts });
-  return renderInvoiceHtml(doc, business.template);
+  // Premium designs are for paid plans; free users print Simple.
+  return renderInvoiceHtml(doc, effectiveTemplate(business.template, !!opts.isPro));
 }
 
 // For the in-app preview: lay the page out at A4 width, then let WebView zoom to fit.
@@ -33,7 +34,9 @@ export function forPreview(html: string): string {
 
 async function makePdf(html: string, invoiceNo: string): Promise<string> {
   // A4 in points (595 × 842). Without this Android makes US Letter pages.
-  const { uri } = await Print.printToFileAsync({ html, width: 595, height: 842 });
+  // A5 templates declare `@page { size: A5 }`; everything else is A4.
+  const a5 = /@page\s*\{\s*size:\s*A5/.test(html);
+  const { uri } = await Print.printToFileAsync({ html, width: a5 ? 420 : 595, height: a5 ? 595 : 842 });
   // Give the file a readable name like INV-26-27-5.pdf (shown in WhatsApp).
   try {
     const name = `${invoiceNo.replace(/[^A-Za-z0-9-]+/g, '-')}.pdf`;

@@ -8,7 +8,7 @@ import { Text } from '../src/components/Text';
 import { FormHeader } from '../src/components/FormHeader';
 import { DateRangeButton } from '../src/components/DateRangeButton';
 import { DateRangePicker } from '../src/components/DateRangePicker';
-import { Card, Hairline, IconChip, IconName, SectionHeader } from '../src/components/ui';
+import { Card, Hairline, IconChip, IconName, Overline } from '../src/components/ui';
 import { useApp } from '../src/context/AppContext';
 import { Daybook, getDaybook, getDaybookRange } from '../src/db/daybook';
 import { expenseCategoryLabel } from '../src/db/expenses';
@@ -90,7 +90,7 @@ export default function DaybookScreen() {
     <Card>
       <View style={styles.sectionHead}>
         <View style={styles.sectionGrow}>
-          <SectionHeader icon={icon} title={title} subtitle={`${count} · ${formatPaise(total)}`} />
+          <Overline>{title} subtitle={`${count} · ${formatPaise(total)}`}</Overline>
         </View>
         {action}
       </View>
@@ -292,8 +292,8 @@ const styles = StyleSheet.create({
   totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 4 },
   totalLabel: { fontSize: 14, fontWeight: '600', color: colors.muted },
   totalValue: { fontSize: 15, fontWeight: '700' },
-  netLabel: { fontSize: 14, fontWeight: '800', color: colors.text },
-  netValue: { fontSize: 14, fontWeight: '800' },
+  netLabel: { fontSize: 14, fontWeight: '700', color: colors.text },
+  netValue: { fontSize: 14, fontWeight: '700' },
   list: { gap: 10, marginTop: 4 },
   entry: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   entryText: { flex: 1 },

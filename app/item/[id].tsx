@@ -7,7 +7,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { AppAlert } from '../../src/components/AppDialog';
 import { Text } from '../../src/components/Text';
 import { FormHeader } from '../../src/components/FormHeader';
-import { Button, Card, Chips, Field, Hairline, Label, Screen, SectionHeader } from '../../src/components/ui';
+import { Button, Card, Chips, Field, Hairline, Label, Screen, Overline } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import {
   createItem,
@@ -153,10 +153,10 @@ export default function ItemFormScreen() {
       />
       <Screen
         edges={['bottom']}
-        footer={<Button label={t('save')} icon="checkmark-circle" onPress={onSave} loading={saving} />}
+        footer={<Button label={t('save')} onPress={onSave} loading={saving} />}
       >
         <Card>
-          <SectionHeader icon="cube" title={t('sectionBasic')} />
+          <Overline>{t('sectionBasic')}</Overline>
           <Field
             label={t('itemName')}
             placeholder={t('itemNamePlaceholder')}
@@ -182,7 +182,7 @@ export default function ItemFormScreen() {
         </Card>
 
         <Card>
-          <SectionHeader icon="pricetags" title={t('sectionPricing')} />
+          <Overline>{t('sectionPricing')}</Overline>
           <Field
             label={t('salesPrice')}
             placeholder="0"
@@ -255,7 +255,7 @@ export default function ItemFormScreen() {
 
         {isService ? null : (
           <Card>
-            <SectionHeader icon="layers" title={t('sectionStock')} />
+            <Overline>{t('sectionStock')}</Overline>
             <Field
               label={`${t('openingStock')} (${unit})`}
               optionalLabel={t('optional')}
@@ -308,5 +308,5 @@ const styles = StyleSheet.create({
   breakRow: { flexDirection: 'row', justifyContent: 'space-between' },
   breakLabel: { fontSize: text.sm, color: colors.muted },
   breakValue: { fontSize: text.sm, color: colors.text },
-  bold: { fontWeight: '800', color: colors.primary },
+  bold: { fontWeight: '700', color: colors.primary },
 });

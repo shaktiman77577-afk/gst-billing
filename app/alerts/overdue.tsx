@@ -165,5 +165,5 @@ const styles = StyleSheet.create({
   },
   badgeText: { fontSize: 12, fontWeight: '700', color: colors.danger },
   rowSide: { alignItems: 'flex-end', gap: 8 },
-  balance: { fontSize: 16, fontWeight: '800', color: colors.danger },
+  balance: { fontSize: 16, fontWeight: '700', color: colors.danger },
 });
