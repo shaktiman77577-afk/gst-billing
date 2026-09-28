@@ -102,7 +102,11 @@ export function UpdateGate({ children }: { children: ReactNode }) {
 
 const styles = StyleSheet.create({
   overlay: {
-    ...StyleSheet.absoluteFillObject,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: colors.background,
     zIndex: 1000,
     elevation: 1000,
