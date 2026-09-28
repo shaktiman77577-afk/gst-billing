@@ -3,7 +3,7 @@
     "name": "GST Billing",
     "slug": "gst-billing",
     "scheme": "gstbilling",
-    "version": "0.10.0",
+    "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "plugins": [
@@ -25,11 +25,12 @@
           "photosPermission": "Allow GST Billing to use your photos for the business logo and signature."
         }
       ],
-      "./plugins/withStableDebugKeystore"
+      "./plugins/withStableDebugKeystore",
+      "./plugins/withReleaseSigning"
     ],
     "android": {
       "package": "com.gstbilling.invoicemaker",
-      "versionCode": 10,
+      "versionCode": 100,
       "softwareKeyboardLayoutMode": "resize",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {

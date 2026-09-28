@@ -11,6 +11,7 @@ import { LanguageToggle } from '../../src/components/LanguageToggle';
 import { Card, Hairline, IconChip, IconName, MadeInIndia, MenuRow, Overline } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import { useMembership } from '../../src/hooks/useMembership';
+import { MONETIZATION_ENABLED } from '../../src/lib/features';
 import { getMeta } from '../../src/db/meta';
 import { stateName } from '../../src/data/states';
 import { useBusiness } from '../../src/hooks/useBusiness';
@@ -203,14 +204,18 @@ export default function MoreScreen() {
             <View style={styles.langToggle}>
               <LanguageToggle />
             </View>
-            <Hairline />
-            <MenuRow
-              icon="star-outline"
-              title={t('mem_title')}
-              subtitle={t('mem_rowHint')}
-              subtitleLines={1}
-              onPress={() => router.push('/settings/membership')}
-            />
+            {MONETIZATION_ENABLED ? (
+              <>
+                <Hairline />
+                <MenuRow
+                  icon="star-outline"
+                  title={t('mem_title')}
+                  subtitle={t('mem_rowHint')}
+                  subtitleLines={1}
+                  onPress={() => router.push('/settings/membership')}
+                />
+              </>
+            ) : null}
           </Card>
         </View>
 
@@ -235,6 +240,16 @@ export default function MoreScreen() {
               title={t('v2_dailyBackup')}
               subtitle={statusLine(cloud.fileAt, cloud.fileErr)}
               chevron={false}
+            />
+            <Hairline />
+            <MenuRow
+              icon="trash-outline"
+              iconBg={colors.dangerSoft}
+              iconFg={colors.danger}
+              title={t('v2_deleteAccount')}
+              subtitle={t('v2_deleteAccountHint')}
+              subtitleLines={1}
+              onPress={() => router.push('/settings/delete-account')}
             />
             <Hairline />
             <Pressable onPress={onLogout} style={({ pressed }) => [styles.logout, pressed && { opacity: 0.7 }]}>

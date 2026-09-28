@@ -14,6 +14,7 @@ import { SQLiteProvider } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { DialogHost } from '../src/components/AppDialog';
+import { UpdateGate } from '../src/components/UpdateGate';
 import { AppProvider } from '../src/context/AppContext';
 import { migrateDb } from '../src/db/migrations';
 import { AutoBackup } from '../src/hooks/useAutoBackup';
@@ -46,13 +47,15 @@ export default function RootLayout() {
         <AppProvider>
           <SyncProvider>
             <AutoBackup />
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                contentStyle: { backgroundColor: colors.background },
-                animation: 'fade',
-              }}
-            />
+            <UpdateGate>
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  contentStyle: { backgroundColor: colors.background },
+                  animation: 'fade',
+                }}
+              />
+            </UpdateGate>
             <DialogHost />
           </SyncProvider>
         </AppProvider>

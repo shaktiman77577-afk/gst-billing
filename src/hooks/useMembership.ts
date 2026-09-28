@@ -22,6 +22,8 @@ import {
   writeMembershipCache,
 } from '../lib/membership';
 import { CACHE_TTL_MS, FREE_BILLS_PER_MONTH, TRIAL_DAYS } from '../lib/membershipConfig';
+import { MONETIZATION_ENABLED } from '../lib/features';
+import { getAppConfig } from '../lib/appConfig';
 import { supabase } from '../lib/supabase';
 
 export type MembershipState = {
@@ -42,6 +44,17 @@ export type MembershipState = {
 /** Local calendar month as 'YYYY-MM' (no date-fns needed). */
 function localYYYYMM(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+/**
+ * Trial start = the later of account creation and the paid-launch date
+ * (app_config.paid_launch_at). Users who joined while everything was free
+ * get the full trial from the day paid plans start, not from their signup.
+ */
+export function trialStartFor(userCreatedAtISO: string | null, paidLaunchAtISO: string | null): string | null {
+  if (!userCreatedAtISO) return paidLaunchAtISO;
+  if (!paidLaunchAtISO) return userCreatedAtISO;
+  return new Date(userCreatedAtISO).getTime() >= new Date(paidLaunchAtISO).getTime() ? userCreatedAtISO : paidLaunchAtISO;
 }
 
 function trialDaysLeftFor(userCreatedAtISO: string | null, nowMs: number): number {
@@ -96,7 +109,9 @@ export function useMembership(): MembershipState {
         setBillsUsed(0);
         return;
       }
-      const userCreatedAt = user.created_at ?? null;
+      // Trial counts from the paid-launch date for users who joined earlier.
+      const cfg = await getAppConfig();
+      const userCreatedAt = trialStartFor(user.created_at ?? null, cfg.paid_launch_at);
 
       // 1) Stale-while-revalidate: show the cache first.
       let cached: { m: MembershipRow | null; at: number } | null = null;
@@ -141,6 +156,7 @@ export function useMembership(): MembershipState {
   }, [db, businessId]);
 
   useEffect(() => {
+    if (!MONETIZATION_ENABLED) return; // launch release: no membership lookups
     setLoading(true);
     load()
       .catch(() => {})
@@ -160,6 +176,23 @@ export function useMembership(): MembershipState {
 
   // Fail-open: only a positively-known free tier at/over the limit blocks.
   const canCreateBill = status !== 'free' || billsUsed < FREE_BILLS_PER_MONTH;
+
+  // Launch release: everything is free and unlocked for everyone.
+  if (!MONETIZATION_ENABLED) {
+    return {
+      status: 'pro',
+      loading: false,
+      membership: null,
+      planId: null,
+      isYearly: true,
+      expiresAt: null,
+      trialDaysLeft: 0,
+      billsUsed,
+      billsLimit: FREE_BILLS_PER_MONTH,
+      canCreateBill: true,
+      refresh,
+    };
+  }
 
   return {
     status,
