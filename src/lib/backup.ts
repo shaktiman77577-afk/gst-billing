@@ -272,6 +272,57 @@ export async function deleteBackup(row: CloudBackupRow): Promise<void> {
   }
 }
 
+// Base64 → bytes without relying on atob (not on every Hermes build).
+const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+function base64ToBytes(b64: string): Uint8Array {
+  const clean = b64.replace(/[^A-Za-z0-9+/]/g, '');
+  const out = new Uint8Array(Math.floor((clean.length * 3) / 4));
+  let o = 0;
+  for (let i = 0; i < clean.length; i += 4) {
+    const a = B64.indexOf(clean[i]);
+    const b = B64.indexOf(clean[i + 1]);
+    const c = i + 2 < clean.length ? B64.indexOf(clean[i + 2]) : 0;
+    const d = i + 3 < clean.length ? B64.indexOf(clean[i + 3]) : 0;
+    const n = (a << 18) | (b << 12) | (c << 6) | d;
+    if (o < out.length) out[o++] = (n >> 16) & 255;
+    if (i + 2 < clean.length && o < out.length) out[o++] = (n >> 8) & 255;
+    if (i + 3 < clean.length && o < out.length) out[o++] = n & 255;
+  }
+  return out.subarray(0, o);
+}
+
+/**
+ * Downloads a backup file from storage onto the phone (`dest`) and returns
+ * its bytes. React Native's Blob has no arrayBuffer(), so the file is fetched
+ * natively through a short-lived signed URL; FileReader is the fallback.
+ */
+async function downloadBackupFile(filePath: string, dest: File): Promise<Uint8Array> {
+  try {
+    if (dest.exists) await dest.delete();
+    const { data: signed, error: sErr } = await supabase.storage.from(BUCKET).createSignedUrl(filePath, 300);
+    const dl = (File as unknown as { downloadFileAsync?: (url: string, to: File) => Promise<File> }).downloadFileAsync;
+    if (!sErr && signed?.signedUrl && typeof dl === 'function') {
+      const f = await dl.call(File, signed.signedUrl, dest);
+      return await f.bytes();
+    }
+    // Fallback: download as Blob and read it with FileReader.
+    const { data, error } = await supabase.storage.from(BUCKET).download(filePath);
+    if (error || !data) throw new BackupError(isNetworkError(error) ? 'no_network' : 'failed', error?.message);
+    const dataUrl: string = await new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(String(r.result ?? ''));
+      r.onerror = () => reject(r.error ?? new Error('read failed'));
+      r.readAsDataURL(data);
+    });
+    const bytes = base64ToBytes(dataUrl.slice(dataUrl.indexOf(',') + 1));
+    await dest.write(bytes);
+    return bytes;
+  } catch (e) {
+    if (e instanceof BackupError) throw e;
+    throw new BackupError(isNetworkError(e) ? 'no_network' : 'failed', String(e));
+  }
+}
+
 /**
  * Downloads a cloud backup, verifies it, and replaces the live database file.
  * The app is asked to remount its SQLiteProvider afterwards (registered via
@@ -281,17 +332,8 @@ export async function deleteBackup(row: CloudBackupRow): Promise<void> {
 export async function restoreBackup(db: SQLiteDatabase, row: CloudBackupRow): Promise<void> {
   await requireUserId();
 
-  let bytes: Uint8Array;
-  try {
-    const { data, error } = await supabase.storage.from(BUCKET).download(row.file_path);
-    if (error || !data) {
-      throw new BackupError(isNetworkError(error) ? 'no_network' : 'failed', error?.message);
-    }
-    bytes = new Uint8Array(await data.arrayBuffer());
-  } catch (e) {
-    if (e instanceof BackupError) throw e;
-    throw new BackupError(isNetworkError(e) ? 'no_network' : 'failed', String(e));
-  }
+  const tmp0 = new File(sqliteDir(), TMP_RESTORE_NAME);
+  const bytes = await downloadBackupFile(row.file_path, tmp0);
 
   // Cheap first check: SQLite magic header.
   let header = '';
@@ -399,17 +441,8 @@ export async function maybeDailyBackup(db: SQLiteDatabase): Promise<void> {
 export async function restoreBackupInPlace(db: SQLiteDatabase, row: CloudBackupRow): Promise<void> {
   await requireUserId();
 
-  let bytes: Uint8Array;
-  try {
-    const { data, error } = await supabase.storage.from(BUCKET).download(row.file_path);
-    if (error || !data) {
-      throw new BackupError(isNetworkError(error) ? 'no_network' : 'failed', error?.message);
-    }
-    bytes = new Uint8Array(await data.arrayBuffer());
-  } catch (e) {
-    if (e instanceof BackupError) throw e;
-    throw new BackupError(isNetworkError(e) ? 'no_network' : 'failed', String(e));
-  }
+  const tmp0 = new File(sqliteDir(), TMP_RESTORE_NAME);
+  const bytes = await downloadBackupFile(row.file_path, tmp0);
   let header = '';
   for (let i = 0; i < SQLITE_MAGIC.length && i < bytes.length; i++) header += String.fromCharCode(bytes[i]);
   if (header !== SQLITE_MAGIC) throw new BackupError('invalid');
