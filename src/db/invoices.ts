@@ -747,6 +747,24 @@ export type LedgerEntry = {
   cancelled: boolean;
 };
 
+/**
+ * Unpaid / part-paid sales bills of a party, oldest first — exactly the order
+ * recordPayment() uses when a Payment In is auto-adjusted. Used for the
+ * "will be adjusted against" preview on the payment screen.
+ */
+export async function listOpenBills(
+  db: SQLiteDatabase,
+  partyId: string,
+): Promise<{ id: string; invoice_no: string; invoice_date: string; due: number }[]> {
+  return db.getAllAsync<{ id: string; invoice_no: string; invoice_date: string; due: number }>(
+    `SELECT id, invoice_no, invoice_date, total_paise - received_paise - credited_paise AS due FROM invoices
+     WHERE party_id = ? AND kind = 'invoice' AND doc_type NOT IN ('quotation', 'delivery_challan', 'proforma') AND deleted_at IS NULL
+       AND cancelled_at IS NULL AND status IN ('unpaid', 'partial')
+     ORDER BY invoice_date, created_at`,
+    partyId,
+  );
+}
+
 /** Party khata: opening balance, bills, credit notes and payments with a running balance. */
 export async function partyLedger(db: SQLiteDatabase, partyId: string): Promise<LedgerEntry[]> {
   const party = await db.getFirstAsync<{ opening_balance_paise: number; created_at: string }>(
