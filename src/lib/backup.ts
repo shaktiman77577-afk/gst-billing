@@ -14,10 +14,12 @@
 // - No new native modules are used: expo-sqlite, expo-file-system (File/Paths
 //   API), expo-crypto and expo-constants are all already in the app.
 import Constants from 'expo-constants';
-import * as Crypto from 'expo-crypto';
 import { Directory, File, Paths } from 'expo-file-system';
 import { openDatabaseAsync, type SQLiteDatabase } from 'expo-sqlite';
 import { getMeta, setMeta } from '../db/meta';
+import { checkThisDevice, reportDeviceReplaced } from '../sync/device';
+import { flushSyncNow, retrySync, scheduleSync } from '../sync/engine';
+import { getDeviceId } from './deviceId';
 import { supabase } from './supabase';
 
 export const DB_NAME = 'gstbilling.db';
@@ -90,20 +92,10 @@ function deviceLabel(): { device_name: string; app_version: string | null } {
   return { device_name, app_version };
 }
 
-/** Stable per-install id, used for the devices table (future 1-user feature). */
-async function installDeviceId(db: SQLiteDatabase): Promise<string> {
-  let id = await getMeta(db, 'device_id');
-  if (!id) {
-    id = Crypto.randomUUID();
-    await setMeta(db, 'device_id', id);
-  }
-  return id;
-}
-
 /** Best-effort device registration (no enforcement yet — that comes later). */
 async function touchDevice(db: SQLiteDatabase, userId: string): Promise<void> {
   try {
-    const device_id = await installDeviceId(db);
+    const device_id = await getDeviceId();
     const { device_name } = deviceLabel();
     await supabase.from('devices').upsert(
       {
@@ -150,6 +142,12 @@ export async function backupNow(
   db: SQLiteDatabase,
 ): Promise<{ id: string; createdAt: string; sizeBytes: number }> {
   const userId = await requireUserId();
+
+  // Only the active phone may upload (another phone may have logged in).
+  if ((await checkThisDevice()) === 'replaced') {
+    reportDeviceReplaced();
+    throw new BackupError('no_session', 'another phone is active');
+  }
 
   const biz = await db.getFirstAsync<{ n: number }>('SELECT COUNT(*) AS n FROM businesses');
   if (!biz || biz.n === 0) throw new BackupError('empty');
@@ -199,11 +197,45 @@ export async function backupNow(
     }
 
     await touchDevice(db, userId);
+    // Keep only the newest backup per user: remove every older file + row.
+    await pruneOldBackups(userId, row.id as string);
     const now = new Date().toISOString();
     await setMeta(db, 'last_backup_at', now);
+    await setMeta(db, 'last_backup_error', null);
     return { id: row.id as string, createdAt: row.created_at as string, sizeBytes: bytes.length };
   } finally {
     if (snap.exists) await snap.delete();
+  }
+}
+
+/**
+ * Deletes every cloud backup of this user except `keepId` (storage files
+ * first, then table rows). Runs right after a successful upload, so the
+ * cloud always holds exactly one — the newest — backup. Never throws: a
+ * failed cleanup is retried automatically after the next backup.
+ */
+async function pruneOldBackups(userId: string, keepId: string): Promise<void> {
+  try {
+    const { data: old, error } = await supabase
+      .from('backups')
+      .select('id, file_path')
+      .eq('user_id', userId)
+      .neq('id', keepId);
+    if (error || !old || old.length === 0) return;
+    const paths = old.map((r) => r.file_path as string).filter(Boolean);
+    if (paths.length) {
+      const { error: sErr } = await supabase.storage.from(BUCKET).remove(paths);
+      if (sErr) return; // keep the rows so the files can be cleaned up next time
+    }
+    await supabase
+      .from('backups')
+      .delete()
+      .in(
+        'id',
+        old.map((r) => r.id as string),
+      );
+  } catch {
+    // ignore — next successful backup tries again
   }
 }
 
@@ -299,120 +331,60 @@ export async function restoreBackup(db: SQLiteDatabase, row: CloudBackupRow): Pr
 }
 
 // ---------------------------------------------------------------------------
-// Change-triggered cloud backup (debounced)
+// Change hook + daily full backup
 //
 // Domain write functions (src/db/*) call markDirty(db) after a successful
-// save. A full snapshot upload runs ~60s after the LAST change — the timer
-// resets on every call, so 20 quick bill saves produce a single upload.
-// Fire-and-forget: never throws, never blocks the caller.
-//
-// If the upload fails (offline, logged out), the dirty flag is kept and the
-// upload is retried on the next markDirty() or when the app comes back to
-// the foreground (see retryPendingBackup, wired in useAutoBackup).
+// save. That now schedules the row-level sync (~5s later, see
+// src/sync/engine.ts). The full database file is uploaded at most once a
+// day as a safety copy; the cloud keeps only the newest file.
 // ---------------------------------------------------------------------------
 
-const DIRTY_DEBOUNCE_MS = 60 * 1000;
+const DAY_MS = 24 * 3600 * 1000;
 
-let dirtyDb: SQLiteDatabase | null = null;
-let dirtyTimer: ReturnType<typeof setTimeout> | null = null;
-
-async function flushDirtyBackup(db: SQLiteDatabase): Promise<void> {
-  try {
-    await backupNow(db);
-    // A change-triggered upload also counts for the daily safety net below.
-    await setMeta(db, 'backup_last_auto', new Date().toISOString());
-  } catch {
-    // Stay dirty: the next markDirty() or an app-foreground retry picks it up.
-    dirtyDb = db;
-  }
-}
-
-/**
- * Mark local data as changed and (re)start the ~60s debounce timer.
- * Safe to call from any domain write — never throws.
- */
+/** Mark local data as changed → cloud sync ~5s later. Never throws. */
 export function markDirty(db: SQLiteDatabase): void {
-  try {
-    dirtyDb = db;
-    if (dirtyTimer) clearTimeout(dirtyTimer);
-    dirtyTimer = setTimeout(() => {
-      dirtyTimer = null;
-      const target = dirtyDb;
-      dirtyDb = null;
-      if (target) void flushDirtyBackup(target);
-    }, DIRTY_DEBOUNCE_MS);
-  } catch {
-    // Backup bookkeeping must never disturb a save.
-  }
+  scheduleSync(db);
 }
 
-/**
- * App-background flush: clears the pending debounce timer (if any) and runs
- * the pending dirty backup immediately, fire-and-forget. Without this, data
- * changed just before the app is backgrounded/killed would wait for the
- * 60s timer that never fires while suspended. Never throws.
- */
-export function flushPendingBackupNow(): void {
-  try {
-    if (dirtyTimer) {
-      clearTimeout(dirtyTimer);
-      dirtyTimer = null;
-    }
-    if (!dirtyDb) return;
-    const target = dirtyDb;
-    dirtyDb = null;
-    void flushDirtyBackup(target);
-  } catch {
-    // ignore
-  }
+/** App going to background: upload pending changes now. Never throws. */
+export function flushPendingBackupNow(db?: SQLiteDatabase): void {
+  void flushSyncNow(db);
 }
 
-/**
- * App-foreground retry point: runs the pending dirty backup now, but only
- * when its debounce timer already fired (i.e. a previous upload failed and
- * the flag is still set). When the timer is still pending, it fires on its
- * own — leave it alone.
- */
+/** App back in foreground: retry a failed upload. Never throws. */
 export function retryPendingBackup(): void {
-  try {
-    if (dirtyTimer || !dirtyDb) return;
-    const target = dirtyDb;
-    dirtyDb = null;
-    void flushDirtyBackup(target);
-  } catch {
-    // ignore
-  }
+  retrySync();
 }
 
-// ---------------------------------------------------------------------------
-// Auto-backup (at most once per 24h, only when the user enabled it)
-// ---------------------------------------------------------------------------
-
-export async function isAutoBackupEnabled(db: SQLiteDatabase): Promise<boolean> {
-  return (await getMeta(db, 'backup_auto')) === '1';
-}
-
-export async function setAutoBackupEnabled(db: SQLiteDatabase, on: boolean): Promise<void> {
-  await setMeta(db, 'backup_auto', on ? '1' : null);
-}
+let dailyRunning = false;
 
 /**
- * Called when the app goes to the background. Never throws — a failed
- * background backup must not disturb the user.
+ * Daily safety copy: uploads the whole database file when the last one is
+ * older than 24 hours (checked on app open / background). Never throws.
  */
-export async function maybeAutoBackup(
-  db: SQLiteDatabase,
-): Promise<'disabled' | 'skipped' | 'ok' | 'error'> {
+export async function maybeDailyBackup(db: SQLiteDatabase): Promise<void> {
+  if (dailyRunning) return;
+  dailyRunning = true;
   try {
-    if (!(await isAutoBackupEnabled(db))) return 'disabled';
-    const last = await getMeta(db, 'backup_last_auto');
-    if (last && Date.now() - new Date(last).getTime() < 24 * 3600 * 1000) return 'skipped';
-    await backupNow(db);
-    await setMeta(db, 'backup_last_auto', new Date().toISOString());
-    return 'ok';
-  } catch (e) {
-    // 'empty' just means the user has no business yet — not worth reporting.
-    if (e instanceof BackupError && e.code === 'empty') return 'skipped';
-    return 'error';
+    const userId = await getMeta(db, 'user_id');
+    if (!userId) return;
+    const last = await getMeta(db, 'last_backup_at');
+    if (last && Date.now() - new Date(last).getTime() < DAY_MS) return;
+    try {
+      await backupNow(db);
+    } catch (e) {
+      const code = e instanceof BackupError ? e.code : 'failed';
+      if (code !== 'empty') {
+        try {
+          await setMeta(db, 'last_backup_error', code);
+        } catch {
+          // ignore
+        }
+      }
+    }
+  } catch {
+    // ignore
+  } finally {
+    dailyRunning = false;
   }
 }

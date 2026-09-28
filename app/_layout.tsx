@@ -13,6 +13,7 @@ import { Stack } from 'expo-router';
 import { SQLiteProvider } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { DialogHost } from '../src/components/AppDialog';
 import { AppProvider } from '../src/context/AppContext';
 import { migrateDb } from '../src/db/migrations';
 import { AutoBackup } from '../src/hooks/useAutoBackup';
@@ -52,6 +53,7 @@ export default function RootLayout() {
                 animation: 'fade',
               }}
             />
+            <DialogHost />
           </SyncProvider>
         </AppProvider>
       </SQLiteProvider>

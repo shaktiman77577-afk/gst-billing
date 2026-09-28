@@ -3,7 +3,8 @@ import { useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { AppAlert } from '../../src/components/AppDialog';
 import { Text } from '../../src/components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
@@ -47,7 +48,7 @@ export default function BillPreviewScreen() {
       if (kind === 'share') await sharePdf(html, data.invoice.invoice_no);
       else await printBill(html);
     } catch (e) {
-      if (!/cancel/i.test(String((e as Error)?.message ?? e))) Alert.alert(t('appName'), t('pdfError'));
+      if (!/cancel/i.test(String((e as Error)?.message ?? e))) AppAlert.alert(t('appName'), t('pdfError'));
     } finally {
       setBusy(null);
     }
@@ -69,7 +70,7 @@ export default function BillPreviewScreen() {
       });
       await sharePdfOnWhatsApp(html, inv.invoice_no, inv.party_phone, caption);
     } catch (e) {
-      if (!/cancel/i.test(String((e as Error)?.message ?? e))) Alert.alert(t('appName'), t('pdfError'));
+      if (!/cancel/i.test(String((e as Error)?.message ?? e))) AppAlert.alert(t('appName'), t('pdfError'));
     } finally {
       setBusy(null);
     }

@@ -2,7 +2,8 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { AppAlert } from '../../src/components/AppDialog';
 import { Text } from '../../src/components/Text';
 import { FormHeader } from '../../src/components/FormHeader';
 import { Button, Card, IconName, Screen, SectionHeader } from '../../src/components/ui';
@@ -32,11 +33,11 @@ function planPerLabel(plan: Plan, t: T): string {
 }
 
 // Honest Pro feature list — only features the app actually has.
-const PRO_FEATURES: { key: StringKey; icon: IconName }[] = [
+const PRO_FEATURES: { key: StringKey; icon: IconName; yearlyOnly?: boolean }[] = [
   { key: 'mem_featUnlimited', icon: 'infinite-outline' },
   { key: 'mem_featWhiteLabel', icon: 'ribbon-outline' },
   { key: 'mem_featThemes', icon: 'color-palette-outline' },
-  { key: 'mem_featRecycle', icon: 'trash-bin-outline' },
+  { key: 'mem_featRecycle', icon: 'trash-bin-outline', yearlyOnly: true },
   { key: 'mem_featAutoBackup', icon: 'cloud-upload-outline' },
   { key: 'mem_featExports', icon: 'share-outline' },
   { key: 'mem_featSupport', icon: 'headset-outline' },
@@ -91,12 +92,24 @@ export default function MembershipScreen() {
     setSelectedPlanId((yearly ?? plans[0]).id);
   }, [plans, selectedPlanId]);
 
+  const showPayFailed = (plan: Plan) => {
+    AppAlert.alert(
+      t('v2_payNotDoneTitle'),
+      t('v2_payNotDone'),
+      [
+        { text: t('v2_close'), style: 'cancel' },
+        { text: t('v2_tryAgain'), onPress: () => void upgrade(plan) },
+      ],
+      { tone: 'error' },
+    );
+  };
+
   const upgrade = async (plan: Plan) => {
     setProcessingId(plan.id);
     try {
       const r = await startUpgrade(plan);
       if (r.success) {
-        Alert.alert(t('mem_title'), t('mem_paySuccess'));
+        AppAlert.alert(t('mem_title'), t('mem_paySuccess'), undefined, { tone: 'success' });
         await mem.refresh();
         try {
           setHistory(await fetchMembershipHistory());
@@ -104,12 +117,14 @@ export default function MembershipScreen() {
           /* history will retry on next focus */
         }
       } else if (r.cancelled) {
-        Alert.alert(t('mem_title'), t('mem_payCancelled'));
+        AppAlert.alert(t('mem_title'), t('mem_payCancelled'));
       } else {
-        Alert.alert(t('mem_title'), r.error ?? t('mem_payFailed'));
+        // Razorpay sends raw JSON here (e.g. BAD_REQUEST_ERROR / payment_error
+        // when the customer's bank or UPI app declines) — show plain words.
+        showPayFailed(plan);
       }
     } catch {
-      Alert.alert(t('mem_title'), t('mem_payFailed'));
+      showPayFailed(plan);
     } finally {
       setProcessingId(null);
     }
@@ -236,6 +251,11 @@ export default function MembershipScreen() {
                       <Ionicons name={f.icon} size={19} color={colors.primary} />
                     </View>
                     <Text style={styles.featText}>{t(f.key)}</Text>
+                    {f.yearlyOnly ? (
+                      <View style={styles.yearlyTag}>
+                        <Text style={styles.yearlyTagText}>{t('v2_yearlyOnly')}</Text>
+                      </View>
+                    ) : null}
                   </View>
                 </View>
               ))}
@@ -402,4 +422,6 @@ const styles = StyleSheet.create({
   statusPillText: { fontSize: 11, fontWeight: '700', color: colors.primary, textTransform: 'capitalize' },
   sep: { height: 1, backgroundColor: colors.border, marginVertical: 2 },
   gap: { marginTop: 12 },
+  yearlyTag: { backgroundColor: colors.warningSoft, borderRadius: 4, paddingHorizontal: 7, paddingVertical: 1 },
+  yearlyTagText: { fontSize: 11, lineHeight: 16, fontWeight: '500', color: colors.warning },
 });

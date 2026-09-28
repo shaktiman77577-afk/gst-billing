@@ -2,8 +2,9 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ComponentProps, useCallback, useMemo, useState } from 'react';
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { AppAlert } from '../../src/components/AppDialog';
 import { Text } from '../../src/components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BillRow } from '../../src/components/BillRow';
@@ -97,7 +98,7 @@ export default function BillDetailScreen() {
       if (kind === 'share') await sharePdf(html, inv.invoice_no);
       else await printBill(html);
     } catch (e) {
-      if (!/cancel/i.test(String((e as Error)?.message ?? e))) Alert.alert(t('appName'), t('pdfError'));
+      if (!/cancel/i.test(String((e as Error)?.message ?? e))) AppAlert.alert(t('appName'), t('pdfError'));
     } finally {
       setBusy(null);
     }
@@ -118,7 +119,7 @@ export default function BillDetailScreen() {
       });
       await sharePdfOnWhatsApp(html, inv.invoice_no, inv.party_phone, caption);
     } catch (e) {
-      if (!/cancel/i.test(String((e as Error)?.message ?? e))) Alert.alert(t('appName'), t('pdfError'));
+      if (!/cancel/i.test(String((e as Error)?.message ?? e))) AppAlert.alert(t('appName'), t('pdfError'));
     } finally {
       setBusy(null);
     }
@@ -137,21 +138,21 @@ export default function BillDetailScreen() {
       });
       router.replace(`/bill/${billId}`);
     } catch (e) {
-      Alert.alert(t('appName'), `${t('somethingWrong')} (${String((e as Error)?.message ?? e)})`);
+      AppAlert.alert(t('appName'), `${t('somethingWrong')} (${String((e as Error)?.message ?? e)})`);
     } finally {
       setBusy(null);
     }
   };
 
   const onCancel = () => {
-    Alert.alert(t('cancelBill'), t('cancelBillConfirm'), [
+    AppAlert.alert(t('cancelBill'), t('cancelBillConfirm'), [
       { text: t('no'), style: 'cancel' },
       {
         text: t('cancelBill'),
         style: 'destructive',
         onPress: async () => {
           const res = await cancelInvoice(db, inv.id);
-          if (res === 'has-credit-notes') Alert.alert(t('cancelBill'), t('cancelHasCn'));
+          if (res === 'has-credit-notes') AppAlert.alert(t('cancelBill'), t('cancelHasCn'));
           load();
         },
       },
@@ -159,7 +160,7 @@ export default function BillDetailScreen() {
   };
 
   const onDeletePayment = (p: Payment) => {
-    Alert.alert(t('delete'), t('deletePaymentConfirm'), [
+    AppAlert.alert(t('delete'), t('deletePaymentConfirm'), [
       { text: t('cancel'), style: 'cancel' },
       {
         text: t('delete'),
@@ -186,7 +187,7 @@ export default function BillDetailScreen() {
             </View>
           ) : null}
 
-          {/* Compact summary */}
+          {/* Summary card: document, party, money and the main actions */}
           <Card style={styles.summaryCard}>
             <View style={styles.rowBetween}>
               <Text style={styles.docType}>
@@ -194,9 +195,12 @@ export default function BillDetailScreen() {
               </Text>
               <StatusBadge status={inv.status} kind={inv.kind} />
             </View>
-            <Text style={[styles.totalCompact, cancelled && styles.strike]}>{formatPaise(inv.total_paise)}</Text>
+            <Text style={styles.summaryParty} numberOfLines={1}>
+              {inv.party_name}
+            </Text>
             <Text style={styles.partyLine} numberOfLines={1}>
-              {inv.party_name} · {formatDate(inv.invoice_date)}
+              {formatDate(inv.invoice_date)}
+              {gst ? ` · ${inv.is_igst ? 'IGST' : 'CGST + SGST'}` : ''}
             </Text>
             {isCn && inv.ref_invoice_id ? (
               <Pressable onPress={() => router.push(`/bill/${inv.ref_invoice_id}`)} hitSlop={10} style={styles.refLink}>
@@ -214,59 +218,66 @@ export default function BillDetailScreen() {
                 </Text>
               </Pressable>
             ) : null}
-          </Card>
 
-          {/* Original / Duplicate / Triplicate */}
-          <View style={styles.copyRow}>
-            <Text style={styles.copyLabel}>{t('invoiceCopy')}</Text>
-            <View style={styles.chips}>
-              {COPIES.map((c) => (
-                <Pressable
-                  key={c.kind}
-                  onPress={() => setCopy(c.kind)}
-                  style={[styles.chip, copy === c.kind && styles.chipActive]}
-                >
-                  <Text style={[styles.chipText, copy === c.kind && styles.chipTextActive]}>{t(c.key)}</Text>
-                </Pressable>
-              ))}
+            <View style={styles.moneyBox}>
+              <View style={styles.flexOnly}>
+                <Text style={styles.moneyLabel}>{t('totalAmount')}</Text>
+                <Text style={[styles.moneyValue, cancelled && styles.strike]} numberOfLines={1} adjustsFontSizeToFit>
+                  {formatPaise(inv.total_paise)}
+                </Text>
+              </View>
+              {!isCn && !isQuotation && !cancelled ? (
+                <View style={styles.flexOnly}>
+                  <Text style={styles.moneyLabel}>{t('balanceDue')}</Text>
+                  <Text
+                    style={[styles.moneyValue, { color: balance > 0 ? colors.danger : colors.success }]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                  >
+                    {formatPaise(Math.max(balance, 0))}
+                  </Text>
+                </View>
+              ) : null}
             </View>
-          </View>
 
-          {!cancelled ? (
-            <Pressable
-              onPress={onWhatsapp}
-              disabled={busy === 'whatsapp'}
-              style={({ pressed }) => [styles.wa, pressed && { opacity: 0.85 }, busy === 'whatsapp' && { opacity: 0.7 }]}
-            >
-              {busy === 'whatsapp' ? (
-                <ActivityIndicator color={colors.white} />
-              ) : (
-                <>
-                  <Ionicons name="logo-whatsapp" size={22} color={colors.white} />
-                  <Text style={styles.waText}>{t('whatsapp')}</Text>
-                </>
-              )}
-            </Pressable>
-          ) : null}
-          <View style={styles.actions}>
-            <View style={styles.flexOnly}>
-              <Button
-                variant="outline"
-                icon="print-outline"
-                label={t('print')}
-                onPress={() => run('print')}
-                loading={busy === 'print'}
-              />
+            {/* Original / Duplicate / Triplicate — applies to Share and Print */}
+            <View style={styles.copyRow}>
+              <Text style={styles.copyLabel}>{t('invoiceCopy')}</Text>
+              <View style={styles.chips}>
+                {COPIES.map((c) => (
+                  <Pressable
+                    key={c.kind}
+                    onPress={() => setCopy(c.kind)}
+                    style={[styles.chip, copy === c.kind && styles.chipActive]}
+                  >
+                    <Text style={[styles.chipText, copy === c.kind && styles.chipTextActive]} numberOfLines={1}>
+                      {t(c.key)}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
             </View>
-            <View style={styles.flexOnly}>
-              <Button
+
+            <View style={styles.actions}>
+              <ActionBtn
+                primary
                 icon="share-social-outline"
-                label={t('sharePdf')}
+                label={t('v2_share')}
+                busy={busy === 'share'}
                 onPress={() => run('share')}
-                loading={busy === 'share'}
               />
+              {!cancelled ? (
+                <ActionBtn
+                  icon="logo-whatsapp"
+                  iconColor="#1DA851"
+                  label={t('whatsapp')}
+                  busy={busy === 'whatsapp'}
+                  onPress={onWhatsapp}
+                />
+              ) : null}
+              <ActionBtn icon="print-outline" label={t('print')} busy={busy === 'print'} onPress={() => run('print')} />
             </View>
-          </View>
+          </Card>
         </View>
 
         <ScrollView contentContainerStyle={styles.content}>
@@ -481,15 +492,76 @@ function Row({ label, value, bold, color }: { label: string; value: string; bold
   );
 }
 
+function ActionBtn({
+  icon,
+  label,
+  onPress,
+  busy,
+  primary,
+  iconColor,
+}: {
+  icon: ComponentProps<typeof Ionicons>['name'];
+  label: string;
+  onPress: () => void;
+  busy?: boolean;
+  primary?: boolean;
+  iconColor?: string;
+}) {
+  const fg = primary ? colors.white : colors.text;
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={busy}
+      style={({ pressed }) => [styles.actBtn, primary && styles.actBtnPrimary, (pressed || busy) && { opacity: 0.75 }]}
+    >
+      {busy ? (
+        <ActivityIndicator color={primary ? colors.white : colors.primary} />
+      ) : (
+        <>
+          <Ionicons name={icon} size={16} color={iconColor ?? (primary ? colors.white : colors.textSecondary)} />
+          <Text style={[styles.actText, { color: fg }]} numberOfLines={1}>
+            {label}
+          </Text>
+        </>
+      )}
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.background },
   flexOnly: { flex: 1 },
   content: { padding: 16, gap: 14, paddingBottom: 32 },
-  topZone: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 12, gap: 10 },
-  summaryCard: { paddingVertical: 10, gap: 2 },
-  totalCompact: { fontSize: text.xl, fontWeight: '800', color: colors.primary },
-  partyLine: { fontSize: text.sm, color: colors.muted },
-  copyRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  topZone: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 4, gap: 10 },
+  summaryCard: { gap: 2 },
+  summaryParty: { fontSize: text.lg, lineHeight: 22, fontWeight: '700', color: colors.text, marginTop: 4 },
+  partyLine: { fontSize: text.xs, lineHeight: 16, color: colors.muted },
+  moneyBox: {
+    flexDirection: 'row',
+    gap: 12,
+    backgroundColor: colors.background,
+    borderRadius: radius.md,
+    padding: 12,
+    marginTop: 10,
+  },
+  moneyLabel: { fontSize: text.xs, lineHeight: 16, color: colors.muted },
+  moneyValue: { fontSize: 20, lineHeight: 26, fontWeight: '700', color: colors.text, fontVariant: ['tabular-nums'] },
+  actBtn: {
+    flex: 1,
+    height: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingHorizontal: 6,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    backgroundColor: colors.card,
+  },
+  actBtnPrimary: { backgroundColor: colors.primary, borderColor: colors.primary },
+  actText: { fontSize: text.sm, fontWeight: '500', flexShrink: 1 },
+  copyRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 12 },
   copyLabel: {
     fontSize: text.xs,
     fontWeight: '500',
@@ -497,51 +569,57 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
-  chips: { flex: 1, flexDirection: 'row', gap: 8 },
+  chips: { flex: 1, flexDirection: 'row', gap: 3, backgroundColor: colors.divider, borderRadius: radius.md + 2, padding: 3 },
   chip: {
     flex: 1,
-    paddingVertical: 9,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.white,
+    height: 30,
+    borderRadius: radius.md,
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
   },
-  chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  chipText: { fontSize: text.sm, fontWeight: '700', color: colors.muted },
-  chipTextActive: { color: colors.white },
+  chipActive: {
+    backgroundColor: colors.card,
+    shadowColor: '#0F172A',
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
+  },
+  chipText: { fontSize: text.xs, fontWeight: '500', color: colors.muted },
+  chipTextActive: { color: colors.text, fontWeight: '700' },
   cancelBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: colors.border,
+    backgroundColor: colors.surfaceAlt,
     padding: 12,
     borderRadius: radius.md,
   },
-  cancelText: { fontSize: text.md, fontWeight: '700', color: colors.muted },
+  cancelText: { fontSize: text.sm, fontWeight: '500', color: colors.muted },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
-  docType: { fontSize: text.sm, fontWeight: '500', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.4 },
+  docType: { fontSize: text.xs, fontWeight: '500', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.4 },
   strike: { textDecorationLine: 'line-through', color: colors.faint },
   refLink: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 4 },
-  refText: { fontSize: text.md, fontWeight: '700', color: colors.primary },
+  refText: { fontSize: text.sm, fontWeight: '500', color: colors.primary },
   cardLabel: { fontSize: text.xs, fontWeight: '500', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.4 },
-  partyName: { fontSize: text.md, fontWeight: '700', color: colors.text, marginTop: -6 },
-  meta: { fontSize: text.sm, color: colors.muted },
+  partyName: { fontSize: text.md, fontWeight: '500', color: colors.text, marginTop: -6 },
+  meta: { fontSize: text.xs, lineHeight: 16, color: colors.muted },
   line: {
     flexDirection: 'row',
     gap: 10,
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: colors.divider,
   },
-  lineName: { fontSize: text.md, fontWeight: '600', color: colors.text },
-  lineAmt: { fontSize: text.md, fontWeight: '700', color: colors.text },
-  rowLabel: { fontSize: text.md, color: colors.muted, flexShrink: 1 },
-  rowValue: { fontSize: text.md, color: colors.text, fontWeight: '600' },
-  bold: { fontWeight: '800', color: colors.text, fontSize: text.md },
+  lineName: { fontSize: text.md, fontWeight: '500', color: colors.text },
+  lineAmt: { fontSize: text.md, fontWeight: '500', color: colors.text, fontVariant: ['tabular-nums'] },
+  rowLabel: { fontSize: text.sm, color: colors.muted, flexShrink: 1 },
+  rowValue: { fontSize: text.sm, color: colors.text, fontVariant: ['tabular-nums'] },
+  bold: { fontWeight: '700', color: colors.text, fontSize: text.md },
   divider: { height: 1, backgroundColor: colors.border },
   payDel: { padding: 8 },
-  actions: { flexDirection: 'row', gap: 12 },
+  actions: { flexDirection: 'row', gap: 8, marginTop: 12 },
   wa: {
     minHeight: 48,
     borderRadius: 14,
@@ -553,8 +631,8 @@ const styles = StyleSheet.create({
   },
   waText: { color: colors.white, fontSize: text.md, fontWeight: '700' },
   qrWrap: { alignItems: 'center', paddingVertical: 8 },
-  qrTitle: { fontSize: text.md, fontWeight: '700', color: colors.text, marginBottom: 12 },
+  qrTitle: { fontSize: text.md, fontWeight: '500', color: colors.text, marginBottom: 12 },
   qr: { width: 200, height: 200, borderRadius: radius.sm },
-  qrAmount: { marginTop: 12, fontSize: text.xl, fontWeight: '800', color: colors.text },
+  qrAmount: { marginTop: 12, fontSize: text.xl, fontWeight: '700', color: colors.text, fontVariant: ['tabular-nums'] },
   qrUpi: { marginTop: 4, fontSize: text.sm, color: colors.muted },
 });

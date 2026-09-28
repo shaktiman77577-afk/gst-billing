@@ -3,7 +3,8 @@ import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { Alert, Image, Pressable, StyleSheet, View } from 'react-native';
+import { Image, Pressable, StyleSheet, View } from 'react-native';
+import { AppAlert } from '../../src/components/AppDialog';
 import { Text } from '../../src/components/Text';
 import { FormHeader } from '../../src/components/FormHeader';
 import { Button, Card, Field, MenuRow, Screen, SectionHeader } from '../../src/components/ui';
@@ -81,7 +82,7 @@ export default function BillSettingsScreen() {
 
   const choose = async (kind: 'logo' | 'signature') => {
     const img = await pickImage(kind === 'logo' ? [1, 1] : [3, 1]);
-    if (img === 'too-big') return Alert.alert(t('appName'), t('imageTooBig'));
+    if (img === 'too-big') return AppAlert.alert(t('appName'), t('imageTooBig'));
     if (!img) return;
     if (kind === 'logo') setLogo(img);
     else setSignature(img);

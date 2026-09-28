@@ -3,7 +3,8 @@ import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { AppAlert } from '../../src/components/AppDialog';
 import { Text } from '../../src/components/Text';
 import { EmptyState } from '../../src/components/EmptyState';
 import { Fab } from '../../src/components/Fab';
@@ -63,7 +64,7 @@ export default function ItemsScreen() {
     try {
       const priced = items.filter((i) => i.sales_price_paise > 0);
       if (priced.length === 0) {
-        Alert.alert(t('appName'), t('cat_empty'));
+        AppAlert.alert(t('appName'), t('cat_empty'));
         return;
       }
       const html = catalogHtml(business, priced, t);
@@ -73,7 +74,7 @@ export default function ItemsScreen() {
       // no phone → WhatsApp's own share picker; not installed → system sheet.
       await sharePdfOnWhatsApp(html, `Price-List-${stamp}`, null, caption);
     } catch (e) {
-      if (!/cancel/i.test(String((e as Error)?.message ?? e))) Alert.alert(t('appName'), t('pdfError'));
+      if (!/cancel/i.test(String((e as Error)?.message ?? e))) AppAlert.alert(t('appName'), t('pdfError'));
     } finally {
       setSharing(false);
     }

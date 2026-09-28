@@ -3,7 +3,8 @@ import { useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { Fragment, useCallback, useState } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { AppAlert } from '../../src/components/AppDialog';
 import { Text } from '../../src/components/Text';
 import { EmptyState } from '../../src/components/EmptyState';
 import { FormHeader } from '../../src/components/FormHeader';
@@ -69,7 +70,7 @@ export default function ExpenseCategoriesScreen() {
   };
 
   const confirmDelete = (cname: string) => {
-    Alert.alert(t('pe_delTitle'), t('pe_delMsg'), [
+    AppAlert.alert(t('pe_delTitle'), t('pe_delMsg'), [
       { text: t('cancel'), style: 'cancel' },
       {
         text: t('delete'),

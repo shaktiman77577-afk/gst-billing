@@ -28,7 +28,7 @@ export function LanguageToggle({ onDark = false }: { onDark?: boolean }) {
               style={[
                 styles.label,
                 { color: onDark ? 'rgba(255,255,255,0.8)' : colors.muted },
-                active && { color: onDark ? colors.primary : colors.white },
+                active && { color: onDark ? colors.primary : colors.text },
               ]}
             >
               {o.label}
@@ -41,11 +41,18 @@ export function LanguageToggle({ onDark = false }: { onDark?: boolean }) {
 }
 
 const styles = StyleSheet.create({
-  wrap: { flexDirection: 'row', borderRadius: radius.pill, padding: 3 },
+  wrap: { flexDirection: 'row', borderRadius: radius.md + 2, padding: 3, gap: 3 },
   wrapDark: { backgroundColor: 'rgba(255,255,255,0.15)' },
-  wrapLight: { backgroundColor: colors.primarySoft },
-  option: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: radius.pill },
+  wrapLight: { backgroundColor: colors.divider },
+  option: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: radius.md },
   activeDark: { backgroundColor: colors.white },
-  activeLight: { backgroundColor: colors.primary },
-  label: { fontSize: 13, fontWeight: '700' },
+  activeLight: {
+    backgroundColor: colors.card,
+    shadowColor: '#0F172A',
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
+  },
+  label: { fontSize: 13, fontWeight: '500' },
 });

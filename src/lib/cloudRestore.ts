@@ -1,5 +1,8 @@
 // Silent cloud restore after login / on app start ("invisible cloud").
 //
+// Order: row-level sync data first (src/sync/engine.ts pullAll), then the
+// daily full-file backup, then the business-profile-only fast path.
+//
 // The user never sees backup/restore UI. When they log in with Google on a
 // fresh install (or open the app while logged in but with no local business),
 // we silently bring their data back:
@@ -30,6 +33,7 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 import { setMeta } from '../db/meta';
 import { CloudBackupRow, restoreBackup } from './backup';
 import { pullBusinessProfileIfMissing } from './businessProfile';
+import { cloudHasSyncData, pullAll } from '../sync/engine';
 import { supabase } from './supabase';
 
 export type AutoRestoreResult = 'restored' | 'nothing-found' | 'failed';
@@ -57,7 +61,25 @@ export async function autoRestoreAfterLogin(
     }
     if (!userId) return 'failed';
 
-    // 1) Full restore from the newest cloud backup (brings back everything).
+    // 0) Row-level sync (primary copy): download every row and write it into
+    //    the live database. No file swap — the same `db` handle stays valid.
+    try {
+      const pulled = await pullAll(db);
+      if (pulled.businesses > 0) {
+        const biz = await db.getFirstAsync<{ id: string }>(
+          'SELECT id FROM businesses WHERE user_id = ? AND deleted_at IS NULL ORDER BY created_at LIMIT 1',
+          userId,
+        );
+        if (biz) {
+          await setMeta(db, 'active_business_id', biz.id);
+          return 'restored';
+        }
+      }
+    } catch {
+      // fall through to the daily file backup
+    }
+
+    // 1) Full restore from the newest daily file backup (safety copy).
     try {
       const { data: rows, error } = await supabase
         .from('backups')
@@ -88,5 +110,27 @@ export async function autoRestoreAfterLogin(
     return 'nothing-found';
   } catch {
     return 'failed';
+  }
+}
+
+/**
+ * Does this user already have a backup in the cloud?
+ * 'unknown' when it could not be checked (offline / no session).
+ * Used before creating a NEW business, so a phone whose restore failed can
+ * never start fresh and overwrite the user's real data in the cloud
+ * (the cloud keeps only the newest backup).
+ */
+export async function cloudBackupExists(): Promise<'yes' | 'no' | 'unknown'> {
+  try {
+    const { data } = await supabase.auth.getSession();
+    const userId = data.session?.user?.id;
+    if (!userId) return 'unknown';
+    const sync = await cloudHasSyncData();
+    if (sync === 'yes') return 'yes';
+    const { data: rows, error } = await supabase.from('backups').select('id').eq('user_id', userId).limit(1);
+    if (error || sync === 'unknown') return rows && rows.length > 0 ? 'yes' : 'unknown';
+    return rows && rows.length > 0 ? 'yes' : 'no';
+  } catch {
+    return 'unknown';
   }
 }

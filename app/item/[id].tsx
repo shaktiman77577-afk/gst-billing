@@ -3,7 +3,8 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { AppAlert } from '../../src/components/AppDialog';
 import { Text } from '../../src/components/Text';
 import { FormHeader } from '../../src/components/FormHeader';
 import { Button, Card, Chips, Field, Hairline, Label, Screen, SectionHeader } from '../../src/components/ui';
@@ -124,7 +125,7 @@ export default function ItemFormScreen() {
   };
 
   const onDelete = () => {
-    Alert.alert(t('delete'), t('deleteItemConfirm'), [
+    AppAlert.alert(t('delete'), t('deleteItemConfirm'), [
       { text: t('cancel'), style: 'cancel' },
       {
         text: t('delete'),

@@ -279,6 +279,18 @@ const MIGRATIONS: string[] = [
 
   CREATE INDEX IF NOT EXISTS idx_purchases_kind ON purchases(kind, deleted_at);
   `,
+
+  // v11: row-level cloud sync. Rows removed for good (recycle bin →
+  // delete forever) leave a tombstone here until the next upload tells the
+  // cloud to drop them too.
+  `
+  CREATE TABLE IF NOT EXISTS sync_tombstones (
+    tbl TEXT NOT NULL,
+    row_id TEXT NOT NULL,
+    deleted_at TEXT NOT NULL,
+    PRIMARY KEY (tbl, row_id)
+  );
+  `,
 ];
 
 export async function migrateDb(db: SQLiteDatabase): Promise<void> {

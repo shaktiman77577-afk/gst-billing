@@ -2,7 +2,8 @@ import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { AppAlert } from '../../src/components/AppDialog';
 import { Text } from '../../src/components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { DateRangeButton } from '../../src/components/DateRangeButton';
@@ -37,12 +38,12 @@ export default function ReportsScreen() {
     try {
       const uri = await exportGstr1Csv(db, business.id, business.name);
       if (!uri) {
-        Alert.alert(t('g1_noDataTitle'), t('g1_noData'));
+        AppAlert.alert(t('g1_noDataTitle'), t('g1_noData'));
       } else {
-        Alert.alert(t('g1_doneTitle'), t('g1_done'));
+        AppAlert.alert(t('g1_doneTitle'), t('g1_done'));
       }
     } catch {
-      Alert.alert(t('g1_failedTitle'), t('g1_failed'));
+      AppAlert.alert(t('g1_failedTitle'), t('g1_failed'));
     } finally {
       setExporting(false);
     }
@@ -51,7 +52,7 @@ export default function ReportsScreen() {
   const onExportGstr1Json = useCallback(async () => {
     if (!business || exportingJson) return;
     if (!business.gstin || !business.gstin.trim()) {
-      Alert.alert(t('gj_noGstinTitle'), t('gj_noGstin'));
+      AppAlert.alert(t('gj_noGstinTitle'), t('gj_noGstin'));
       return;
     }
     setExportingJson(true);
@@ -62,12 +63,12 @@ export default function ReportsScreen() {
         fp,
       );
       if (!uri) {
-        Alert.alert(t('gj_noDataTitle'), t('gj_noData'));
+        AppAlert.alert(t('gj_noDataTitle'), t('gj_noData'));
       } else {
-        Alert.alert(t('gj_doneTitle'), t('gj_done'));
+        AppAlert.alert(t('gj_doneTitle'), t('gj_done'));
       }
     } catch {
-      Alert.alert(t('gj_failedTitle'), t('gj_failed'));
+      AppAlert.alert(t('gj_failedTitle'), t('gj_failed'));
     } finally {
       setExportingJson(false);
     }
@@ -85,12 +86,12 @@ export default function ReportsScreen() {
     try {
       const res = await exportTallyXml(db, business.id, business.name, talRange.from, talRange.to);
       if (!res) {
-        Alert.alert(t('tal_noDataTitle'), t('tal_noData'));
+        AppAlert.alert(t('tal_noDataTitle'), t('tal_noData'));
       } else {
-        Alert.alert(t('tal_doneTitle'), t('tal_done'));
+        AppAlert.alert(t('tal_doneTitle'), t('tal_done'));
       }
     } catch {
-      Alert.alert(t('tal_failedTitle'), t('tal_failed'));
+      AppAlert.alert(t('tal_failedTitle'), t('tal_failed'));
     } finally {
       setTallying(false);
     }

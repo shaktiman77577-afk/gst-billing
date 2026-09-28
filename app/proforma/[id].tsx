@@ -3,7 +3,8 @@ import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { AppAlert } from '../../src/components/AppDialog';
 import { Text } from '../../src/components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FormHeader } from '../../src/components/FormHeader';
@@ -35,7 +36,7 @@ export default function ProformaDetailScreen() {
   const load = useCallback(async () => {
     const d = await getInvoice(db, id);
     if (!d || d.invoice.doc_type !== 'proforma') {
-      Alert.alert(t('appName'), t('pf_errNotProforma'));
+      AppAlert.alert(t('appName'), t('pf_errNotProforma'));
       router.back();
       return;
     }
@@ -62,7 +63,7 @@ export default function ProformaDetailScreen() {
       if (kind === 'share') await sharePdf(html, inv.invoice_no);
       else await printBill(html);
     } catch (e) {
-      if (!/cancel/i.test(String((e as Error)?.message ?? e))) Alert.alert(t('appName'), t('pdfError'));
+      if (!/cancel/i.test(String((e as Error)?.message ?? e))) AppAlert.alert(t('appName'), t('pdfError'));
     } finally {
       setBusy(null);
     }
@@ -82,7 +83,7 @@ export default function ProformaDetailScreen() {
       });
       await sharePdfOnWhatsApp(html, inv.invoice_no, inv.party_phone, caption);
     } catch (e) {
-      if (!/cancel/i.test(String((e as Error)?.message ?? e))) Alert.alert(t('appName'), t('pdfError'));
+      if (!/cancel/i.test(String((e as Error)?.message ?? e))) AppAlert.alert(t('appName'), t('pdfError'));
     } finally {
       setBusy(null);
     }
@@ -101,14 +102,14 @@ export default function ProformaDetailScreen() {
       });
       router.replace(`/bill/${billId}`);
     } catch (e) {
-      Alert.alert(t('appName'), `${t('somethingWrong')} (${String((e as Error)?.message ?? e)})`);
+      AppAlert.alert(t('appName'), `${t('somethingWrong')} (${String((e as Error)?.message ?? e)})`);
     } finally {
       setBusy(null);
     }
   };
 
   const onCancel = () => {
-    Alert.alert(t('pf_cancelProforma'), t('pf_cancelProformaConfirm'), [
+    AppAlert.alert(t('pf_cancelProforma'), t('pf_cancelProformaConfirm'), [
       { text: t('no'), style: 'cancel' },
       {
         text: t('pf_cancelProforma'),

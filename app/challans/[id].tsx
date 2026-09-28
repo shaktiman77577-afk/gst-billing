@@ -3,7 +3,8 @@ import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { AppAlert } from '../../src/components/AppDialog';
 import { Text } from '../../src/components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FormHeader } from '../../src/components/FormHeader';
@@ -58,7 +59,7 @@ export default function ChallanDetailScreen() {
       if (kind === 'share') await sharePdf(html, inv.invoice_no);
       else await printBill(html);
     } catch (e) {
-      if (!/cancel/i.test(String((e as Error)?.message ?? e))) Alert.alert(t('appName'), t('pdfError'));
+      if (!/cancel/i.test(String((e as Error)?.message ?? e))) AppAlert.alert(t('appName'), t('pdfError'));
     } finally {
       setBusy(null);
     }
@@ -82,7 +83,7 @@ export default function ChallanDetailScreen() {
       );
       await sharePdfOnWhatsApp(html, inv.invoice_no, inv.party_phone, caption);
     } catch (e) {
-      if (!/cancel/i.test(String((e as Error)?.message ?? e))) Alert.alert(t('appName'), t('pdfError'));
+      if (!/cancel/i.test(String((e as Error)?.message ?? e))) AppAlert.alert(t('appName'), t('pdfError'));
     } finally {
       setBusy(null);
     }
@@ -99,19 +100,19 @@ export default function ChallanDetailScreen() {
         gstRegistered: business.gst_registered === 1,
         stateCode: business.state_code,
       });
-      Alert.alert(t('appName'), t('ch_convertedMsg'), [
+      AppAlert.alert(t('appName'), t('ch_convertedMsg'), [
         { text: 'OK', onPress: () => router.replace(`/bill/${billId}`) },
       ]);
       load();
     } catch (e) {
-      Alert.alert(t('appName'), `${t('somethingWrong')} (${String((e as Error)?.message ?? e)})`);
+      AppAlert.alert(t('appName'), `${t('somethingWrong')} (${String((e as Error)?.message ?? e)})`);
     } finally {
       setBusy(null);
     }
   };
 
   const onCancel = () => {
-    Alert.alert(t('ch_cancelChallan'), t('ch_cancelConfirm'), [
+    AppAlert.alert(t('ch_cancelChallan'), t('ch_cancelConfirm'), [
       { text: t('no'), style: 'cancel' },
       {
         text: t('ch_cancelChallan'),

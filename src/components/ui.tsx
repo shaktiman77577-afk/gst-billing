@@ -9,6 +9,7 @@ import {
   StyleProp,
   StyleSheet,
   TextInputProps,
+  TextStyle,
   View,
   ViewStyle,
 } from 'react-native';
@@ -206,6 +207,43 @@ export function Chips<T extends string>({
   );
 }
 
+// Segmented control (2–4 options, equal width) — e.g. All / Customers / Suppliers.
+export function Segmented<T extends string>({
+  options,
+  value,
+  onChange,
+}: {
+  options: { value: T; label: string }[];
+  value: T;
+  onChange: (v: T) => void;
+}) {
+  return (
+    <View style={styles.segment} accessibilityRole="tablist">
+      {options.map((o) => {
+        const on = o.value === value;
+        return (
+          <Pressable
+            key={o.value}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: on }}
+            onPress={() => onChange(o.value)}
+            style={[styles.segmentBtn, on && styles.segmentBtnOn]}
+          >
+            <Text style={[styles.segmentText, on && styles.segmentTextOn]} numberOfLines={1}>
+              {o.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+// Small uppercase section label ("THIS MONTH", "RECENT BILLS").
+export function Overline({ children, style }: { children: ReactNode; style?: StyleProp<TextStyle> }) {
+  return <Text style={[styles.overline, style]}>{children}</Text>;
+}
+
 export function MadeInIndia({ light = false }: { light?: boolean }) {
   return (
     <View style={styles.madeWrap}>
@@ -260,6 +298,7 @@ export function MenuRow({
   iconBg,
   iconFg,
   chevron = true,
+  subtitleLines = 2,
 }: {
   icon: IconName;
   title: string;
@@ -269,6 +308,7 @@ export function MenuRow({
   iconBg?: string;
   iconFg?: string;
   chevron?: boolean;
+  subtitleLines?: number;
 }) {
   const inner = (
     <>
@@ -278,7 +318,7 @@ export function MenuRow({
           {title}
         </Text>
         {subtitle ? (
-          <Text style={styles.menuSubtitle} numberOfLines={2}>
+          <Text style={styles.menuSubtitle} numberOfLines={subtitleLines}>
             {subtitle}
           </Text>
         ) : null}
@@ -401,4 +441,24 @@ const styles = StyleSheet.create({
   hairline: { height: 1, backgroundColor: colors.divider, marginVertical: 2 },
   // Slim card variant for lists: wrap MenuRows + Hairlines in <Card list>.
   list: { paddingVertical: 6, gap: 0 },
+  segment: { flexDirection: 'row', backgroundColor: colors.divider, borderRadius: radius.md + 2, padding: 3, gap: 3 },
+  segmentBtn: { flex: 1, height: 36, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8 },
+  segmentBtnOn: {
+    backgroundColor: colors.card,
+    shadowColor: '#0F172A',
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
+  },
+  segmentText: { fontSize: text.sm, fontWeight: '500', color: colors.muted },
+  segmentTextOn: { color: colors.text, fontWeight: '700' },
+  overline: {
+    fontSize: text.xs,
+    lineHeight: 16,
+    fontWeight: '500',
+    color: colors.muted,
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+  },
 });

@@ -196,6 +196,20 @@ export async function permanentDeleteInvoice(db: SQLiteDatabase, invoiceId: stri
   if (!inv.cancelled_at) throw new Error(RECYCLE_NOT_CANCELLED);
 
   await db.withTransactionAsync(async () => {
+    // Cloud sync: remember what is removed for good.
+    const now = nowIso();
+    await db.runAsync(
+      `INSERT OR REPLACE INTO sync_tombstones (tbl, row_id, deleted_at)
+       SELECT 'invoice_items', id, ? FROM invoice_items WHERE invoice_id = ?`,
+      now,
+      invoiceId,
+    );
+    await db.runAsync(
+      'INSERT OR REPLACE INTO sync_tombstones (tbl, row_id, deleted_at) VALUES (?, ?, ?)',
+      'invoices',
+      invoiceId,
+      now,
+    );
     await db.runAsync('DELETE FROM invoice_items WHERE invoice_id = ?', invoiceId);
     await db.runAsync('DELETE FROM invoices WHERE id = ?', invoiceId);
     // Cloud backup: mark data as changed (debounced upload, never blocks the UI).
@@ -217,6 +231,20 @@ export async function permanentDeletePurchase(db: SQLiteDatabase, purchaseId: st
   if (!p.deleted_at) throw new Error(RECYCLE_NOT_DELETED);
 
   await db.withTransactionAsync(async () => {
+    // Cloud sync: remember what is removed for good.
+    const now = nowIso();
+    await db.runAsync(
+      `INSERT OR REPLACE INTO sync_tombstones (tbl, row_id, deleted_at)
+       SELECT 'purchase_items', id, ? FROM purchase_items WHERE purchase_id = ?`,
+      now,
+      purchaseId,
+    );
+    await db.runAsync(
+      'INSERT OR REPLACE INTO sync_tombstones (tbl, row_id, deleted_at) VALUES (?, ?, ?)',
+      'purchases',
+      purchaseId,
+      now,
+    );
     await db.runAsync('DELETE FROM purchase_items WHERE purchase_id = ?', purchaseId);
     await db.runAsync('DELETE FROM purchases WHERE id = ?', purchaseId);
     // Cloud backup: mark data as changed (debounced upload, never blocks the UI).

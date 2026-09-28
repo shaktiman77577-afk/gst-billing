@@ -23,6 +23,7 @@ import { useApp } from '../src/context/AppContext';
 import { BusinessType, createBusiness, updateBusiness } from '../src/db/businesses';
 import { useBusiness } from '../src/hooks/useBusiness';
 import { loginWithGoogle } from '../src/lib/auth';
+import { autoRestoreAfterLogin, cloudBackupExists } from '../src/lib/cloudRestore';
 import {
   isValidGstin,
   normalizeGstin,
@@ -59,6 +60,14 @@ export default function BusinessSetupScreen() {
   const [saving, setSaving] = useState(false);
   const [loggingIn, setLoggingIn] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  // A cloud restore can finish after this screen opened (the database is
+  // swapped and the app state re-reads it). As soon as a business exists,
+  // go home instead of asking the user to type everything again.
+  useEffect(() => {
+    if (!isEdit && businessId) router.replace('/home');
+  }, [isEdit, businessId]);
 
   // Editing: fill the form with the saved business once.
   useEffect(() => {
@@ -147,6 +156,26 @@ export default function BusinessSetupScreen() {
       if (isEdit && businessId) {
         await updateBusiness(db, businessId, input);
         router.back();
+        return;
+      }
+      // Safety: never start a fresh business when this account already has
+      // data in the cloud — bring that data back instead. The cloud keeps
+      // only the newest backup, so a fresh start here could replace it.
+      setSaveError(null);
+      const cloud = await cloudBackupExists();
+      if (cloud === 'unknown') {
+        setSaveError(t('v2_cloudCheckFailed'));
+        return;
+      }
+      if (cloud === 'yes') {
+        const r = await autoRestoreAfterLogin(db);
+        if (r === 'restored') {
+          // The database file was swapped; the app reloads it and the effect
+          // above moves to home. Do not touch `db` again here.
+          router.replace('/');
+          return;
+        }
+        setSaveError(t('v2_cloudRestoreFailed'));
         return;
       }
       const id = await createBusiness(db, userId, input);
@@ -320,6 +349,7 @@ export default function BusinessSetupScreen() {
       </Card>
 
         <MadeInIndia />
+        <ErrorText>{saveError}</ErrorText>
       </Screen>
     </View>
   );

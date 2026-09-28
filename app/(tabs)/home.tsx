@@ -167,7 +167,7 @@ export default function HomeScreen() {
             >
               <Ionicons name="arrow-down" size={16} color={colors.success} />
               <Text style={styles.payLabel} numberOfLines={1}>
-                {t('receivePayment')}
+                {t('paymentIn')}
               </Text>
             </Pressable>
             <Pressable
@@ -247,16 +247,19 @@ export default function HomeScreen() {
               onPress={() => router.navigate('/bills')}
             >
               <Text style={styles.statLabel} numberOfLines={1}>
-                {t('thisMonthSales')} · {month.count} {t('billsCount')}
+                {t('v2_sales')}
               </Text>
               <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit>
                 {formatPaise(month.total)}
+              </Text>
+              <Text style={styles.statSub} numberOfLines={1}>
+                {month.count} {t('billsCount')}
               </Text>
             </Pressable>
             <View style={styles.moneyDivider} />
             <View style={styles.statCol}>
               <Text style={styles.statLabel} numberOfLines={1}>
-                {t('e_profitMonth')}
+                {t('v2_profit')}
               </Text>
               <Text
                 style={[styles.statValue, { color: profit >= 0 ? colors.success : colors.danger }]}

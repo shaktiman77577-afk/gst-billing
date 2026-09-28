@@ -63,66 +63,70 @@ export function DateRangePicker({ visible, onClose, value, onApply, allowClear =
         <Pressable style={styles.backdropPress} onPress={onClose} />
         <View style={styles.sheet}>
           <View style={styles.handle} />
-          <Text style={styles.title}>{t('dr_title')}</Text>
-          <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
-            {DATE_PRESETS.map((p) => {
-              const range = p === 'custom' ? null : presetRange(p);
-              const selected = value?.preset === p;
-              return (
-                <View key={p}>
-                  <Pressable
-                    onPress={() => pick(p)}
-                    style={[styles.row, selected && styles.rowSelected]}
-                  >
-                    <View style={[styles.radio, selected && styles.radioSelected]}>
-                      {selected ? <Ionicons name="checkmark" size={13} color={colors.white} /> : null}
-                    </View>
-                    <View style={styles.rowText}>
-                      <Text style={[styles.rowLabel, selected && styles.rowLabelSelected]}>
-                        {t(DR_PRESET_LABELS[p])}
-                      </Text>
-                      {range ? (
-                        <Text style={styles.rowSub}>{formatRange(range.from, range.to)}</Text>
-                      ) : null}
-                    </View>
-                    <Ionicons
-                      name="chevron-forward"
-                      size={16}
-                      color={selected ? colors.primary : colors.faint}
-                    />
-                  </Pressable>
-                  {p === 'custom' && showCustom ? (
-                    <View style={styles.custom}>
-                      <View style={styles.customRow}>
-                        <DateField
-                          label={t('dr_from')}
-                          value={from}
-                          onChange={(v) => {
-                            if (v) {
-                              setFrom(v);
-                              setError(null);
-                            }
-                          }}
-                        />
-                        <DateField
-                          label={t('dr_to')}
-                          value={to}
-                          onChange={(v) => {
-                            if (v) {
-                              setTo(v);
-                              setError(null);
-                            }
-                          }}
-                        />
+          {showCustom ? (
+            // Custom range gets its own panel so the From/To fields are always
+            // on screen (they used to open below the list, out of view).
+            <View style={styles.custom}>
+              <View style={styles.customHead}>
+                <Pressable onPress={() => setShowCustom(false)} hitSlop={10} style={styles.backBtn}>
+                  <Ionicons name="chevron-back" size={20} color={colors.text} />
+                </Pressable>
+                <Text style={[styles.title, styles.customTitle]}>{t(DR_PRESET_LABELS.custom)}</Text>
+                <View style={styles.backBtn} />
+              </View>
+              <View style={styles.customRow}>
+                <DateField
+                  label={t('dr_from')}
+                  value={from}
+                  onChange={(v) => {
+                    if (v) {
+                      setFrom(v);
+                      setError(null);
+                    }
+                  }}
+                />
+                <DateField
+                  label={t('dr_to')}
+                  value={to}
+                  onChange={(v) => {
+                    if (v) {
+                      setTo(v);
+                      setError(null);
+                    }
+                  }}
+                />
+              </View>
+              {error ? <Text style={styles.error}>{error}</Text> : null}
+              <Button label={t('dr_apply')} onPress={applyCustom} />
+            </View>
+          ) : (
+            <>
+              <Text style={styles.title}>{t('dr_title')}</Text>
+              <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
+                {DATE_PRESETS.map((p) => {
+                  const range = p === 'custom' ? null : presetRange(p);
+                  const selected = value?.preset === p;
+                  return (
+                    <Pressable key={p} onPress={() => pick(p)} style={[styles.row, selected && styles.rowSelected]}>
+                      <View style={[styles.radio, selected && styles.radioSelected]}>
+                        {selected ? <Ionicons name="checkmark" size={13} color={colors.white} /> : null}
                       </View>
-                      {error ? <Text style={styles.error}>{error}</Text> : null}
-                      <Button label={t('dr_apply')} icon="checkmark" onPress={applyCustom} />
-                    </View>
-                  ) : null}
-                </View>
-              );
-            })}
-          </ScrollView>
+                      <View style={styles.rowText}>
+                        <Text style={[styles.rowLabel, selected && styles.rowLabelSelected]}>
+                          {t(DR_PRESET_LABELS[p])}
+                        </Text>
+                        {range ? <Text style={styles.rowSub}>{formatRange(range.from, range.to)}</Text> : null}
+                        {p === 'custom' && value?.preset === 'custom' ? (
+                          <Text style={styles.rowSub}>{formatRange(value.from, value.to)}</Text>
+                        ) : null}
+                      </View>
+                      <Ionicons name="chevron-forward" size={16} color={selected ? colors.primary : colors.faint} />
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </>
+          )}
           {allowClear && value ? (
             <Button variant="text" label={t('dr_clear')} onPress={() => onApply(null)} />
           ) : null}
@@ -154,7 +158,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     marginBottom: 4,
   },
-  title: { fontSize: 17, fontWeight: '800', color: colors.text, textAlign: 'center' },
+  title: { fontSize: text.lg, fontWeight: '700', color: colors.text, textAlign: 'center' },
   list: { marginHorizontal: -4 },
   row: {
     flexDirection: 'row',
@@ -177,10 +181,13 @@ const styles = StyleSheet.create({
   },
   radioSelected: { borderColor: colors.primary, backgroundColor: colors.primary },
   rowText: { flex: 1 },
-  rowLabel: { fontSize: text.md, fontWeight: '600', color: colors.text },
+  rowLabel: { fontSize: text.md, fontWeight: '500', color: colors.text },
   rowLabelSelected: { color: colors.primary, fontWeight: '700' },
   rowSub: { fontSize: text.xs, color: colors.muted, marginTop: 2 },
-  custom: { padding: 12, gap: 12, backgroundColor: colors.primaryTint, borderRadius: radius.md },
+  custom: { gap: 16, paddingBottom: 4 },
+  customHead: { flexDirection: 'row', alignItems: 'center' },
+  customTitle: { flex: 1 },
+  backBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   customRow: { flexDirection: 'row', gap: 12 },
-  error: { fontSize: text.sm, color: colors.danger, fontWeight: '600' },
+  error: { fontSize: text.sm, color: colors.danger, fontWeight: '500' },
 });

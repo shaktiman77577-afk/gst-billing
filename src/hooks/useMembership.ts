@@ -17,6 +17,7 @@ import {
   computeEntitlement,
   countBillsThisMonth,
   fetchMembership,
+  isYearlyPlan,
   readMembershipCache,
   writeMembershipCache,
 } from '../lib/membership';
@@ -28,6 +29,8 @@ export type MembershipState = {
   loading: boolean;
   membership: MembershipRow | null;
   planId: string | null;
+  /** Active Pro membership on the Yearly plan (trial / monthly / free → false). */
+  isYearly: boolean;
   expiresAt: string | null;
   trialDaysLeft: number;
   billsUsed: number;
@@ -163,6 +166,7 @@ export function useMembership(): MembershipState {
     loading,
     membership,
     planId: membership?.plan_id ?? null,
+    isYearly: status === 'pro' && isYearlyPlan(membership?.plan_id),
     expiresAt: membership?.expires_at ?? null,
     trialDaysLeft,
     billsUsed,

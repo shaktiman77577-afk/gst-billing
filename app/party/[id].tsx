@@ -3,7 +3,8 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Switch, View } from 'react-native';
+import { Pressable, StyleSheet, Switch, View } from 'react-native';
+import { AppAlert } from '../../src/components/AppDialog';
 import { Text } from '../../src/components/Text';
 import { FormHeader } from '../../src/components/FormHeader';
 import { StatePicker } from '../../src/components/StatePicker';
@@ -106,7 +107,7 @@ export default function PartyFormScreen() {
   };
 
   const onDelete = () => {
-    Alert.alert(t('delete'), t('deletePartyConfirm'), [
+    AppAlert.alert(t('delete'), t('deletePartyConfirm'), [
       { text: t('cancel'), style: 'cancel' },
       {
         text: t('delete'),

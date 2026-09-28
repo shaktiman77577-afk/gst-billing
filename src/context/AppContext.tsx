@@ -5,7 +5,8 @@ import { getMeta, setMeta } from '../db/meta';
 import { Language, STRINGS, StringKey } from '../i18n/strings';
 import { logoutGoogle } from '../lib/auth';
 import { autoRestoreAfterLogin } from '../lib/cloudRestore';
-import { pushChanges, resetSyncState, syncEnabled } from '../sync/engine';
+import { claimThisDevice } from '../sync/device';
+import { cancelSync, flushSyncNow, hasUnsyncedChanges, wipeLocalData } from '../sync/engine';
 
 type AppState = {
   ready: boolean;
@@ -20,7 +21,11 @@ type AppContextValue = AppState & {
   chooseLanguage: (lang: Language) => Promise<void>;
   completeLogin: (userId: string, email: string) => Promise<string | null>;
   setActiveBusiness: (id: string) => Promise<void>;
-  logout: () => Promise<void>;
+  /** Normal logout. Returns 'unsynced' (and does nothing) when changes could
+   *  not reach the cloud and `force` is not set — ask the user first. */
+  logout: (force?: boolean) => Promise<'ok' | 'unsynced'>;
+  /** Another phone logged in: log out and wipe this phone without asking. */
+  forceLogout: () => Promise<void>;
 };
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -81,8 +86,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const completeLogin = useCallback(
     async (userId: string, email: string) => {
-      const previous = await getMeta(db, 'user_id');
-      if (previous !== userId) await resetSyncState(db);
+      // A different account's data must never mix with this one.
+      const other = await db.getFirstAsync<{ id: string }>(
+        'SELECT id FROM businesses WHERE user_id IS NOT ? LIMIT 1',
+        userId,
+      );
+      if (other) await wipeLocalData(db);
+      // This phone becomes the account's only active phone; any other phone
+      // is logged out on its next check.
+      await claimThisDevice();
       await setMeta(db, 'user_id', userId);
       await setMeta(db, 'email', email);
       // Silent cloud restore right after login. Gated on "no local business":
@@ -126,22 +138,50 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [db],
   );
 
-  const logout = useCallback(async () => {
-    // Last chance to send unsaved changes to the cloud (skipped if offline).
-    if (syncEnabled() && state.userId) {
-      await Promise.race([pushChanges(db, state.userId).catch(() => 0), new Promise((r) => setTimeout(r, 8000))]);
+  // Logout wipes this phone's business data (it stays in the cloud and comes
+  // back on the next login). Changes are uploaded first; if that fails
+  // (offline), the caller is told so it can warn the user.
+  const logout = useCallback(
+    async (force = false): Promise<'ok' | 'unsynced'> => {
+      if (state.userId) {
+        await Promise.race([flushSyncNow(db), new Promise((r) => setTimeout(r, 8000))]);
+        if (!force) {
+          let pending = false;
+          try {
+            pending = await hasUnsyncedChanges(db);
+          } catch {
+            pending = false;
+          }
+          if (pending) return 'unsynced';
+        }
+      }
+      cancelSync();
+      await logoutGoogle();
+      await wipeLocalData(db);
+      setState((s) => ({ ...s, userId: null, email: null, businessId: null }));
+      return 'ok';
+    },
+    [db, state.userId],
+  );
+
+  const forceLogout = useCallback(async () => {
+    cancelSync();
+    try {
+      await logoutGoogle();
+    } catch {
+      // ignore
     }
-    await resetSyncState(db);
-    await logoutGoogle();
-    await setMeta(db, 'user_id', null);
-    await setMeta(db, 'email', null);
-    await setMeta(db, 'active_business_id', null);
+    try {
+      await wipeLocalData(db);
+    } catch {
+      // ignore
+    }
     setState((s) => ({ ...s, userId: null, email: null, businessId: null }));
-  }, [db, state.userId]);
+  }, [db]);
 
   const value = useMemo(
-    () => ({ ...state, t, chooseLanguage, completeLogin, setActiveBusiness, logout }),
-    [state, t, chooseLanguage, completeLogin, setActiveBusiness, logout],
+    () => ({ ...state, t, chooseLanguage, completeLogin, setActiveBusiness, logout, forceLogout }),
+    [state, t, chooseLanguage, completeLogin, setActiveBusiness, logout, forceLogout],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

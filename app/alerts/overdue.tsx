@@ -3,7 +3,8 @@ import { useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useState } from 'react';
-import { Alert, FlatList, RefreshControl, StyleSheet, View } from 'react-native';
+import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
+import { AppAlert } from '../../src/components/AppDialog';
 import { Text } from '../../src/components/Text';
 import { EmptyState } from '../../src/components/EmptyState';
 import { FormHeader } from '../../src/components/FormHeader';
@@ -61,7 +62,7 @@ export default function OverdueScreen() {
       });
       await whatsappMessage(inv.party_phone, caption);
     } catch {
-      Alert.alert(t('appName'), t('a_remindError'));
+      AppAlert.alert(t('appName'), t('a_remindError'));
     } finally {
       setBusyId(null);
     }

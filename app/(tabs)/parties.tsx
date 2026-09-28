@@ -1,4 +1,3 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
@@ -9,11 +8,11 @@ import { EmptyState } from '../../src/components/EmptyState';
 import { Fab } from '../../src/components/Fab';
 import { Header } from '../../src/components/Header';
 import { SearchBar } from '../../src/components/SearchBar';
-import { Chips } from '../../src/components/ui';
+import { Overline, Segmented } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import { listParties, PartyWithBalance } from '../../src/db/parties';
 import { formatPaise } from '../../src/lib/money';
-import { colors, radius, shadow, shadowSm, text } from '../../src/theme';
+import { colors, radius, spacing, tabular, text } from '../../src/theme';
 
 type Filter = 'all' | 'customer' | 'supplier';
 
@@ -68,34 +67,7 @@ export default function PartiesScreen() {
         keyboardShouldPersistTaps="handled"
         ListHeaderComponent={
           <View style={styles.top}>
-            <View style={styles.totals}>
-              <View style={styles.total}>
-                <Text style={styles.totalLabel}>{t('toCollect')}</Text>
-                <Text style={[styles.totalValue, { color: colors.success }]}>{formatPaise(totals.collect)}</Text>
-              </View>
-              <View style={styles.divider} />
-              <View style={styles.total}>
-                <Text style={styles.totalLabel}>{t('toPay')}</Text>
-                <Text style={[styles.totalValue, { color: colors.danger }]}>{formatPaise(totals.pay)}</Text>
-              </View>
-            </View>
-            <View style={styles.quickPay}>
-              <Pressable
-                onPress={() => router.push({ pathname: '/payment/new', params: { direction: 'in' } })}
-                style={({ pressed }) => [styles.quickBtn, pressed && { opacity: 0.8 }]}
-              >
-                <Ionicons name="arrow-down-circle" size={18} color={colors.success} />
-                <Text style={[styles.quickLabel, { color: colors.success }]}>{t('receivePayment')}</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => router.push({ pathname: '/payment/new', params: { direction: 'out' } })}
-                style={({ pressed }) => [styles.quickBtn, pressed && { opacity: 0.8 }]}
-              >
-                <Ionicons name="arrow-up-circle" size={18} color={colors.danger} />
-                <Text style={[styles.quickLabel, { color: colors.danger }]}>{t('paymentOutAction')}</Text>
-              </Pressable>
-            </View>
-            <Chips
+            <Segmented
               options={[
                 { value: 'all', label: t('all') },
                 { value: 'customer', label: t('customers') },
@@ -104,6 +76,22 @@ export default function PartiesScreen() {
               value={filter}
               onChange={setFilter}
             />
+            <View style={styles.totals}>
+              <View style={styles.total}>
+                <Text style={styles.totalLabel}>{t('toCollect')}</Text>
+                <Text style={[styles.totalValue, { color: colors.success }]} numberOfLines={1} adjustsFontSizeToFit>
+                  {formatPaise(totals.collect)}
+                </Text>
+              </View>
+              <View style={styles.divider} />
+              <View style={styles.total}>
+                <Text style={styles.totalLabel}>{t('toPay')}</Text>
+                <Text style={[styles.totalValue, { color: colors.danger }]} numberOfLines={1} adjustsFontSizeToFit>
+                  {formatPaise(totals.pay)}
+                </Text>
+              </View>
+            </View>
+            {visible.length > 0 ? <Overline>{`${visible.length} · ${t('tabParties')}`}</Overline> : null}
           </View>
         }
         ListEmptyComponent={
@@ -115,7 +103,9 @@ export default function PartiesScreen() {
             )
           ) : null
         }
-        renderItem={({ item }) => <PartyRow party={item} />}
+        renderItem={({ item, index }) => (
+          <PartyRow party={item} first={index === 0} last={index === visible.length - 1} />
+        )}
       />
 
       <Fab label={t('addParty')} onPress={() => router.push('/party/new')} />
@@ -123,33 +113,40 @@ export default function PartiesScreen() {
   );
 }
 
-function PartyRow({ party }: { party: PartyWithBalance }) {
+// Rows sit together in one card: the first row rounds the top corners, the
+// last row the bottom ones, and rows in between share hairline dividers.
+function PartyRow({ party, first, last }: { party: PartyWithBalance; first: boolean; last: boolean }) {
   const { t } = useApp();
   const bal = party.balance_paise;
-  const initial = party.name.trim().charAt(0).toUpperCase();
+  const initials =
+    party.name
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((w) => w.charAt(0).toUpperCase())
+      .join('') || '?';
+  const isSupplier = party.party_type === 'supplier';
+  const sub = [party.gstin || party.phone, isSupplier ? t('supplier') : t('customer')].filter(Boolean).join(' · ');
   return (
     <Pressable
       onPress={() => router.push({ pathname: '/party/ledger', params: { id: party.id } })}
-      style={({ pressed }) => [styles.row, pressed && { opacity: 0.85 }]}
+      style={({ pressed }) => [
+        styles.row,
+        first && styles.rowFirst,
+        last ? styles.rowLast : styles.rowDivider,
+        pressed && { backgroundColor: colors.primaryTint },
+      ]}
     >
-      <View style={[styles.avatar, party.party_type === 'supplier' && { backgroundColor: colors.accentSoft }]}>
-        <Text style={[styles.avatarText, party.party_type === 'supplier' && { color: colors.warning }]}>{initial}</Text>
+      <View style={[styles.avatar, isSupplier && { backgroundColor: colors.warningSoft }]}>
+        <Text style={[styles.avatarText, isSupplier && { color: colors.warning }]}>{initials}</Text>
       </View>
       <View style={styles.flexOnly}>
         <Text style={styles.name} numberOfLines={1}>
           {party.name}
         </Text>
-        <View style={styles.subRow}>
-          <Ionicons
-            name={party.party_type === 'supplier' ? 'cube-outline' : 'person-outline'}
-            size={12}
-            color={colors.faint}
-          />
-          <Text style={styles.sub} numberOfLines={1}>
-            {party.party_type === 'supplier' ? t('supplier') : t('customer')}
-            {party.phone ? ` · ${party.phone}` : ''}
-          </Text>
-        </View>
+        <Text style={styles.sub} numberOfLines={1}>
+          {sub}
+        </Text>
       </View>
       <View style={styles.balance}>
         {bal === 0 ? (
@@ -169,61 +166,49 @@ function PartyRow({ party }: { party: PartyWithBalance }) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.background },
-  flexOnly: { flex: 1 },
-  list: { padding: 16, paddingBottom: 100, gap: 10 },
-  top: { gap: 12, marginBottom: 4 },
+  flexOnly: { flex: 1, minWidth: 0 },
+  list: { padding: spacing.lg, paddingBottom: 96 },
+  top: { gap: spacing.md, marginBottom: spacing.sm },
   totals: {
     flexDirection: 'row',
     backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.lg,
-    paddingVertical: 14,
-    ...shadow,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
   },
-  total: { flex: 1, alignItems: 'center', gap: 2 },
-  divider: { width: 1, backgroundColor: colors.border },
-  totalLabel: { fontSize: text.xs, color: colors.muted, fontWeight: '600' },
-  totalValue: { fontSize: text.md, fontWeight: '800' },
-  quickPay: { flexDirection: 'row', gap: 10 },
-  quickBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    paddingVertical: 12,
-  },
-  quickLabel: { fontSize: text.sm, fontWeight: '700' },
+  total: { flex: 1, gap: 2 },
+  totalLabel: { fontSize: text.xs, lineHeight: 16, color: colors.muted },
+  totalValue: { fontSize: 17, lineHeight: 22, fontWeight: '700', ...tabular },
+  divider: { width: 1, backgroundColor: colors.border, marginHorizontal: spacing.lg },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: spacing.md,
     backgroundColor: colors.card,
-    borderWidth: 1,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
     borderColor: colors.border,
-    borderRadius: radius.md,
-    padding: 12,
-    ...shadowSm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
   },
+  rowFirst: { borderTopWidth: 1, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg },
+  rowLast: { borderBottomWidth: 1, borderBottomLeftRadius: radius.lg, borderBottomRightRadius: radius.lg },
+  rowDivider: { borderBottomWidth: 1, borderBottomColor: colors.divider },
   avatar: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 36,
+    height: 36,
+    borderRadius: radius.md,
     backgroundColor: colors.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: { fontSize: 16, fontWeight: '800', color: colors.primary },
-  name: { fontSize: text.md, fontWeight: '700', color: colors.text },
-  subRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
-  sub: { fontSize: text.sm, color: colors.muted, flex: 1 },
-  balance: { alignItems: 'flex-end' },
-  amount: { fontSize: text.md, fontWeight: '800' },
-  balLabel: { fontSize: text.xs, color: colors.muted, marginTop: 1 },
-  settled: { fontSize: text.xs, color: colors.muted, fontWeight: '600' },
+  avatarText: { fontSize: text.sm, fontWeight: '700', color: colors.primary },
+  name: { fontSize: text.md, lineHeight: 20, fontWeight: '500', color: colors.text },
+  sub: { fontSize: text.xs, lineHeight: 16, color: colors.muted, marginTop: 1 },
+  balance: { alignItems: 'flex-end', gap: 2 },
+  amount: { fontSize: text.md, fontWeight: '700', ...tabular },
+  balLabel: { fontSize: 11, color: colors.muted },
+  settled: { fontSize: text.xs, color: colors.muted },
 });

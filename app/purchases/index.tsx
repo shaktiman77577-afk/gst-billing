@@ -3,7 +3,8 @@ import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { AppAlert } from '../../src/components/AppDialog';
 import { Text } from '../../src/components/Text';
 import { EmptyState } from '../../src/components/EmptyState';
 import { Fab } from '../../src/components/Fab';
@@ -43,7 +44,7 @@ export default function PurchasesScreen() {
   const isCurrent = ym.y === now.getFullYear() && ym.m === now.getMonth();
 
   const confirmDelete = (p: Purchase) => {
-    Alert.alert(t('delete'), t('pur_deleteConfirm'), [
+    AppAlert.alert(t('delete'), t('pur_deleteConfirm'), [
       { text: t('cancel'), style: 'cancel' },
       {
         text: t('delete'),

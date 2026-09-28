@@ -114,6 +114,9 @@ async function verifyRazorpaySignature(
   return timingSafeEqual(hex, signature);
 }
 
+// Plan id of the Yearly plan (see supabase/membership.sql).
+const YEARLY_PLAN_ID = "pro_yearly";
+
 Deno.serve(async (req: Request): Promise<Response> => {
   // CORS preflight
   if (req.method === "OPTIONS") {
@@ -235,10 +238,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
       Prefer: "return=representation",
     };
 
-    let existing: { id: string; expires_at: string } | null = null;
+    let existing: { id: string; expires_at: string; plan_id: string } | null = null;
     const existingRes = await fetch(
       `${SUPABASE_URL}/rest/v1/memberships?user_id=eq.${encodeURIComponent(user.id)}` +
-        `&status=eq.active&select=id,expires_at`,
+        `&status=eq.active&select=id,expires_at,plan_id`,
       { method: "GET", headers: svcHeaders },
     );
     if (existingRes.ok) {
@@ -254,6 +257,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
       : now.getTime();
     const newExpires = new Date(baseMs + plan.duration_days * 86400000).toISOString();
 
+    // A shorter plan bought on top of an active Yearly plan only adds days:
+    // the membership stays Yearly (Yearly-only features like the recycle bin
+    // keep working). The plan is upgraded when the new plan is longer.
+    const keepPlan = (current: { plan_id?: string } | null): string =>
+      current?.plan_id === YEARLY_PLAN_ID && plan.id !== YEARLY_PLAN_ID ? YEARLY_PLAN_ID : plan.id;
+
     let upsertRes: Response;
     if (existing) {
       // Extend the existing active row (stacked renewals keep leftover days).
@@ -263,7 +272,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
           method: "PATCH",
           headers: svcHeaders,
           body: JSON.stringify({
-            plan_id: plan.id,
+            plan_id: keepPlan(existing),
             expires_at: newExpires,
             razorpay_payment_id,
             razorpay_order_id,
@@ -290,7 +299,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     if (upsertRes.status === 409) {
       const retryRes = await fetch(
         `${SUPABASE_URL}/rest/v1/memberships?user_id=eq.${encodeURIComponent(user.id)}` +
-          `&status=eq.active&select=id,expires_at`,
+          `&status=eq.active&select=id,expires_at,plan_id`,
         { method: "GET", headers: svcHeaders },
       );
       if (!retryRes.ok) {
@@ -314,7 +323,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
           method: "PATCH",
           headers: svcHeaders,
           body: JSON.stringify({
-            plan_id: plan.id,
+            plan_id: keepPlan(winner),
             expires_at: retryExpires,
             razorpay_payment_id,
             razorpay_order_id,

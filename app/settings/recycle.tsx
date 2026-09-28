@@ -1,9 +1,10 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { AppAlert } from '../../src/components/AppDialog';
 import { Text } from '../../src/components/Text';
 import { FormHeader } from '../../src/components/FormHeader';
 import { Card, Hint, Screen, SectionHeader } from '../../src/components/ui';
@@ -22,6 +23,7 @@ import { formatPaise } from '../../src/lib/money';
 import type { StringKey } from '../../src/i18n/strings';
 import { colors, radius, text } from '../../src/theme';
 import { useBusiness } from '../../src/hooks/useBusiness';
+import { useMembership } from '../../src/hooks/useMembership';
 
 const SECTIONS: { kind: RecycleRow['docKind']; icon: 'document-text' | 'reader' | 'newspaper' | 'bag-handle-outline'; key: StringKey }[] = [
   { kind: 'invoice', icon: 'document-text', key: 'rc_sectionInvoices' },
@@ -34,6 +36,22 @@ export default function RecycleScreen() {
   const db = useSQLiteContext();
   const { t, language } = useApp();
   const business = useBusiness();
+  const mem = useMembership();
+  // Restoring is a Yearly-plan feature. Everyone can still see the list and
+  // delete forever; trial / monthly / free users are told to take Yearly.
+  const yearly = mem.isYearly;
+  const lockedMsg =
+    mem.status === 'trial'
+      ? t('v2_rcLockedTrial')
+      : mem.status === 'pro'
+        ? t('v2_rcLockedMonthly')
+        : t('v2_rcLockedFree');
+  const openYearly = () => router.push('/settings/membership');
+  const showYearlyGate = () =>
+    AppAlert.alert(t('v2_rcLockedTitle'), lockedMsg, [
+      { text: t('v2_close'), style: 'cancel' },
+      { text: t('v2_seeYearly'), onPress: openYearly },
+    ]);
 
   const [rows, setRows] = useState<RecycleRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,10 +88,10 @@ export default function RecycleScreen() {
     try {
       if (row.docKind === 'purchase') await restorePurchase(db, row.id);
       else await uncancelInvoice(db, row.id);
-      Alert.alert(t('rc_title'), t('rc_restored'));
+      AppAlert.alert(t('rc_title'), t('rc_restored'));
       await refresh();
     } catch (e) {
-      Alert.alert(t('rc_title'), recycleErrorText(e));
+      AppAlert.alert(t('rc_title'), recycleErrorText(e));
     } finally {
       setBusyId(null);
     }
@@ -81,14 +99,14 @@ export default function RecycleScreen() {
 
   // Two-step confirmation for permanent delete.
   const stepOne = (row: RecycleRow) => {
-    Alert.alert(t('rc_deleteTitle'), `${row.docNo}\n${t('rc_deleteMsg1')}`, [
+    AppAlert.alert(t('rc_deleteTitle'), `${row.docNo}\n${t('rc_deleteMsg1')}`, [
       { text: t('rc_restore'), style: 'cancel' },
       { text: t('rc_deleteForever'), style: 'destructive', onPress: () => stepTwo(row) },
     ]);
   };
 
   const stepTwo = (row: RecycleRow) => {
-    Alert.alert(t('rc_deleteTitle2'), t('rc_deleteMsg2').replace('{no}', row.docNo), [
+    AppAlert.alert(t('rc_deleteTitle2'), t('rc_deleteMsg2').replace('{no}', row.docNo), [
       { text: t('rc_restore'), style: 'cancel' },
       { text: t('rc_deleteConfirm'), style: 'destructive', onPress: () => doDeleteForever(row) },
     ]);
@@ -99,10 +117,10 @@ export default function RecycleScreen() {
     try {
       if (row.docKind === 'purchase') await permanentDeletePurchase(db, row.id);
       else await permanentDeleteInvoice(db, row.id);
-      Alert.alert(t('rc_title'), t('rc_deleted'));
+      AppAlert.alert(t('rc_title'), t('rc_deleted'));
       await refresh();
     } catch {
-      Alert.alert(t('rc_title'), t('rc_deleteFailed'));
+      AppAlert.alert(t('rc_title'), t('rc_deleteFailed'));
     } finally {
       setBusyId(null);
     }
@@ -130,13 +148,15 @@ export default function RecycleScreen() {
                 style={({ pressed }) => [styles.pill, styles.restorePill, pressed && styles.pressed]}
                 hitSlop={8}
                 onPress={() =>
-                  Alert.alert(t('rc_restoreTitle'), `${row.docNo}\n${t('rc_restoreMsg')}`, [
-                    { text: t('rc_restore'), style: 'cancel' },
-                    { text: t('rc_restoreConfirm'), onPress: () => doRestore(row) },
-                  ])
+                  yearly
+                    ? AppAlert.alert(t('rc_restoreTitle'), `${row.docNo}\n${t('rc_restoreMsg')}`, [
+                        { text: t('rc_restore'), style: 'cancel' },
+                        { text: t('rc_restoreConfirm'), onPress: () => doRestore(row) },
+                      ])
+                    : showYearlyGate()
                 }
               >
-                <Ionicons name="refresh-outline" size={13} color={colors.primary} />
+                <Ionicons name={yearly ? 'refresh-outline' : 'lock-closed-outline'} size={13} color={colors.primary} />
                 <Text style={styles.restoreText}>{t('rc_restore')}</Text>
               </Pressable>
               <Pressable
@@ -159,6 +179,20 @@ export default function RecycleScreen() {
       <StatusBar style="dark" />
       <FormHeader title={t('rc_title')} />
       <Screen edges={['bottom']}>
+        {!yearly && !mem.loading ? (
+          <View style={styles.lockCard}>
+            <View style={styles.lockHead}>
+              <View style={styles.lockIcon}>
+                <Ionicons name="lock-closed-outline" size={18} color={colors.warning} />
+              </View>
+              <Text style={styles.lockTitle}>{t('v2_rcLockedTitle')}</Text>
+            </View>
+            <Text style={styles.lockMsg}>{lockedMsg}</Text>
+            <Pressable onPress={openYearly} style={({ pressed }) => [styles.lockBtn, pressed && styles.pressed]}>
+              <Text style={styles.lockBtnText}>{t('v2_seeYearly')}</Text>
+            </Pressable>
+          </View>
+        ) : null}
         <Card>
           <Hint>{t('rc_hint')}</Hint>
         </Card>
@@ -187,6 +221,35 @@ export default function RecycleScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.background },
+  lockCard: {
+    backgroundColor: colors.warningSoft,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    borderRadius: radius.lg,
+    padding: 16,
+    gap: 10,
+  },
+  lockHead: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  lockIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.md,
+    backgroundColor: colors.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  lockTitle: { flex: 1, fontSize: text.md, fontWeight: '700', color: colors.text },
+  lockMsg: { fontSize: text.sm, lineHeight: 18, color: colors.textSecondary },
+  lockBtn: {
+    alignSelf: 'flex-start',
+    height: 40,
+    paddingHorizontal: 16,
+    borderRadius: radius.md,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  lockBtnText: { fontSize: text.sm, fontWeight: '500', color: colors.white },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10 },
   rowMain: { flex: 1 },
   docNo: { fontSize: text.md, fontWeight: '700', color: colors.text },

@@ -43,6 +43,14 @@ export type MembershipRow = {
 
 export type Entitlement = 'pro' | 'trial' | 'free';
 
+/** Plan id of the Yearly plan (see supabase/membership.sql). */
+export const YEARLY_PLAN_ID = 'pro_yearly';
+
+/** Yearly-only features (recycle bin restore) check this. */
+export function isYearlyPlan(planId: string | null | undefined): boolean {
+  return planId === YEARLY_PLAN_ID;
+}
+
 function isNetworkError(e: unknown): boolean {
   const msg = String((e as { message?: unknown })?.message ?? e ?? '');
   return /network|fetch|failed to fetch|network request failed|timed out|timeout/i.test(msg);
