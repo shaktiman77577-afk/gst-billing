@@ -10,7 +10,7 @@ import { DateField } from '../../src/components/DateField';
 import { FormHeader } from '../../src/components/FormHeader';
 import { ItemPicker } from '../../src/components/ItemPicker';
 import { PartyPicker } from '../../src/components/PartyPicker';
-import { Button, Card, ErrorText, Field, IconChip, Screen, SectionHeader } from '../../src/components/ui';
+import { Button, Card, ErrorText, Field, IconChip, Screen, Overline } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import type { LineDraft } from '../../src/db/invoices';
 import { Item, listItems, roundQty } from '../../src/db/items';
@@ -20,7 +20,7 @@ import { todayIso } from '../../src/lib/dates';
 import type { LineResult } from '../../src/lib/gst';
 import { qtyTimesRatePaise } from '../../src/lib/gst';
 import { formatPaise } from '../../src/lib/money';
-import { colors, radius } from '../../src/theme';
+import { colors, radius, text } from '../../src/theme';
 
 type Line = LineDraft & { key: string };
 type SupplierChoice = PartyWithBalance | null | undefined; // null = cash purchase, undefined = not chosen
@@ -219,7 +219,6 @@ export default function PurchaseFormScreen() {
             <View style={styles.footerBtn}>
               <Button
                 label={t('pur_savePurchase')}
-                icon="checkmark-circle"
                 onPress={onSave}
                 loading={saving}
               />
@@ -241,7 +240,7 @@ export default function PurchaseFormScreen() {
 
         {/* Supplier */}
         <Card>
-          <SectionHeader icon="business" title={t('pur_supplier')} />
+          <Overline>{t('pur_supplier')}</Overline>
           <Pressable style={styles.partyBox} onPress={() => setSupplierOpen(true)}>
             {supplier === undefined ? (
               <>
@@ -263,7 +262,7 @@ export default function PurchaseFormScreen() {
 
         {/* Items */}
         <Card>
-          <SectionHeader icon="cube" title={`${t('itemsLabel')}${lines.length ? ` (${lines.length})` : ''}`} />
+          <Overline>{`${t('itemsLabel')}${lines.length ? ` (${lines.length})` : ''}`}</Overline>
           {lines.map((l) => (
             <BillLineCard
               key={l.key}
@@ -274,7 +273,13 @@ export default function PurchaseFormScreen() {
               onRemove={() => setLines((ls) => ls.filter((x) => x.key !== l.key))}
             />
           ))}
-          <Button variant="outline" icon="add" label={t('addItems')} onPress={() => setItemsOpen(true)} />
+          <Pressable
+            onPress={() => setItemsOpen(true)}
+            style={({ pressed }) => [styles.addItems, pressed && { opacity: 0.7 }]}
+          >
+            <Ionicons name="add" size={18} color={colors.primary} />
+            <Text style={styles.addItemsText}>{t('addItems')}</Text>
+          </Pressable>
         </Card>
 
         {/* Totals */}
@@ -333,27 +338,37 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    padding: 12,
-    backgroundColor: colors.background,
+    minHeight: 48,
+    paddingVertical: 4,
   },
-  partyName: { fontSize: 14, fontWeight: '700', color: colors.text, flexShrink: 1 },
-  partySub: { fontSize: 13, color: colors.muted, marginTop: 1 },
+  partyName: { fontSize: 14, fontWeight: '500', color: colors.text, flexShrink: 1 },
+  partySub: { fontSize: 12, color: colors.muted, marginTop: 1 },
   totalBox: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: colors.primarySoft,
-    padding: 12,
-    borderRadius: radius.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingTop: 10,
   },
-  totalLabel: { fontSize: 14, fontWeight: '700', color: colors.primary },
-  totalValue: { fontSize: 18, fontWeight: '800', color: colors.primary },
-  note: { fontSize: 12, color: colors.faint },
+  totalLabel: { fontSize: 14, fontWeight: '700', color: colors.text },
+  totalValue: { fontSize: 17, fontWeight: '700', color: colors.text, fontVariant: ['tabular-nums'] },
+  note: { fontSize: 12, lineHeight: 16, color: colors.muted },
   footerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   footerLabel: { fontSize: 12, color: colors.muted },
-  footerTotal: { fontSize: 18, fontWeight: '800', color: colors.text },
-  footerBtn: { flex: 1.4 },
+  footerTotal: { fontSize: 18, fontWeight: '700', color: colors.text, fontVariant: ['tabular-nums'] },
+  footerBtn: { flex: 1.2 },
+  addItems: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    height: 44,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: colors.faint,
+    backgroundColor: colors.primaryTint,
+  },
+  addItemsText: { fontSize: text.md, fontWeight: '500', color: colors.primary },
 });

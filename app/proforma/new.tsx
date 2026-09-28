@@ -10,7 +10,7 @@ import { DateField } from '../../src/components/DateField';
 import { FormHeader } from '../../src/components/FormHeader';
 import { ItemPicker } from '../../src/components/ItemPicker';
 import { PartyPicker } from '../../src/components/PartyPicker';
-import { Button, Card, ErrorText, Field, IconChip, Screen, SectionHeader } from '../../src/components/ui';
+import { Button, Card, ErrorText, Field, IconChip, Screen, Overline } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import { stateName } from '../../src/data/states';
 import { DUPLICATE_INVOICE_NO, getInvoice, LineDraft } from '../../src/db/invoices';
@@ -248,7 +248,7 @@ export default function ProformaFormScreen() {
               <Text style={styles.footerTotal}>{formatPaise(totals.totalPaise)}</Text>
             </View>
             <View style={styles.footerBtn}>
-              <Button label={t('pf_saveProforma')} icon="checkmark-circle" onPress={onSave} loading={saving} />
+              <Button label={t('pf_saveProforma')} onPress={onSave} loading={saving} />
             </View>
           </View>
         }
@@ -276,7 +276,7 @@ export default function ProformaFormScreen() {
 
         {/* Party */}
         <Card>
-          <SectionHeader icon="person" title={t('party')} />
+          <Overline>{t('party')}</Overline>
           <Pressable style={styles.partyBox} onPress={() => setPartyOpen(true)}>
             {party === undefined ? (
               <>
@@ -314,7 +314,7 @@ export default function ProformaFormScreen() {
 
         {/* Items */}
         <Card>
-          <SectionHeader icon="cube" title={`${t('itemsLabel')}${lines.length ? ` (${lines.length})` : ''}`} />
+          <Overline>{`${t('itemsLabel')}${lines.length ? ` (${lines.length})` : ''}`}</Overline>
           {lines.map((l, i) => (
             <BillLineCard
               key={l.key}
@@ -325,7 +325,13 @@ export default function ProformaFormScreen() {
               onRemove={() => setLines((ls) => ls.filter((x) => x.key !== l.key))}
             />
           ))}
-          <Button variant="outline" icon="add" label={t('addItems')} onPress={() => setItemsOpen(true)} />
+          <Pressable
+            onPress={() => setItemsOpen(true)}
+            style={({ pressed }) => [styles.addItems, pressed && { opacity: 0.7 }]}
+          >
+            <Ionicons name="add" size={18} color={colors.primary} />
+            <Text style={styles.addItemsText}>{t('addItems')}</Text>
+          </Pressable>
         </Card>
 
         {/* Totals */}
@@ -391,7 +397,7 @@ export default function ProformaFormScreen() {
         {/* More details */}
         <Card>
           <Pressable style={styles.moreHeader} onPress={() => setShowMore((s) => !s)}>
-            <Ionicons name="document-attach-outline" size={18} color={colors.primary} />
+            <Ionicons name="document-attach-outline" size={18} color={colors.muted} />
             <Text style={styles.moreText}>{t('moreDetails')}</Text>
             <Ionicons name={showMore ? 'chevron-up' : 'chevron-down'} size={18} color={colors.faint} />
           </Pressable>
@@ -472,56 +478,74 @@ function SumRow({
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: 'transparent' },
   row: { flexDirection: 'row', gap: 12 },
-  note: { fontSize: text.xs, color: colors.warning, backgroundColor: colors.accentSoft, padding: 8, borderRadius: radius.sm },
+  note: {
+    fontSize: text.xs,
+    lineHeight: 16,
+    color: colors.warning,
+    backgroundColor: colors.warningSoft,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: radius.md,
+  },
   partyBox: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    padding: 12,
-    backgroundColor: colors.surfaceAlt,
+    minHeight: 48,
+    paddingVertical: 4,
   },
-  partyName: { fontSize: text.md, fontWeight: '700', color: colors.text, flexShrink: 1 },
-  partySub: { fontSize: text.sm, color: colors.muted, marginTop: 1 },
+  partyName: { fontSize: text.md, fontWeight: '500', color: colors.text, flexShrink: 1 },
+  partySub: { fontSize: text.xs, color: colors.muted, marginTop: 1 },
   posRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   posText: { flex: 1, fontSize: text.sm, color: colors.muted },
   taxChip: { backgroundColor: colors.primarySoft, paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill },
   taxChipText: { fontSize: text.xs, fontWeight: '800', color: colors.primary },
   sumRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  sumLabel: { fontSize: 14, color: colors.muted },
-  sumValue: { fontSize: 14, color: colors.text, fontWeight: '600' },
-  bold: { fontWeight: '800', color: colors.text, fontSize: text.md },
+  sumLabel: { fontSize: 13, color: colors.muted },
+  sumValue: { fontSize: 13, color: colors.text, fontVariant: ['tabular-nums'] },
+  bold: { fontWeight: '700', color: colors.text, fontSize: text.sm },
   chargesRow: { flexDirection: 'row', gap: 8 },
   smallInput: {
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.borderStrong,
     borderRadius: radius.sm,
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: colors.card,
     paddingHorizontal: 10,
     paddingVertical: 9,
     fontSize: 14,
     color: colors.text,
   },
   switchRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  flexText: { flex: 1, fontSize: 14, color: colors.text, fontWeight: '600' },
+  flexText: { flex: 1, fontSize: 13, color: colors.text, fontWeight: '500' },
   muted: { fontSize: text.sm, color: colors.muted },
   totalBox: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: colors.primarySoft,
-    padding: 12,
-    borderRadius: radius.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingTop: 10,
   },
-  totalLabel: { fontSize: text.md, fontWeight: '700', color: colors.primary },
-  totalValue: { fontSize: text.xl, fontWeight: '800', color: colors.primary },
-  words: { fontSize: text.xs, color: colors.faint, fontStyle: 'italic' },
+  totalLabel: { fontSize: text.md, fontWeight: '700', color: colors.text },
+  totalValue: { fontSize: 17, fontWeight: '700', color: colors.text, fontVariant: ['tabular-nums'] },
+  words: { fontSize: text.xs, color: colors.muted },
   moreHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  moreText: { flex: 1, fontSize: 14, fontWeight: '700', color: colors.primary },
+  moreText: { flex: 1, fontSize: 13, fontWeight: '500', color: colors.muted },
   footerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   footerLabel: { fontSize: text.xs, color: colors.muted },
-  footerTotal: { fontSize: text.xl, fontWeight: '800', color: colors.primary },
-  footerBtn: { flex: 1.4 },
+  footerTotal: { fontSize: text.xl, fontWeight: '700', color: colors.text, fontVariant: ['tabular-nums'] },
+  footerBtn: { flex: 1.2 },
+  addItems: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    height: 44,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: colors.faint,
+    backgroundColor: colors.primaryTint,
+  },
+  addItemsText: { fontSize: text.md, fontWeight: '500', color: colors.primary },
 });
