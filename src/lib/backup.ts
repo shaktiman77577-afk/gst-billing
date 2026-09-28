@@ -391,8 +391,8 @@ export async function maybeDailyBackup(db: SQLiteDatabase): Promise<void> {
 
 /**
  * Restores a daily backup INTO the live database (no file swap, no app
- * reload): the downloaded file is attached and every data table is copied
- * across. Used on login when the phone has no data yet, so the same `db`
+ * reload): the downloaded file is opened next to it and every data table is
+ * copied across. Used on login when the phone has no data yet, so the same `db`
  * handle stays valid and the "Loading your data" screen can simply move on.
  * Columns are matched by name, so an older backup still restores cleanly.
  */
@@ -431,37 +431,50 @@ export async function restoreBackupInPlace(db: SQLiteDatabase, row: CloudBackupR
     await probe.closeAsync();
   }
 
-  const path = decodeURIComponent(tmp.uri.replace(/^file:\/\//, ''));
+  // Copy every data table from the downloaded file into the live database,
+  // row by row through a second connection (no ATTACH — works the same on
+  // every Android version / storage path).
+  const src = await openDatabaseAsync(TMP_RESTORE_NAME);
   await db.execAsync('PRAGMA foreign_keys = OFF');
-  await db.runAsync('ATTACH DATABASE ? AS bk', path);
   try {
     await db.withTransactionAsync(async () => {
       for (const t of SYNC_TABLES) {
-        const exists = await db.getFirstAsync<{ n: number }>(
-          "SELECT COUNT(*) AS n FROM bk.sqlite_master WHERE type = 'table' AND name = ?",
+        const exists = await src.getFirstAsync<{ n: number }>(
+          "SELECT COUNT(*) AS n FROM sqlite_master WHERE type = 'table' AND name = ?",
           t,
         );
         if (!exists?.n) continue;
-        const mine = await db.getAllAsync<{ name: string }>(`PRAGMA main.table_info(${t})`);
-        const theirs = new Set((await db.getAllAsync<{ name: string }>(`PRAGMA bk.table_info(${t})`)).map((c) => c.name));
-        const cols = mine.map((c) => c.name).filter((c) => theirs.has(c));
+        const mine = (await db.getAllAsync<{ name: string }>(`PRAGMA table_info(${t})`)).map((c) => c.name);
+        const theirs = new Set((await src.getAllAsync<{ name: string }>(`PRAGMA table_info(${t})`)).map((c) => c.name));
+        const cols = mine.filter((c) => theirs.has(c));
         if (cols.length === 0) continue;
         const list = cols.map((c) => `"${c}"`).join(', ');
-        await db.runAsync(`INSERT OR REPLACE INTO main.${t} (${list}) SELECT ${list} FROM bk.${t}`);
+        const rows = await src.getAllAsync<Record<string, unknown>>(`SELECT ${list} FROM ${t}`);
+        if (rows.length === 0) continue;
+        const stmt = await db.prepareAsync(
+          `INSERT OR REPLACE INTO ${t} (${list}) VALUES (${cols.map(() => '?').join(', ')})`,
+        );
+        try {
+          for (const r of rows) {
+            await stmt.executeAsync(cols.map((c) => (r[c] ?? null) as string | number | null));
+          }
+        } finally {
+          await stmt.finalizeAsync();
+        }
       }
       // Custom expense categories live in app_meta.
-      const cat = await db.getFirstAsync<{ value: string | null }>(
-        "SELECT value FROM bk.app_meta WHERE key = 'expense_categories'",
+      const cat = await src.getFirstAsync<{ value: string | null }>(
+        "SELECT value FROM app_meta WHERE key = 'expense_categories'",
       );
       if (cat?.value) await setMeta(db, 'expense_categories', cat.value);
     });
   } finally {
+    await db.execAsync('PRAGMA foreign_keys = ON');
     try {
-      await db.execAsync('DETACH DATABASE bk');
+      await src.closeAsync();
     } catch {
       // ignore
     }
-    await db.execAsync('PRAGMA foreign_keys = ON');
     try {
       if (tmp.exists) await tmp.delete();
     } catch {

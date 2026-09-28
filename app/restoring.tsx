@@ -21,6 +21,7 @@ export default function RestoringScreen() {
   const { t, userId, businessId, setActiveBusiness, logout } = useApp();
   const insets = useSafeAreaInsets();
   const [phase, setPhase] = useState<'loading' | 'failed'>('loading');
+  const [detail, setDetail] = useState<string | null>(null);
   const running = useRef(false);
 
   // No way back while loading (Android back button / swipe).
@@ -46,6 +47,7 @@ export default function RestoringScreen() {
     } else if (r.status === 'nothing-found') {
       router.replace('/business-setup'); // brand-new account
     } else {
+      setDetail(r.detail ?? null);
       setPhase('failed');
     }
   }, [db, setActiveBusiness]);
@@ -85,6 +87,12 @@ export default function RestoringScreen() {
             </View>
             <Text style={styles.title}>{t('v2_loadFailedTitle')}</Text>
             <Text style={styles.msg}>{t('v2_loadFailedMsg')}</Text>
+            {detail ? (
+              // Technical reason, small — send a screenshot of this for support.
+              <Text style={styles.detail} selectable>
+                {detail}
+              </Text>
+            ) : null}
             <Pressable
               onPress={() => void run()}
               style={({ pressed }) => [styles.primaryBtn, pressed && styles.pressed]}
@@ -123,6 +131,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 20, lineHeight: 26, fontWeight: '700', color: colors.text, textAlign: 'center' },
   msg: { fontSize: text.md, lineHeight: 20, color: colors.muted, textAlign: 'center', maxWidth: 320 },
   spinner: { marginTop: spacing.lg },
+  detail: { fontSize: 11, lineHeight: 15, color: colors.faint, textAlign: 'center', maxWidth: 320 },
   primaryBtn: {
     marginTop: spacing.lg,
     height: 48,

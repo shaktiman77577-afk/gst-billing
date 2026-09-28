@@ -21,7 +21,32 @@ import { cloudHasSyncData, pullAll } from '../sync/engine';
 import { supabase } from './supabase';
 
 export type AutoRestoreStatus = 'restored' | 'nothing-found' | 'failed';
-export type AutoRestoreResult = { status: AutoRestoreStatus; businessId: string | null };
+export type AutoRestoreResult = {
+  status: AutoRestoreStatus;
+  businessId: string | null;
+  /** Short technical reason when status is 'failed' (shown small on screen). */
+  detail?: string;
+};
+
+function errText(e: unknown): string {
+  const code = (e as { code?: unknown })?.code;
+  const msg = String((e as { message?: unknown })?.message ?? e ?? '');
+  return `${typeof code === 'string' ? `${code}: ` : ''}${msg}`.slice(0, 160);
+}
+
+/**
+ * Data restored from this account's own cloud may carry an older user id on
+ * its business rows (e.g. created before a login change). It is the same
+ * person's data, so it is re-linked to the current account.
+ */
+async function adoptBusinesses(db: SQLiteDatabase, userId: string): Promise<string | null> {
+  const mine = await firstBusinessId(db, userId);
+  if (mine) return mine;
+  const any = await firstBusinessId(db);
+  if (!any) return null;
+  await db.runAsync('UPDATE businesses SET user_id = ? WHERE user_id IS NOT ?', userId, userId);
+  return firstBusinessId(db, userId);
+}
 
 async function firstBusinessId(db: SQLiteDatabase, userId?: string): Promise<string | null> {
   const row = userId
@@ -52,38 +77,44 @@ export async function autoRestoreAfterLogin(db: SQLiteDatabase): Promise<AutoRes
     if (!userId) return { status: 'failed', businessId: null };
 
     // Already on this phone (e.g. an earlier attempt finished) → just use it.
-    const local = await firstBusinessId(db, userId);
+    const local = await adoptBusinesses(db, userId);
     if (local) return done(db, local);
 
-    let hadError = false;
+    const errors: string[] = [];
 
     // 0) Row-level sync — the primary copy.
     try {
       const pulled = await pullAll(db);
       if (pulled.businesses > 0) {
-        const id = await firstBusinessId(db, userId);
+        const id = await adoptBusinesses(db, userId);
         if (id) return done(db, id);
       }
-    } catch {
-      hadError = true;
+    } catch (e) {
+      errors.push(`sync: ${errText(e)}`);
     }
 
-    // 1) Newest daily full-file backup — the safety copy.
+    // 1) Daily full-file backups — newest first; if one cannot be read, the
+    //    next older one is tried (up to 3).
     try {
       const { data: rows, error } = await supabase
         .from('backups')
         .select('id, created_at, file_path, size_bytes, device_name, app_version')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
-        .limit(1);
+        .limit(3);
       if (error) throw error;
-      if (rows && rows.length > 0) {
-        await restoreBackupInPlace(db, rows[0] as CloudBackupRow);
-        const id = await firstBusinessId(db, userId);
-        if (id) return done(db, id);
+      for (const row of rows ?? []) {
+        try {
+          await restoreBackupInPlace(db, row as CloudBackupRow);
+          const id = await adoptBusinesses(db, userId);
+          if (id) return done(db, id);
+          errors.push(`file ${String(row.created_at).slice(0, 16)}: no business inside`);
+        } catch (e) {
+          errors.push(`file ${String(row.created_at).slice(0, 16)}: ${errText(e)}`);
+        }
       }
-    } catch {
-      hadError = true;
+    } catch (e) {
+      errors.push(`backups: ${errText(e)}`);
     }
 
     // 2) Business profile only (the table may not exist — ignore errors).
@@ -94,9 +125,11 @@ export async function autoRestoreAfterLogin(db: SQLiteDatabase): Promise<AutoRes
       // ignore
     }
 
-    return { status: hadError ? 'failed' : 'nothing-found', businessId: null };
-  } catch {
-    return { status: 'failed', businessId: null };
+    return errors.length
+      ? { status: 'failed', businessId: null, detail: errors.join(' | ') }
+      : { status: 'nothing-found', businessId: null };
+  } catch (e) {
+    return { status: 'failed', businessId: null, detail: errText(e) };
   }
 }
 
