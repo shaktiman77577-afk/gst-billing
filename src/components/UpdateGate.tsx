@@ -73,10 +73,13 @@ export function UpdateGate({ children }: { children: ReactNode }) {
     return () => sub.remove();
   }, [blocked]);
 
-  if (!blocked) return <>{children}</>;
-
+  // The app (router) is ALWAYS rendered underneath: the navigator must mount
+  // so the splash screen can hide. The update screen covers it on top.
   return (
-    <View style={[styles.flex, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+    <>
+      {children}
+      {blocked ? (
+    <View style={[styles.overlay, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
       <StatusBar style="dark" />
       <View style={styles.center}>
         <View style={styles.icon}>
@@ -92,11 +95,18 @@ export function UpdateGate({ children }: { children: ReactNode }) {
         </Text>
       </View>
     </View>
+      ) : null}
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: colors.background },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: colors.background,
+    zIndex: 1000,
+    elevation: 1000,
+  },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xxl, gap: spacing.md },
   icon: {
     width: 64,
