@@ -244,6 +244,39 @@ export function Overline({ children, style }: { children: ReactNode; style?: Sty
   return <Text style={[styles.overline, style]}>{children}</Text>;
 }
 
+// A row inside a grouped list card (Bills / Parties style): rows sit together
+// in one card, the first rounds the top corners, the last the bottom ones,
+// and rows in between get hairline dividers.
+export function ListRow({
+  first,
+  last,
+  onPress,
+  children,
+  style,
+}: {
+  first: boolean;
+  last: boolean;
+  onPress?: () => void;
+  children: ReactNode;
+  style?: StyleProp<ViewStyle>;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={!onPress}
+      style={({ pressed }) => [
+        styles.listRow,
+        first && styles.listRowFirst,
+        last ? styles.listRowLast : styles.listRowDivider,
+        pressed && { backgroundColor: colors.primaryTint },
+        style,
+      ]}
+    >
+      {children}
+    </Pressable>
+  );
+}
+
 export function MadeInIndia({ light = false }: { light?: boolean }) {
   return (
     <View style={styles.madeWrap}>
@@ -453,6 +486,20 @@ const styles = StyleSheet.create({
   },
   segmentText: { fontSize: text.sm, fontWeight: '500', color: colors.muted },
   segmentTextOn: { color: colors.text, fontWeight: '700' },
+  listRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: colors.card,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  listRowFirst: { borderTopWidth: 1, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg },
+  listRowLast: { borderBottomWidth: 1, borderBottomLeftRadius: radius.lg, borderBottomRightRadius: radius.lg },
+  listRowDivider: { borderBottomWidth: 1, borderBottomColor: colors.divider },
   overline: {
     fontSize: text.xs,
     lineHeight: 16,

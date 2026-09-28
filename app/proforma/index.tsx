@@ -9,6 +9,7 @@ import { EmptyState } from '../../src/components/EmptyState';
 import { Fab } from '../../src/components/Fab';
 import { FormHeader } from '../../src/components/FormHeader';
 import { SearchBar } from '../../src/components/SearchBar';
+import { ListRow } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import { listProformas } from '../../src/db/proformas';
 import { formatDate } from '../../src/lib/dates';
@@ -59,21 +60,30 @@ export default function ProformaListScreen() {
             <EmptyState icon="document-text-outline" title={t('pf_noProformas')} hint={t('pf_noProformasHint')} />
           ) : null
         }
-        renderItem={({ item }) => <ProformaRow row={item} convertedLabel={t('pf_convertedTo')} />}
+        renderItem={({ item, index }) => (
+          <ProformaRow row={item} convertedLabel={t('pf_convertedTo')} first={index === 0} last={index === visible.length - 1} />
+        )}
       />
       <Fab label={t('pf_newProforma')} onPress={() => router.push('/proforma/new')} />
     </View>
   );
 }
 
-function ProformaRow({ row, convertedLabel }: { row: Row; convertedLabel: string }) {
+function ProformaRow({
+  row,
+  convertedLabel,
+  first,
+  last,
+}: {
+  row: Row;
+  convertedLabel: string;
+  first: boolean;
+  last: boolean;
+}) {
   const cancelled = !!row.cancelled_at;
   const converted = !!row.ref_invoice_id;
   return (
-    <Pressable
-      onPress={() => router.push(`/proforma/${row.id}`)}
-      style={({ pressed }) => [styles.row, pressed && { opacity: 0.85 }]}
-    >
+    <ListRow first={first} last={last} onPress={() => router.push(`/proforma/${row.id}`)}>
       <View style={styles.flexOnly}>
         <Text style={styles.party} numberOfLines={1}>
           {row.party_name}
@@ -95,7 +105,7 @@ function ProformaRow({ row, convertedLabel }: { row: Row; convertedLabel: string
           <Ionicons name="checkmark-circle" size={18} color={colors.success} />
         ) : null}
       </View>
-    </Pressable>
+    </ListRow>
   );
 }
 
@@ -103,7 +113,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.background },
   flexOnly: { flex: 1 },
   searchWrap: { paddingHorizontal: 16, paddingTop: 12 },
-  list: { padding: 16, gap: 10, paddingBottom: 96 },
+  list: { padding: 16, paddingBottom: 96 },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -116,11 +126,11 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     ...shadowSm,
   },
-  party: { fontSize: text.md, fontWeight: '700', color: colors.text },
-  sub: { fontSize: text.sm, color: colors.muted, marginTop: 2 },
+  party: { fontSize: text.md, fontWeight: '500', color: colors.text },
+  sub: { fontSize: text.xs, color: colors.muted, marginTop: 2 },
   converted: { fontSize: text.xs, color: colors.success, fontWeight: '700', marginTop: 2 },
   right: { alignItems: 'flex-end', gap: 4 },
-  amount: { fontSize: text.md, fontWeight: '800', color: colors.text },
+  amount: { fontSize: text.md, fontWeight: '700', color: colors.text, fontVariant: ['tabular-nums'] },
   strike: { textDecorationLine: 'line-through', color: colors.faint },
   cancelledTag: { fontSize: text.xs, color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.4 },
 });

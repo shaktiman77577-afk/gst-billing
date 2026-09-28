@@ -53,11 +53,11 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
       <ScrollView contentContainerStyle={styles.scroll} bounces={false}>
         <View style={[styles.hero, { paddingTop: insets.top + 12 }]}>
           <View style={styles.toggleRow}>
-            <LanguageToggle onDark />
+            <LanguageToggle />
           </View>
           <Image source={require('../assets/icon.png')} style={styles.logo} />
           <Text style={styles.appName}>{t('appName')}</Text>
@@ -72,7 +72,9 @@ export default function LoginScreen() {
           <View style={styles.benefits}>
             {BENEFITS.map((b) => (
               <View key={b.key} style={styles.benefit}>
-                <IconChip icon={b.icon} />
+                <View style={styles.benefitIcon}>
+                  <Ionicons name={b.icon} size={16} color={colors.primary} />
+                </View>
                 <Text style={styles.benefitText}>{t(b.key)}</Text>
               </View>
             ))}
@@ -111,47 +113,51 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   scroll: { flexGrow: 1 },
   hero: {
-    backgroundColor: colors.primary,
     alignItems: 'center',
-    paddingBottom: 56,
+    paddingBottom: 28,
     paddingHorizontal: 20,
-    borderBottomLeftRadius: radius.xl,
-    borderBottomRightRadius: radius.xl,
   },
-  toggleRow: { alignSelf: 'stretch', alignItems: 'flex-end', marginBottom: 16 },
-  logo: { width: 84, height: 84, borderRadius: 22, borderWidth: 2, borderColor: 'rgba(255,255,255,0.25)' },
-  appName: { fontSize: 18, fontWeight: '800', color: colors.white, marginTop: 14, letterSpacing: 0.1 },
-  tagline: { fontSize: 14, color: 'rgba(255,255,255,0.75)', marginTop: 2 },
-  hindi: { fontSize: 15, color: colors.accent, marginTop: 10, fontWeight: '600' },
+  toggleRow: { alignSelf: 'stretch', alignItems: 'flex-end', marginBottom: 28 },
+  logo: { width: 72, height: 72, borderRadius: 18, borderWidth: 1, borderColor: colors.border },
+  appName: { fontSize: 22, lineHeight: 28, fontWeight: '700', color: colors.text, marginTop: 16 },
+  tagline: { fontSize: 14, lineHeight: 20, color: colors.muted, marginTop: 4, textAlign: 'center' },
+  hindi: { fontSize: 14, color: colors.primary, marginTop: 6, fontWeight: '500' },
   card: {
     backgroundColor: colors.card,
     marginHorizontal: 16,
-    marginTop: -32,
     borderRadius: radius.lg,
     padding: 20,
     gap: 14,
     borderWidth: 1,
     borderColor: colors.border,
   },
-  title: { fontSize: 18, fontWeight: '800', color: colors.text },
-  hint: { fontSize: 14, color: colors.muted, marginTop: -8 },
-  benefits: { gap: 10, marginVertical: 4 },
+  title: { fontSize: 17, lineHeight: 24, fontWeight: '700', color: colors.text },
+  hint: { fontSize: 13, lineHeight: 18, color: colors.muted, marginTop: -8 },
+  benefits: { gap: 10, marginVertical: 2 },
   benefit: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  benefitText: { fontSize: 14, color: colors.text, flex: 1 },
+  benefitIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: radius.md,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  benefitText: { fontSize: 14, lineHeight: 20, color: colors.text, flex: 1 },
   google: {
     minHeight: 48,
-    borderRadius: radius.md,
-    borderWidth: 1.5,
-    borderColor: colors.border,
+    borderRadius: radius.md + 2,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
     backgroundColor: colors.card,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
+    gap: 10,
     marginTop: 4,
   },
-  googleLabel: { fontSize: 14, fontWeight: '700', color: colors.text },
+  googleLabel: { fontSize: 15, fontWeight: '500', color: colors.text },
   checkingRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  checkingText: { fontSize: 14, color: colors.muted, fontWeight: '600' },
+  checkingText: { fontSize: 14, color: colors.muted, fontWeight: '500' },
   bottom: { flex: 1, justifyContent: 'flex-end', paddingVertical: 20 },
 });

@@ -10,6 +10,7 @@ import { Fab } from '../../src/components/Fab';
 import { Header } from '../../src/components/Header';
 import { SearchBar } from '../../src/components/SearchBar';
 import { StatusBadge } from '../../src/components/StatusBadge';
+import { ListRow } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import { InvoiceListRow } from '../../src/db/invoices';
 import { listChallans } from '../../src/db/challans';
@@ -18,15 +19,22 @@ import { formatDate } from '../../src/lib/dates';
 import { formatPaise } from '../../src/lib/money';
 import { colors, radius, shadowSm, text } from '../../src/theme';
 
-function ChallanRow({ challan, tr }: { challan: InvoiceListRow; tr: (k: StringKey) => string }) {
+function ChallanRow({
+  challan,
+  tr,
+  first,
+  last,
+}: {
+  challan: InvoiceListRow;
+  tr: (k: StringKey) => string;
+  first: boolean;
+  last: boolean;
+}) {
   const cancelled = challan.status === 'cancelled';
   const converted = !!challan.ref_invoice_no;
   return (
-    <Pressable
-      onPress={() => router.push(`/challans/${challan.id}`)}
-      style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]}
-    >
-      <View style={styles.flex}>
+    <ListRow first={first} last={last} onPress={() => router.push(`/challans/${challan.id}`)}>
+      <View style={styles.flexOnly}>
         <Text style={styles.party} numberOfLines={1}>
           {challan.party_name}
         </Text>
@@ -46,7 +54,7 @@ function ChallanRow({ challan, tr }: { challan: InvoiceListRow; tr: (k: StringKe
         <Text style={[styles.amount, cancelled && styles.strike]}>{formatPaise(challan.total_paise)}</Text>
         <StatusBadge status={challan.status} kind={challan.kind} />
       </View>
-    </Pressable>
+    </ListRow>
   );
 }
 
@@ -96,7 +104,9 @@ export default function ChallansScreen() {
             )
           ) : null
         }
-        renderItem={({ item }) => <ChallanRow challan={item} tr={t} />}
+        renderItem={({ item, index }) => (
+          <ChallanRow challan={item} tr={t} first={index === 0} last={index === visible.length - 1} />
+        )}
       />
       <Fab label={t('ch_newChallan')} onPress={() => router.push('/challans/new')} />
     </View>
@@ -105,7 +115,8 @@ export default function ChallansScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.background },
-  list: { padding: 16, gap: 10, paddingBottom: 96 },
+  flexOnly: { flex: 1, minWidth: 0 },
+  list: { padding: 16, paddingBottom: 96 },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -118,10 +129,10 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     ...shadowSm,
   },
-  party: { fontSize: text.md, fontWeight: '700', color: colors.text },
-  sub: { fontSize: text.sm, color: colors.muted, marginTop: 2 },
+  party: { fontSize: text.md, fontWeight: '500', color: colors.text },
+  sub: { fontSize: text.xs, color: colors.muted, marginTop: 2 },
   right: { alignItems: 'flex-end', gap: 4 },
-  amount: { fontSize: text.md, fontWeight: '800', color: colors.text },
+  amount: { fontSize: text.md, fontWeight: '700', color: colors.text, fontVariant: ['tabular-nums'] },
   strike: { color: colors.faint, textDecorationLine: 'line-through' },
   convertedPill: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
   convertedText: { fontSize: text.xs, fontWeight: '700', color: colors.success },
