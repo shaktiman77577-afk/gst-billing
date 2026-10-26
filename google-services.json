@@ -14,11 +14,35 @@
       },
       "oauth_client": [
         {
+          "client_id": "643161340591-7h8t86fvskiv7ldf2gjhie5n11lj1vvr.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.gstbilling.invoicemaker",
+            "certificate_hash": "07222484d66a557967e34be72119d3ac4816cdb2"
+          }
+        },
+        {
           "client_id": "643161340591-brfiineklidc8q8h23k6sk2v8gt4j02q.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.gstbilling.invoicemaker",
             "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "643161340591-nn2t213u0p6c8gkkiq0d1h4othku8e1f.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.gstbilling.invoicemaker",
+            "certificate_hash": "cd27c6a0ad3be1d38a6d139d54bfb67276306789"
+          }
+        },
+        {
+          "client_id": "643161340591-qt4bpgvpmiilin954og0dn70i7h62mv4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.gstbilling.invoicemaker",
+            "certificate_hash": "1ce1ce2ac2fc4a0c9060c7f1f01d3f14bba32167"
           }
         },
         {
